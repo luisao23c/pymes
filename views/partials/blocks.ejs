@@ -1,0 +1,43 @@
+<%
+  var _blocks = [];
+  try { _blocks = JSON.parse(biz.blocks || '[]'); } catch (e) {}
+%>
+<% _blocks.forEach(function (b) { %>
+  <% if (b.type === 'banner') { %>
+    <div style="margin:0 0 16px;">
+      <% if (b.link) { %><a href="<%= b.link %>" target="_blank" rel="noopener" style="display:block;text-decoration:none;"><% } %>
+        <% if (b.image) { %>
+          <img src="<%= b.image %>" alt="<%= b.title || '' %>" style="width:100%;max-height:280px;object-fit:cover;border-radius:16px;display:block;" />
+        <% } else if (b.title) { %>
+          <div style="background:linear-gradient(135deg, var(--accent, #2563eb), var(--accent2, #0ea5e9));color:#fff;padding:22px 24px;border-radius:16px;">
+            <span style="font-size:20px;font-weight:800;"><%= b.title %></span>
+            <% if (b.text) { %><p style="font-size:14px;margin-top:6px;opacity:.95;"><%= b.text %></p><% } %>
+          </div>
+        <% } %>
+      <% if (b.link) { %></a><% } %>
+    </div>
+  <% } else if (b.type === 'texto') { %>
+    <div style="margin:0 0 16px;padding:16px 20px;background:var(--card, #fff);border:1px solid var(--border, #e2e8f0);border-radius:16px;">
+      <% if (b.title) { %><h2 style="font-size:18px;font-weight:800;margin:0 0 6px;"><%= b.title %></h2><% } %>
+      <% if (b.text) { %><p style="font-size:14px;color:var(--muted, #64748b);margin:0;white-space:pre-line;"><%= b.text %></p><% } %>
+    </div>
+  <% } else if (b.type === 'destacados') { %>
+    <% var dest = (products || []).filter(function (p) { return p && !p.isAd && p.featured; }).slice(0, 6); %>
+    <% if (dest.length) { %>
+      <div style="margin:0 0 16px;">
+        <h2 style="font-size:18px;font-weight:800;margin:0 0 10px;">⭐ <%= b.title || 'Destacados' %></h2>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;">
+          <% dest.forEach(function (p) { %>
+            <a href="/<%= biz.slug %>/p/<%= p.id %>" style="display:block;background:var(--card, #fff);border:1px solid var(--border, #e2e8f0);border-radius:14px;overflow:hidden;text-decoration:none;color:inherit;">
+              <img src="<%= p.image || '/img/sin-imagen.svg' %>" alt="<%= p.name %>" style="width:100%;aspect-ratio:1;object-fit:cover;display:block;" />
+              <div style="padding:8px 10px;">
+                <div style="font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><%= p.name %></div>
+                <div style="font-size:13px;font-weight:800;margin-top:2px;"><%= money(p.price) %></div>
+              </div>
+            </a>
+          <% }) %>
+        </div>
+      </div>
+    <% } %>
+  <% } %>
+<% }) %>

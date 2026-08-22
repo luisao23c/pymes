@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <%- include('admin/head', { title: 'Carga masiva', biz }) %>
+</head>
+<body class="m-material bg-slate-100 min-h-screen">
+  <%- include('admin/sidebar', { biz, active: 'importar' }) %>
+
+  <main class="md:pl-60">
+    <div class="max-w-3xl mx-auto px-3 md:px-6 py-4 md:py-5 space-y-3">
+
+      <div>
+        <h1 class="text-lg md:text-xl font-black tracking-tight text-slate-900">Carga masiva</h1>
+        <p class="text-xs text-slate-500 mt-0.5">Sube tu lista de precios o inventario y el sistema la convierte en tu catálogo.</p>
+      </div>
+
+      <% if (resultado) { %>
+        <div class="rounded-xl p-4 m-pop <%= resultado.ok > 0 && resultado.errores.length === 0 ? 'bg-emerald-50 border border-emerald-200' : 'bg-amber-50 border border-amber-200' %>">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl <%= resultado.ok > 0 && resultado.errores.length === 0 ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600' %> flex items-center justify-center shrink-0">
+              <%= resultado.ok > 0 && resultado.errores.length === 0 ? '✓' : '⚠' %>
+            </div>
+            <p class="font-black <%= resultado.ok > 0 && resultado.errores.length === 0 ? 'text-emerald-700' : 'text-amber-700' %> text-sm">
+              <%= resultado.ok %> producto(s) importado(s)
+            </p>
+          </div>
+          <% if (resultado.errores.length > 0) { %>
+            <div class="mt-3 bg-white rounded-xl p-4 max-h-64 overflow-y-auto m-scroll">
+              <p class="text-xs font-bold text-slate-500 uppercase mb-2"><%= resultado.errores.length %> error(es) encontrado(s)</p>
+              <% resultado.errores.forEach(e => { %>
+                <p class="text-xs text-red-600 py-1 border-b border-red-50 last:border-0"><%= e %></p>
+              <% }) %>
+            </div>
+          <% } %>
+        </div>
+      <% } %>
+
+      <!-- Paso 1 -->
+      <section class="m-card p-4 m-rise">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-9 h-9 rounded-full bg-[var(--md-primary)] text-white flex items-center justify-center font-black text-sm shrink-0">1</div>
+          <div>
+            <h2 class="font-extrabold text-slate-900">Sube tu archivo</h2>
+            <p class="text-xs text-slate-400">Excel (.xlsx, .xls) o CSV</p>
+          </div>
+        </div>
+        <p class="text-sm text-slate-600 mb-4">
+          Funciona con <b>tu propia lista de precios o inventario</b> como la traigas:
+          nombre de columnas en español o inglés, con precios, stock, tallas, colores… Después el sistema te deja
+          <b>elegir qué columna es el nombre, cuál el precio</b>, etc. Se reconoce solo casi todo.
+        </p>
+        <form method="POST" action="/<%= biz.slug %>/admin/importar/vista-previa" enctype="multipart/form-data" class="space-y-3">
+          <label class="m-ripple block border-2 border-dashed border-slate-200 hover:border-[var(--md-primary)] hover:bg-blue-50/30 rounded-2xl p-6 text-center cursor-pointer transition">
+            <input type="file" name="archivo" accept=".xlsx,.xls,.csv" class="hidden" required>
+            <div class="w-12 h-12 mx-auto rounded-2xl bg-blue-50 text-blue-500 flex items-center justify-center text-xl mb-2">📄</div>
+            <p class="font-bold text-sm text-slate-700">Haz clic para elegir tu archivo</p>
+            <p class="text-xs text-slate-400 mt-0.5">O arrastra y suelta aquí</p>
+          </label>
+          <button class="m-btn m-btn-filled w-full !min-h-11">
+            Revisar y asignar columnas →
+          </button>
+        </form>
+      </section>
+
+      <!-- Paso 2 -->
+      <section class="m-card p-4">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-9 h-9 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center font-black text-sm shrink-0">2</div>
+          <div>
+            <h2 class="font-extrabold text-slate-400">¿No tienes archivo todavía?</h2>
+            <p class="text-xs text-slate-400">Descarga una plantilla lista, llénala y súbela en el paso 1</p>
+          </div>
+        </div>
+        <a href="/<%= biz.slug %>/admin/plantilla" class="m-btn m-btn-tonal m-btn-sm">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16"/></svg>
+          Descargar plantilla .xlsx
+        </a>
+      </section>
+
+    </div>
+  </main>
+</body>
+</html>

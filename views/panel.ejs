@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <%- include('admin/head', { title: 'Panel', biz }) %>
+</head>
+<body class="m-material bg-slate-100 min-h-screen">
+  <%- include('admin/sidebar', { biz, active: 'panel', canDesign }) %>
+
+  <main class="md:pl-60">
+    <div class="max-w-6xl mx-auto px-3 md:px-6 py-4 md:py-5 pb-24 md:pb-6">
+
+      <!-- Encabezado compacto -->
+      <div class="flex items-center justify-between flex-wrap gap-2 mb-3">
+        <div>
+          <h1 class="text-lg md:text-xl font-black tracking-tight text-slate-900">Hola, <%= biz.name.split(' ')[0] %> 👋</h1>
+          <p class="text-xs text-slate-500 mt-0.5">Resumen de tu catálogo hoy.</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <a href="/<%= biz.slug %>" target="_blank" class="m-btn m-btn-tonal m-btn-sm">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0zM2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z"/></svg>
+            Ver catálogo
+          </a>
+          <a href="/<%= biz.slug %>/admin/importar" class="m-btn m-btn-filled m-btn-sm">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16"/></svg>
+            Carga masiva
+          </a>
+        </div>
+      </div>
+
+      <% if (error) { %>
+        <div id="panel-error" class="mb-3 bg-[var(--md-error-container)] text-[#8c1d18] text-sm font-bold px-4 py-3 rounded-xl m-pop flex items-center gap-2">
+          <span class="shrink-0">⚠️</span><%= error %>
+        </div>
+      <% } %>
+
+      <% if (biz.plan === 'free') { %>
+        <div class="mb-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl shadow-[var(--md-elevation-1)] px-4 py-3 flex items-center justify-between flex-wrap gap-2 m-ripple">
+          <div class="flex items-center gap-3">
+            <span class="text-xl">🚀</span>
+            <div>
+              <p class="font-extrabold text-sm">Plan Gratuito · <%= allProducts.length %>/<%= planMax %> productos</p>
+              <p class="text-[11px] text-blue-100 mt-0.5">Productos ilimitados y atributos con el plan Pro.</p>
+            </div>
+          </div>
+          <a href="/<%= biz.slug %>/admin/config" class="m-btn m-btn-filled m-btn-sm !bg-white !text-blue-700">Mejorar plan</a>
+        </div>
+      <% } %>
+
+      <!-- Comparte tu catálogo (compacto) -->
+      <section class="m-card mb-3 p-3.5 bg-gradient-to-r from-emerald-500 to-teal-500 !border-transparent text-white">
+        <div class="flex items-center justify-between flex-wrap gap-3">
+          <div class="flex-1 min-w-52">
+            <p class="font-extrabold text-sm">Comparte tu catálogo 🚀</p>
+            <div class="flex items-center gap-1.5 bg-white/15 rounded-full pl-3 pr-1.5 py-1 mt-2">
+              <code class="flex-1 truncate text-[11px] font-bold"><%= storeUrl %></code>
+              <button onclick="navigator.clipboard.writeText('<%= storeUrl %>').then(()=>{this.textContent='¡Copiado!';setTimeout(()=>this.textContent='Copiar',1500)})" class="m-btn m-btn-filled m-btn-sm !bg-white !text-emerald-700 shrink-0 !min-h-0 !py-1">Copiar</button>
+            </div>
+            <div class="flex flex-wrap gap-1.5 mt-2">
+              <a href="https://wa.me/?text=<%= encodeURIComponent('Mira mi catálogo: ' + storeUrl) %>" target="_blank" class="m-btn m-btn-sm !bg-white/15 !text-white hover:!bg-white/25">💬 WhatsApp</a>
+              <a href="https://www.facebook.com/sharer/sharer.php?u=<%= encodeURIComponent(storeUrl) %>" target="_blank" class="m-btn m-btn-sm !bg-white/15 !text-white hover:!bg-white/25">📘 Facebook</a>
+              <a href="https://twitter.com/intent/tweet?text=<%= encodeURIComponent('Mira mi catálogo: ' + storeUrl) %>" target="_blank" class="m-btn m-btn-sm !bg-white/15 !text-white hover:!bg-white/25">🐦 X</a>
+              <button type="button" onclick="descargarTarjeta()" class="m-btn m-btn-sm !bg-white/15 !text-white hover:!bg-white/25">🖼️ Tarjeta para redes</button>
+            </div>
+          </div>
+          <% if (typeof qrUrl !== 'undefined' && qrUrl) { %>
+            <div class="bg-white rounded-2xl p-2 shrink-0 mx-auto md:mx-0">
+              <img src="<%= qrUrl %>" alt="Código QR del catálogo" class="w-24 h-24">
+            </div>
+          <% } %>
+        </div>
+      </section>
+
+      <!-- Métricas clave -->
+      <section class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 mb-3">
+        <% const cards = [
+          { label: 'Visitas hoy', value: stats.today, isNum: true, delta: stats.weekDelta, deltaLabel: 'vs semana pasada', icon: 'M15 12a3 3 0 11-6 0 3 3 0 016 0zM2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z', tint: 'text-blue-600 bg-blue-50' },
+          { label: 'Ingresos', value: stats.revenue, isMoney: true, delta: stats.revenueDelta, deltaLabel: 'vs semana pasada', icon: 'M12 8c-2.2 0-4 1.1-4 2.5S9.8 13 12 13s4-1.1 4-2.5S14.2 8 12 8zM5 13.5c.5 1.9 3.4 3.1 7 3.1s6.5-1.2 7-3.1M5 17.5c.5 1.9 3.4 3.1 7 3.1s6.5-1.2 7-3.1', tint: 'text-emerald-600 bg-emerald-50' },
+          { label: 'Pedidos WhatsApp', value: stats.waClicks, isNum: true, icon: 'M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z', tint: 'text-indigo-600 bg-indigo-50' },
+          { label: 'Conversión', value: stats.conv, isPct: true, icon: 'M3 13h4v8H3zM10 5h4v16h-4zM17 9h4v12h-4z', tint: 'text-fuchsia-600 bg-fuchsia-50' }
+        ]; %>
+        <% cards.forEach((c, i) => { %>
+          <div class="m-card m-hover m-ripple p-3.5 m-stagger cursor-pointer" data-active-layer>
+            <div class="flex items-center justify-between gap-2">
+              <div class="min-w-0">
+                <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400"><%= c.label %></p>
+                <% if (c.isMoney) { %><p class="text-xl md:text-2xl font-black text-slate-900 mt-0.5" data-count="<%= c.value %>" data-prefix="$" data-decimals="2">$0.00</p><% } else if (c.isPct) { %><p class="text-xl md:text-2xl font-black text-slate-900 mt-0.5" data-count="<%= c.value %>" data-decimals="1">0.0%</p><% } else { %><p class="text-xl md:text-2xl font-black text-slate-900 mt-0.5" data-count="<%= c.value %>">0</p><% } %>
+                <% if (typeof c.delta !== 'undefined') { %>
+                  <span class="inline-flex items-center gap-1 text-[10px] font-black mt-1 px-2 py-0.5 rounded-full <%= c.delta > 0 ? 'bg-emerald-50 text-emerald-600' : c.delta < 0 ? 'bg-red-50 text-red-500' : 'bg-slate-100 text-slate-400' %>"><%= c.delta > 0 ? '▲' : c.delta < 0 ? '▼' : '·' %> <%= Math.abs(c.delta) %>% <span class="font-semibold opacity-70"><%= c.deltaLabel %></span></span>
+                <% } %>
+              </div>
+              <div class="w-10 h-10 rounded-xl <%= c.tint %> flex items-center justify-center shrink-0">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8"><path d="<%= c.icon %>"/></svg>
+              </div>
+            </div>
+          </div>
+        <% }) %>
+      </section>
+
+      <% if (lowStock && lowStock.length > 0) { %>
+        <section class="mb-3 bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3">
+          <div class="flex items-center gap-3 flex-wrap">
+            <span class="text-xl">⚠️</span>
+            <div class="flex-1 min-w-[200px]">
+              <p class="text-sm font-extrabold text-amber-800">Stock bajo en <%= lowStock.length %> producto(s)</p>
+              <p class="text-xs text-amber-700 mt-0.5 truncate">
+                <% lowStock.slice(0, 6).forEach((p, i) => { %><%= i > 0 ? ' · ' : '' %><b><%= p.name %></b> (<%= p.stock <= 0 ? 'agotado' : p.stock %><% }) %>
+                <% if (lowStock.length > 6) { %> y <%= lowStock.length - 6 %> más<% } %>
+              </p>
+            </div>
+            <a href="/<%= biz.slug %>/admin/productos" class="m-btn m-btn-filled m-btn-sm !bg-amber-600">Ver productos</a>
+          </div>
+        </section>
+      <% } %>
+
+      <% if (priceHistory && priceHistory.length > 0) { %>
+        <section class="m-card p-4 mb-3">
+          <div class="flex items-center justify-between mb-2">
+            <h2 class="font-extrabold text-slate-900 text-sm">Historial de precios y promos</h2>
+            <a href="/<%= biz.slug %>/admin/reporte" class="text-xs font-bold text-blue-600 hover:text-blue-700">Descargar CSV</a>
+          </div>
+          <div class="space-y-1 max-h-64 overflow-y-auto m-scroll">
+            <% priceHistory.forEach(h => { %>
+              <div class="flex items-center gap-2 text-xs py-1 border-b border-slate-50">
+                <span class="text-slate-400 shrink-0 w-32"><%= (h.created_at || '').slice(0, 16) %></span>
+                <span class="font-semibold text-slate-700 truncate flex-1"><%= h.name %></span>
+                <span class="font-black text-slate-900 shrink-0"><%= money(h.price) %></span>
+                <% if (h.old_price) { %><span class="text-slate-400 line-through shrink-0"><%= money(h.old_price) %></span><% } %>
+                <% if (h.promo_type === 'regalo') { %><span class="m-badge m-badge-error shrink-0">🎁 <%= h.promo_gift %></span><% } else if (h.promo_type) { %><span class="m-badge m-badge-warn shrink-0"><%= h.promo_type %></span><% } %>
+              </div>
+            <% }) %>
+          </div>
+        </section>
+      <% } %>
+
+      <!-- Funnel + pedidos semana en una fila -->
+      <div class="grid lg:grid-cols-3 gap-2.5 mb-3">
+        <section class="lg:col-span-2 m-card p-4 m-stagger">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <h2 class="font-extrabold text-slate-900">Funnel de ventas</h2>
+              <p class="text-[11px] text-slate-400">De la visita al pedido</p>
+            </div>
+            <span class="m-badge m-badge-success"><%= money(stats.revenueWeek) %> esta semana</span>
+            <span class="m-badge m-badge-neutral">Ticket prom. <%= money(stats.avgOrder) %></span>
+          </div>
+          <% const steps = [
+            { label: 'Visitas', value: stats.total, pct: 100, color: 'from-blue-600 to-sky-400' },
+            { label: 'Abrieron WhatsApp', value: stats.waClicks, pct: stats.total > 0 ? Math.round((stats.waClicks / stats.total) * 100) : 0, color: 'from-indigo-500 to-violet-400' },
+            { label: 'Pedidos', value: stats.orders, pct: stats.total > 0 ? Math.round((stats.orders / stats.total) * 100) : 0, color: 'from-emerald-500 to-teal-400' }
+          ]; %>
+          <div class="flex items-end justify-center gap-3">
+            <% steps.forEach((s, si) => { %>
+              <div class="flex-1 flex flex-col items-center gap-1.5">
+                <div class="w-full rounded-lg bg-gradient-to-r <%= s.color %> transition-all duration-700" data-bar-v="<%= (s.pct / 100) * 64 %>" style="height: 0px"></div>
+                <div class="text-center">
+                  <p class="font-black text-slate-900 text-sm"><%= s.value %></p>
+                  <p class="text-[10px] text-slate-400 font-semibold"><%= s.label %></p>
+                  <p class="text-[10px] font-black <%= s.pct === 100 ? 'text-blue-600' : 'text-slate-500' %>"><%= s.pct %>%</p>
+                </div>
+              </div>
+            <% }) %>
+          </div>
+          <p class="text-[11px] text-slate-400 mt-2.5 text-center">Pedido → <b class="text-slate-600"><%= stats.orderRate %>%</b> · WhatsApp → <b class="text-slate-600"><%= stats.clickRate %>%</b></p>
+        </section>
+
+        <section class="m-card p-4 m-stagger">
+          <h2 class="font-extrabold text-slate-900 mb-3">Productos más vistos</h2>
+          <% if (stats.topProducts.length > 0) { %>
+            <div class="space-y-2.5">
+              <% const maxC = Math.max(...stats.topProducts.map(t => t.c), 1); %>
+              <% stats.topProducts.forEach((t, i) => { %>
+                <div>
+                  <div class="flex items-center justify-between text-xs mb-1">
+                    <span class="font-semibold text-slate-700 truncate pr-2"><%= i + 1 %>. <%= t.name %></span>
+                    <span class="font-bold text-slate-500 shrink-0"><%= t.c %> <span class="font-normal text-slate-400">vistas</span></span>
+                  </div>
+                  <div class="h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                    <div class="h-full rounded-full bg-gradient-to-r from-blue-500 to-sky-400" style="width: 0%" data-bar="<%= Math.round((t.c / maxC) * 100) %>"></div>
+                  </div>
+                </div>
+              <% }) %>
+            </div>
+          <% } else { %>
+            <div class="text-center py-6">
+              <p class="text-2xl mb-1">🔍</p>
+              <p class="text-xs text-slate-500 font-semibold">Sin datos todavía</p>
+            </div>
+          <% } %>
+        </section>
+      </div>
+
+      <!-- Productos que más se piden por WhatsApp -->
+      <% if (stats.topWaProducts && stats.topWaProducts.length > 0) { %>
+        <section class="m-card p-4 mb-3">
+          <h2 class="font-extrabold text-slate-900 text-sm mb-3">Productos que más se piden por WhatsApp 💬</h2>
+          <div class="space-y-2.5">
+            <% const maxW = Math.max(...stats.topWaProducts.map(t => t.c), 1); %>
+            <% stats.topWaProducts.forEach((t, i) => { %>
+              <div>
+                <div class="flex items-center justify-between text-xs mb-1">
+                  <span class="font-semibold text-slate-700 truncate pr-2"><%= i + 1 %>. <%= t.name %></span>
+                  <span class="font-bold text-slate-500 shrink-0"><%= t.c %> <span class="font-normal text-slate-400">pedidos</span></span>
+                </div>
+                <div class="h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                  <div class="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400" style="width: <%= Math.round((t.c / maxW) * 100) %>%"></div>
+                </div>
+              </div>
+            <% }) %>
+          </div>
+        </section>
+      <% } %>
+
+      <!-- Productos más vendidos -->
+      <% if (stats.topSellers && stats.topSellers.length > 0) { %>
+        <section class="m-card p-4 mb-3">
+          <h2 class="font-extrabold text-slate-900 text-sm mb-3">Productos más vendidos 🏆</h2>
+          <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
+            <% const maxS = Math.max(...stats.topSellers.map(t => t.c), 1); %>
+            <% stats.topSellers.forEach((t, i) => { %>
+              <div class="flex items-center gap-3 p-2.5 rounded-xl border border-slate-100">
+                <span class="w-7 h-7 rounded-full bg-amber-100 text-amber-700 text-xs font-black flex items-center justify-center shrink-0"><%= i + 1 %></span>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-semibold text-slate-800 truncate"><%= t.name %></p>
+                  <div class="h-1.5 rounded-full bg-slate-100 overflow-hidden mt-1">
+                    <div class="h-full rounded-full bg-gradient-to-r from-amber-400 to-orange-400" style="width: <%= Math.round((t.c / maxS) * 100) %>%"></div>
+                  </div>
+                </div>
+                <span class="text-sm font-black text-slate-900 shrink-0"><%= t.c %></span>
+              </div>
+            <% }) %>
+          </div>
+        </section>
+      <% } %>
+
+      <!-- Gráficas de 7 días -->
+      <div class="grid lg:grid-cols-2 gap-2.5 mb-3">
+        <section class="m-card p-4 m-stagger">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <h2 class="font-extrabold text-slate-900 text-sm">Visitas · 7 días</h2>
+              <p class="text-[11px] text-slate-400"><%= stats.week %> visitas en la semana</p>
+            </div>
+            <span class="m-badge m-badge-neutral">Semana</span>
+          </div>
+          <% if (stats.daily.length > 0) { %>
+            <div class="flex items-end gap-1.5 h-28">
+              <% stats.daily.forEach(d => { %>
+                <div class="flex-1 flex flex-col items-center gap-1 group" title="<%= d.d %>: <%= d.c %> visitas">
+                  <div class="w-full max-w-9 rounded-md bg-gradient-to-t from-blue-600 to-sky-400 group-hover:from-blue-700 group-hover:to-sky-500 transition rounded-b-sm" style="height: 0%" data-bar-v="<%= Math.max(8, (d.c / (stats.week || 1)) * 100) %>%"></div>
+                  <span class="text-[9px] text-slate-400 font-medium truncate w-full text-center"><%= d.d.slice(8) %></span>
+                </div>
+              <% }) %>
+            </div>
+          <% } else { %>
+            <div class="text-center py-6">
+              <p class="text-2xl mb-1">📈</p>
+              <p class="text-xs text-slate-500 font-semibold">Aún no hay visitas esta semana</p>
+            </div>
+          <% } %>
+        </section>
+
+        <section class="m-card p-4 m-stagger">
+          <h2 class="font-extrabold text-slate-900 text-sm mb-3">Pedidos · 7 días</h2>
+          <% if (stats.ordersDaily.length > 0) { %>
+            <% const maxO = Math.max(...stats.ordersDaily.map(d => d.c), 1); %>
+            <div class="flex items-end gap-1.5 h-28">
+              <% stats.ordersDaily.forEach(d => { %>
+                <div class="flex-1 flex flex-col items-center gap-1 group" title="<%= d.d %>: <%= d.c %> pedidos · <%= money(d.s) %>">
+                  <div class="w-full max-w-9 rounded-md bg-gradient-to-t from-emerald-600 to-teal-400 group-hover:from-emerald-700 group-hover:to-teal-500 transition rounded-b-sm" style="height: 0%" data-bar-v="<%= Math.max(8, (d.c / maxO) * 100) %>%"></div>
+                  <span class="text-[9px] text-slate-400 font-medium truncate w-full text-center"><%= d.d.slice(8) %></span>
+                </div>
+              <% }) %>
+            </div>
+          <% } else { %>
+            <p class="text-xs text-slate-400 font-semibold py-6 text-center">Sin pedidos esta semana todavía.</p>
+          <% } %>
+        </section>
+      </div>
+
+      <!-- Pedidos recientes -->
+      <section class="m-card p-4 mb-3 m-stagger">
+        <div class="flex items-center justify-between flex-wrap gap-2 mb-2.5">
+          <div class="flex items-center gap-2">
+            <h2 class="font-extrabold text-slate-900 text-sm">Pedidos recientes</h2>
+            <% if (pending > 0) { %>
+              <span class="m-badge m-badge-warn"><%= pending %> por cobrar</span>
+            <% } %>
+          </div>
+          <a href="/<%= biz.slug %>/admin/reporte" class="m-btn m-btn-outlined m-btn-sm">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 10v6m0 0l-3-3m3 3l3-3M4 18V6a2 2 0 012-2h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2z"/></svg>
+            Reporte Excel
+          </a>
+        </div>
+
+        <% const estados = [
+          { f: 'all', label: 'Todos', n: orders.length, cl: 'm-badge-neutral' },
+          { f: 'nuevo', label: 'Nuevos', n: orders.filter(o => o.status === 'nuevo').length, cl: 'm-badge-primary' },
+          { f: 'pendiente', label: 'Por cobrar', n: orders.filter(o => !o.paid && o.status !== 'cancelado').length, cl: 'm-badge-warn' },
+          { f: 'pagado', label: 'Pagados', n: orders.filter(o => o.status === 'pagado').length, cl: 'm-badge-success' },
+          { f: 'entregado', label: 'Entregados', n: orders.filter(o => o.status === 'entregado').length, cl: 'm-badge-success' },
+          { f: 'cancelado', label: 'Cancelados', n: orders.filter(o => o.status === 'cancelado').length, cl: 'm-badge-error' }
+        ]; %>
+
+        <div class="flex flex-wrap items-center gap-1.5 mb-3" id="order-filters">
+          <% estados.forEach(es => { %>
+            <button data-f="<%= es.f %>" class="m-chip m-chip-selected !h-8 <%= es.f !== 'all' ? '!opacity-60' : '' %>"><%= es.label %> <span class="m-badge <%= es.cl %> !h-5 !text-[10px]"><%= es.n %></span></button>
+          <% }) %>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2 mb-3">
+          <div class="relative flex-1 min-w-[160px]">
+            <input id="order-search" type="text" placeholder="Buscar pedido (producto o cliente)…" class="w-full border border-slate-200 rounded-full pl-9 pr-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z"/></svg>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <input id="order-desde" type="date" class="border border-slate-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500" title="Desde">
+            <span class="text-slate-400 text-xs">–</span>
+            <input id="order-hasta" type="date" class="border border-slate-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500" title="Hasta">
+            <button type="button" onclick="limpiarFiltrosPedidos()" class="text-xs font-bold text-blue-600 hover:text-blue-700">Limpiar</button>
+          </div>
+        </div>
+
+        <% if (orders.length === 0) { %>
+          <div class="text-center py-6 border-2 border-dashed border-slate-200 rounded-xl">
+            <p class="text-2xl mb-1">🧾</p>
+            <p class="text-xs text-slate-500 font-semibold">Aún no hay pedidos</p>
+          </div>
+        <% } else { %>
+          <div class="divide-y divide-slate-100" id="order-list">            <% orders.forEach(o => { %>
+              <div class="m-list-item m-ripple px-2 first:pt-1 last:pb-1" data-active-layer
+                   data-order-status="<%= o.status %>" data-paid="<%= o.paid ? 1 : 0 %>" data-confirm-anchor
+                   data-search="<%= (o.items + ' ' + (o.customer_name || '')).toLowerCase().replace(/"/g, '&quot;') %>" data-created="<%= o.created_at %>">
+                <div class="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 shrink-0">
+                  <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13l-1 5h12M7 13L5.4 5M7 13l.4 2M10 21a1 1 0 100-2 1 1 0 000 2zm8 0a1 1 0 100-2 1 1 0 000 2z"/></svg>
+                </div>
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-center justify-between gap-2">
+                    <p class="font-bold text-slate-800 text-sm"><%= money(o.total) %></p>
+                    <span class="m-badge <%= o.status === 'entregado' ? 'm-badge-success' : o.status === 'cancelado' ? 'm-badge-error' : o.paid ? 'm-badge-success' : 'm-badge-warn' %> !h-5 !text-[10px] shrink-0"><%= ({ nuevo: '● NUEVO', pagado: '● PAGADO', entregado: '✓ ENTREGADO', cancelado: '✕ CANCELADO' })[o.status] || '○ POR COBRAR' %></span>
+                  </div>
+                  <p class="text-[11px] text-slate-400 truncate mt-0.5"><%= o.items %></p>
+                  <% if (o.customer_name) { %>
+                    <p class="text-[11px] text-blue-600 font-semibold truncate mt-0.5">👤 <%= o.customer_name %></p>
+                  <% } %>
+                  <p class="text-[10px] text-slate-400 mt-0.5"><%= o.created_at %></p>
+                </div>
+                <div class="flex flex-wrap items-center gap-1 shrink-0 justify-end">
+                  <% if (o.status !== 'entregado' && o.status !== 'cancelado') { %>
+                    <form method="POST" action="/<%= biz.slug %>/admin/order/<%= o.id %>/entregado" class="inline" data-confirm="Marcar como ENTREGADO y cobrado?" data-confirm-ok="Sí, entregado">
+                      <button class="m-btn m-btn-sm m-btn-outlined !min-h-0 !py-1.5">✓ Entregado</button>
+                    </form>
+                    <form method="POST" action="/<%= biz.slug %>/admin/order/<%= o.id %>/cancelado" class="inline" data-confirm="¿Cancelar este pedido?">
+                      <button class="m-btn m-btn-sm m-btn-outlined !min-h-0 !py-1.5 !text-red-500 !border-red-200 hover:!bg-red-50">✕ Cancelar</button>
+                    </form>
+                  <% } %>
+                  <form method="POST" action="/<%= biz.slug %>/admin/order/<%= o.id %>/eliminar" data-confirm="¿Eliminar pedido?" class="inline">
+                    <button class="m-btn-icon !w-8 !h-8 hover:!bg-red-50 hover:!text-red-500" title="Eliminar">✕</button>
+                  </form>
+                </div>
+              </div>
+            <% }) %>
+          </div>
+          <div id="order-pager"></div>
+        <% } %>
+      </section>
+
+    </div>
+  </main>
+
+  <%- include('admin/panel-ajax') %>
+  <%- include('admin/toast') %>
+
+  <script>
+    // Filtros de pedidos por estado + paginación
+    var ORDER_PAGE_SIZE = 8;
+    function initOrderFilter() {
+      var chips = document.querySelectorAll('#order-filters button');
+      var list = document.getElementById('order-list');
+      if (!chips.length || !list) return;
+      var rows = Array.prototype.slice.call(list.querySelectorAll('[data-order-status]'));
+      var f = 'all', page = 1, current = [];
+      function compute() {
+        var q = (document.getElementById('order-search').value || '').toLowerCase().trim();
+        var desde = document.getElementById('order-desde').value;
+        var hasta = document.getElementById('order-hasta').value;
+        return rows.filter(function (row) {
+          var st = row.getAttribute('data-order-status');
+          var paid = row.getAttribute('data-paid');
+          var okStatus = f === 'all'
+            || (f === 'nuevo' && st === 'nuevo')
+            || (f === 'pendiente' && paid !== '1' && st !== 'cancelado')
+            || (f === st);
+          var okSearch = !q || (row.getAttribute('data-search') || '').indexOf(q) !== -1;
+          var created = (row.getAttribute('data-created') || '').slice(0, 10);
+          var okDesde = !desde || created >= desde;
+          var okHasta = !hasta || created <= hasta;
+          return okStatus && okSearch && okDesde && okHasta;
+        });
+      }
+      function show() {
+        current = compute();
+        var pages = Math.max(1, Math.ceil(current.length / ORDER_PAGE_SIZE));
+        if (page > pages) page = pages;
+        var start = (page - 1) * ORDER_PAGE_SIZE;
+        var slice = current.slice(start, start + ORDER_PAGE_SIZE);
+        rows.forEach(function (r) { r.classList.add('hidden'); });
+        slice.forEach(function (r) { r.classList.remove('hidden'); });
+        var box = document.getElementById('order-pager');
+        if (box) {
+          if (pages <= 1) { box.innerHTML = ''; }
+          else {
+            box.innerHTML = '<div class="flex items-center justify-center gap-2 mt-3">'
+              + '<button type="button" class="m-btn m-btn-outlined m-btn-sm" data-pg="prev">‹ Anterior</button>'
+              + '<span class="text-xs font-bold text-slate-500 px-2">Página ' + page + ' de ' + pages + '</span>'
+              + '<button type="button" class="m-btn m-btn-outlined m-btn-sm" data-pg="next">Siguiente ›</button></div>';
+            box.querySelector('[data-pg="prev"]').onclick = function () { if (page > 1) { page--; show(); } };
+            box.querySelector('[data-pg="next"]').onclick = function () { if (page < pages) { page++; show(); } };
+          }
+        }
+      }
+      chips.forEach(function (ch) {
+        ch.onclick = function () {
+          chips.forEach(function (c) {
+            c.classList.toggle('m-chip-selected', c === ch);
+            c.classList.toggle('!opacity-60', c !== ch);
+          });
+          f = ch.getAttribute('data-f');
+          page = 1;
+          show();
+        };
+      });
+      var search = document.getElementById('order-search');
+      var desde = document.getElementById('order-desde');
+      var hasta = document.getElementById('order-hasta');
+      if (search) search.oninput = function () { page = 1; show(); };
+      if (desde) desde.onchange = function () { page = 1; show(); };
+      if (hasta) hasta.onchange = function () { page = 1; show(); };
+      show();
+    }
+    function limpiarFiltrosPedidos() {
+      var s = document.getElementById('order-search');
+      var d = document.getElementById('order-desde');
+      var h = document.getElementById('order-hasta');
+      if (s) s.value = '';
+      if (d) d.value = '';
+      if (h) h.value = '';
+      initOrderFilter();
+    }
+    window.onPanelSwap = initOrderFilter;
+    document.addEventListener('DOMContentLoaded', initOrderFilter);
+
+    // ===== Tarjeta para redes sociales (canvas → PNG) =====
+    var CARD = {
+      name: <%- safeJson(biz.name) %>,
+      desc: <%- safeJson(biz.description || '') %>,
+      url: <%- safeJson(storeUrl) %>,
+      logo: <%- safeJson(biz.logo || '') %>,
+      qr: <%- safeJson(typeof qrUrl !== 'undefined' ? qrUrl : '') %>,
+      accent: <%- safeJson(biz.color_hex || '#2563eb') %>,
+      accent2: <%- safeJson(biz.color_hex2 || biz.color_hex || '#4f46e5') %>
+    };
+    function roundRect(ctx, x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + w, y, x + w, y + h, r);
+      ctx.arcTo(x + w, y + h, x, y + h, r);
+      ctx.arcTo(x, y + h, x, y, r);
+      ctx.arcTo(x, y, x + w, y, r);
+      ctx.closePath();
+    }
+    function wrapText(ctx, text, x, y, maxW, lineH) {
+      const words = String(text || '').split(/\s+/).filter(Boolean);
+      let line = '';
+      const lines = [];
+      for (const w of words) {
+        const test = line ? line + ' ' + w : w;
+        if (ctx.measureText(test).width > maxW && line) { lines.push(line); line = w; }
+        else line = test;
+      }
+      if (line) lines.push(line);
+      lines.slice(0, 3).forEach((l, i) => ctx.fillText(l, x, y + i * lineH));
+    }
+    function descargarTarjeta() {
+      const W = 1080, H = 1080;
+      const canvas = document.createElement('canvas');
+      canvas.width = W; canvas.height = H;
+      const ctx = canvas.getContext('2d');
+
+      const g = ctx.createLinearGradient(0, 0, W, H);
+      g.addColorStop(0, CARD.accent);
+      g.addColorStop(1, CARD.accent2);
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, W, H);
+
+      ctx.fillStyle = 'rgba(255,255,255,0.12)';
+      ctx.beginPath(); ctx.arc(W * 0.85, H * 0.1, 220, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(W * 0.1, H * 0.9, 160, 0, Math.PI * 2); ctx.fill();
+
+      ctx.fillStyle = '#ffffff';
+      roundRect(ctx, 60, 60, W - 120, H - 120, 40);
+      ctx.fill();
+
+      ctx.fillStyle = CARD.accent;
+      roundRect(ctx, 60, 60, W - 120, 26, 13);
+      ctx.fill();
+
+      ctx.fillStyle = '#0f172a';
+      ctx.textAlign = 'center';
+      ctx.font = 'bold 52px "Segoe UI", Arial, sans-serif';
+      ctx.fillText(CARD.name.slice(0, 30), W / 2, 210);
+
+      ctx.fillStyle = '#64748b';
+      ctx.font = '24px "Segoe UI", Arial, sans-serif';
+      wrapText(ctx, CARD.desc, W / 2, 260, W - 260, 34);
+
+      const centerY = 500;
+      const logoSize = 220;
+      let drawn = false;
+      const finish = function () {
+        ctx.fillStyle = '#0f172a';
+        ctx.textAlign = 'center';
+        ctx.font = 'bold 30px "Segoe UI", Arial, sans-serif';
+        ctx.fillText('Catálogo en línea', W / 2, H - 250);
+        ctx.fillStyle = '#2563eb';
+        ctx.font = 'bold 30px "Segoe UI", Arial, sans-serif';
+        ctx.fillText(CARD.url.replace(/^https?:\/\//, '').slice(0, 46), W / 2, H - 205);
+        const a = document.createElement('a');
+        a.download = 'tarjeta-' + CARD.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') + '.png';
+        a.href = canvas.toDataURL('image/png');
+        a.click();
+        mostrarToast('Tarjeta descargada ✓', 'ok');
+      };
+      const drawLogo = function () {
+        if (!CARD.logo) { drawQr(); return; }
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = function () {
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(W / 2, centerY, logoSize / 2, 0, Math.PI * 2);
+          ctx.closePath();
+          ctx.clip();
+          ctx.drawImage(img, W / 2 - logoSize / 2, centerY - logoSize / 2, logoSize, logoSize);
+          ctx.restore();
+          ctx.strokeStyle = '#e2e8f0';
+          ctx.lineWidth = 4;
+          ctx.beginPath(); ctx.arc(W / 2, centerY, logoSize / 2, 0, Math.PI * 2); ctx.stroke();
+          drawQr();
+        };
+        img.onerror = function () { drawQr(); };
+        img.src = CARD.logo;
+      };
+      const drawQr = function () {
+        if (!CARD.qr) { finish(); return; }
+        const q = new Image();
+        q.onload = function () {
+          const s = 240;
+          ctx.fillStyle = '#ffffff';
+          roundRect(ctx, W / 2 - s / 2 - 16, centerY + logoSize / 2 + 30, s + 32, s + 32, 20);
+          ctx.fill();
+          ctx.drawImage(q, W / 2 - s / 2, centerY + logoSize / 2 + 46, s, s);
+          finish();
+        };
+        q.onerror = function () { finish(); };
+        q.src = CARD.qr;
+      };
+      drawLogo();
+    }
+  </script>
+</body>
+</html>

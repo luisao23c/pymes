@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Registrar tienda | Nessik</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>body { font-family: 'Inter', sans-serif; }</style>
+  <link rel="stylesheet" href="/css/material.css">
+  <script src="/js/material.js"></script>
+</head>
+<body class="m-material bg-slate-50 min-h-screen">
+
+  <nav class="bg-white border-b border-slate-100 sticky top-0 z-50">
+    <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
+      <a href="/" class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-600 to-emerald-500 flex items-center justify-center text-white font-black text-sm">C</div>
+        <span class="font-extrabold text-lg">Catálogo<span class="text-blue-600">Nessik</span></span>
+      </a>
+      <a href="/" class="text-sm font-medium text-slate-600 hover:text-slate-900">← Volver</a>
+    </div>
+  </nav>
+
+  <main class="max-w-3xl mx-auto px-4 py-8">
+    <div class="text-center mb-6">
+      <h1 class="text-2xl md:text-3xl font-black tracking-tight">Registrar una tienda</h1>
+      <p class="text-slate-500 mt-1.5">Crea tu tienda en minutos. Catálogo y pedidos por WhatsApp listos.</p>
+    </div>
+
+    <% if (ok) { %>
+      <div class="bg-[var(--md-secondary-container)] rounded-2xl p-5 mb-4 m-pop">
+        <p class="font-bold text-[var(--md-on-secondary-container)] mb-1">Tienda creada correctamente ✓</p>
+        <p class="text-sm text-emerald-700">Catálogo: <a href="/<%= ok %>" class="font-bold underline">/<%= ok %></a></p>
+        <p class="text-sm text-emerald-700">Panel (PIN 1234): <a href="/<%= ok %>/admin" class="font-bold underline">/<%= ok %>/admin</a></p>
+      </div>
+    <% } %>
+    <% if (error) { %>
+      <div class="bg-[var(--md-error-container)] rounded-2xl p-4 mb-4 text-sm font-semibold text-[#8c1d18] m-pop"><%= error %></div>
+    <% } %>
+
+    <form method="POST" action="/registrar" class="m-card p-6 m-rise">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-bold mb-1.5">Nombre del negocio *</label>
+          <input name="name" required placeholder="Ej: Ferretería El Toro" class="w-full border rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+
+        <div>
+          <label class="block text-sm font-bold mb-1.5">Enlace (solo letras y números) *</label>
+          <div class="flex items-center border rounded-xl px-4 py-2.5 focus-within:ring-2 focus-within:ring-blue-500">
+            <span class="text-slate-400 text-sm font-medium">nessik.net/</span>
+            <input name="slug" required pattern="[a-z0-9-]+" placeholder="ferreteria-eltoro" class="flex-1 focus:outline-none ml-1">
+          </div>
+          <p class="text-xs text-slate-400 mt-1">El enlace público de tu tienda. Único y fácil de recordar.</p>
+        </div>
+
+        <div>
+          <label class="block text-sm font-bold mb-1.5">WhatsApp de ventas (10 dígitos) *</label>
+          <input name="whatsapp" required type="tel" inputmode="numeric" placeholder="8719920338" class="w-full border rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <p class="text-xs text-slate-400 mt-1">Los pedidos llegarán a este número.</p>
+        </div>
+
+        <div>
+          <label class="block text-sm font-bold mb-1.5">Descripción corta</label>
+          <textarea name="description" rows="2" placeholder="Ej: Todo para tu obra y hogar en Torreón." class="w-full border rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+        </div>
+
+        <div>
+          <label class="block text-sm font-bold mb-1.5">Giro del negocio</label>
+          <select name="giro" class="w-full border rounded-xl px-4 py-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">Selecciona el giro…</option>
+            <% GIROS.forEach(g => { %>
+              <option value="<%= g %>" <%= g === 'abarrotes' ? 'selected' : '' %>><%= g %></option>
+            <% }) %>
+          </select>
+          <p class="text-xs text-slate-400 mt-1">Se usa para recomendar negocios complementarios entre la red.</p>
+        </div>
+
+        <div>
+          <label class="block text-sm font-bold mb-1.5">PIN de acceso (el dueño lo puede cambiar)</label>
+          <input name="pin" type="text" inputmode="numeric" maxlength="12" placeholder="6 a 12 dígitos" class="w-full border rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <p class="text-xs text-slate-400 mt-1">Mínimo 6 dígitos. Es tu contraseña para entrar al panel.</p>
+        </div>
+
+        <button class="m-btn m-btn-filled w-full !min-h-11">Crear tienda</button>
+      </div>
+    </form>
+  </main>
+</body>
+</html>

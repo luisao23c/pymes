@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Acceso · <%= biz.name %></title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800;14..32,900&display=swap" rel="stylesheet" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      background: #f8fafc;
+      color: #0f172a;
+    }
+    .card {
+      width: 100%;
+      max-width: 400px;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 24px;
+      box-shadow: 0 12px 40px rgba(15, 23, 42, 0.08);
+      padding: 2.25rem 2rem;
+    }
+    .logo-icon {
+      width: 60px;
+      height: 60px;
+      border-radius: 16px;
+      background: var(--accent, #334155);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      font-weight: 800;
+      color: #fff;
+      margin: 0 auto 0.9rem;
+    }
+    .pin-input {
+      width: 100%;
+      padding: 0.8rem 1rem;
+      background: #fff;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 14px;
+      color: #0f172a;
+      font-size: 1.4rem;
+      font-weight: 600;
+      letter-spacing: 0.5em;
+      text-align: center;
+      transition: all 0.2s ease;
+      outline: none;
+    }
+    .pin-input::placeholder { color: #cbd5e1; letter-spacing: 0.05em; font-weight: 400; font-size: 0.85rem; }
+    .pin-input:focus { border-color: var(--accent, #334155); box-shadow: 0 0 0 4px rgba(51, 65, 85, 0.10); }
+    .pin-label { display: block; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; margin-bottom: 0.5rem; }
+    .btn-login {
+      width: 100%;
+      padding: 0.85rem 1.5rem;
+      border: none;
+      border-radius: 14px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: #fff;
+      background: var(--accent, #334155);
+      transition: all 0.2s ease;
+      cursor: pointer;
+      margin-top: 1.25rem;
+    }
+    .btn-login:hover { filter: brightness(1.08); }
+    .btn-login:active { transform: scale(0.99); }
+    .error-msg {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      border-radius: 14px;
+      padding: 0.7rem 1rem;
+      color: #b91c1c;
+      font-size: 0.85rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+    .ok-msg {
+      background: #ecfdf5;
+      border: 1px solid #a7f3d0;
+      border-radius: 14px;
+      padding: 0.7rem 1rem;
+      color: #047857;
+      font-size: 0.85rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+    .back-link {
+      display: block;
+      text-align: center;
+      margin-top: 1.25rem;
+      color: #94a3b8;
+      font-size: 0.85rem;
+      font-weight: 500;
+      text-decoration: none;
+    }
+    .back-link:hover { color: #475569; }
+    .footer-auth { text-align: center; color: #cbd5e1; font-size: 0.7rem; margin-top: 1.25rem; letter-spacing: 0.03em; }
+    .footer-auth strong { color: #94a3b8; font-weight: 600; }
+    input[type="password"]::-webkit-outer-spin-button,
+    input[type="password"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    input[type="password"] { -moz-appearance: textfield; }
+  </style>
+</head>
+<body style="--accent:<%= (typeof pal !== 'undefined' && pal.accent) || '#334155' %>;">
+
+  <div class="card">
+    <div class="logo-icon"><%= biz.name.charAt(0).toUpperCase() %></div>
+    <div class="text-center">
+      <h1 class="text-xl font-extrabold text-slate-900 tracking-tight"><%= biz.name %></h1>
+      <p class="text-sm text-slate-400 font-medium mt-0.5">Accede a tu panel de control</p>
+    </div>
+
+    <% if (ok) { %>
+      <div class="ok-msg"><span>✓</span><span><%= ok %></span></div>
+    <% } %>
+
+    <% if (error) { %>
+      <div class="error-msg"><span>⚠️</span><span><%= error %></span></div>
+    <% } %>
+
+    <form method="POST" action="/<%= biz.slug %>/admin">
+      <label class="pin-label" for="f-pin">Tu PIN de acceso</label>
+      <input type="password"
+             name="pin"
+             id="f-pin"
+             placeholder="••••"
+             autofocus
+             inputmode="numeric"
+             class="pin-input" />
+      <button type="submit" class="btn-login">Entrar a mi panel →</button>
+    </form>
+
+    <a href="/<%= biz.slug %>" class="back-link">← Volver al catálogo público</a>
+
+    <div class="footer-auth">Hecho con <strong>Nessik</strong></div>
+  </div>
+
+</body>
+</html>

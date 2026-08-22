@@ -1,0 +1,65 @@
+<%
+  const mode = biz.color_mode || 'degradado';
+  let accent = estilo.accent;
+  let accent2 = estilo.accent2;
+  if (biz.accent && biz.accent.trim()) { accent = biz.accent.trim(); accent2 = (biz.accent2 && biz.accent2.trim()) ? biz.accent2.trim() : accent; }
+  else if (mode === 'solido') { accent = biz.color_hex || estilo.accent; accent2 = accent; }
+  else if (mode === 'degradado') { accent = biz.color_hex || estilo.accent; accent2 = biz.color_hex2 || accent; }
+  const desc = (biz.description || biz.name + ' - Catálogo en línea. Pide directo por WhatsApp.').slice(0, 160);
+%>
+<meta name="description" content="<%= desc %>">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="<%= biz.name %>">
+<meta property="og:title" content="<%= biz.name %> - Catálogo en línea">
+<meta property="og:description" content="<%= desc %>">
+<meta property="og:image" content="<%= biz.logo || '' %>">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="<%= biz.name %> - Catálogo en línea">
+<meta name="twitter:description" content="<%= desc %>">
+<% if (typeof seoUrl !== 'undefined' && seoUrl) { %><link rel="canonical" href="<%= seoUrl %>"><meta property="og:url" content="<%= seoUrl %>"><% } %>
+<link href="https://fonts.googleapis.com/css2?family=<%= estilo.fontLink %>&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/material.css">
+<script src="/js/material.js"></script>
+<style>
+  :root {
+    --accent: <%= accent %>;
+    --accent2: <%= accent2 %>;
+    --font: <%= estilo.font %>;
+    --bg: <%= estilo.bg %>;
+    --text: <%= estilo.text %>;
+    --muted: <%= estilo.muted %>;
+    --card: <%= estilo.card %>;
+    --border: <%= estilo.border %>;
+    --radius: <%= estilo.radius %>;
+    --header: <%= estilo.header %>;
+    --header-text: <%= estilo.headerText %>;
+    --badge: <%= accent %>;
+    --grid-cols: <%= biz.grid_cols || 3 %>;
+  }
+  @media (min-width: 768px) {
+    .grid-cols-sel { grid-template-columns: repeat(var(--grid-cols), minmax(0, 1fr)) !important; }
+  }
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+  }
+  .header-gradient { background: var(--header) !important; color: var(--header-text) !important; }
+  .header-gradient * { border-color: transparent; }
+  .cat-title { color: var(--header-text) !important; }
+  <% if (estilo.headerSet) { %>.header-gradient.hero-banner::after,.header-gradient.hero-restaurant::after{background:var(--header)!important}<% } %>
+  .chip-active { background: linear-gradient(135deg, var(--accent), var(--accent2)) !important; color: #fff !important; border-color: transparent !important; }
+  .chip-idle { background: var(--card) !important; color: var(--text) !important; border-color: var(--border) !important; }
+  .btn-accent { background: linear-gradient(135deg, var(--accent), var(--accent2)) !important; color: #fff !important; border: none !important; }
+  .btn-accent:hover { filter: brightness(1.1); }
+  .text-accent { color: var(--accent) !important; }
+  .text-accent2 { color: var(--accent2) !important; }
+  .card-surface { background: var(--card) !important; border-color: var(--border) !important; border-radius: var(--radius) !important; }
+  .text-muted { color: var(--muted) !important; }
+  .search-input { background: <%= estilo.dark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.95)' %> !important; color: var(--text) !important; border: 1px solid <%= estilo.border %> !important; }
+  .search-input::placeholder { color: var(--muted) !important; }
+  .footer-muted { color: <%= estilo.dark ? 'rgba(226,232,240,0.45)' : 'var(--muted)' %> !important; }
+  .badge-accent { background: linear-gradient(135deg, var(--accent), var(--accent2)) !important; color: #fff !important; }
+  .price-accent { color: var(--accent) !important; }
+  .price-sale { color: var(--accent2) !important; }
+</style>

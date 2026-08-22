@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= biz.name %> · Catálogo imprimible</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, 'Segoe UI', Roboto, Arial, sans-serif; background: #f1f5f9; color: #0f172a; padding: 16px; }
+    .toolbar { position: sticky; top: 0; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,.05); }
+    .btn { background: #2563eb; color: #fff; border: none; border-radius: 10px; padding: 10px 16px; font-weight: 700; font-size: 14px; cursor: pointer; }
+    .btn.secondary { background: #f1f5f9; color: #334155; }
+    h1 { font-size: 22px; }
+    .sub { color: #64748b; font-size: 13px; margin: 4px 0 16px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; }
+    .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; page-break-inside: avoid; break-inside: avoid; }
+    .card img { width: 100%; height: 130px; object-fit: cover; display: block; background: #e2e8f0; }
+    .card .body { padding: 10px; }
+    .card h3 { font-size: 14px; line-height: 1.25; }
+    .cat { font-size: 10px; font-weight: 800; color: #2563eb; text-transform: uppercase; letter-spacing: .04em; margin: 2px 0; }
+    .price { font-weight: 800; font-size: 16px; margin-top: 4px; }
+    .old { color: #94a3b8; text-decoration: line-through; font-size: 12px; font-weight: 500; }
+    .desc { color: #64748b; font-size: 11px; margin-top: 4px; }
+    .attr { font-size: 10px; color: #475569; margin-top: 4px; }
+    @media print {
+      body { background: #fff; padding: 0; }
+      .toolbar { display: none; }
+      .grid { grid-template-columns: repeat(2, 1fr); gap: 6px; }
+      .card img { height: 100px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <div>
+      <strong><%= biz.name %></strong>
+      <span class="sub" style="display:block;margin:0"><%= products.length %> producto(s)</span>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn secondary" onclick="history.back()">← Volver</button>
+      <button class="btn" onclick="window.print()">🖨️ Imprimir / Guardar PDF</button>
+    </div>
+  </div>
+
+  <h1><%= biz.name %></h1>
+  <% if (biz.description) { %><p class="sub"><%= biz.description %></p><% } %>
+
+  <div class="grid">
+    <% products.forEach(p => { %>
+      <div class="card">
+        <img src="<%= p.image || '/img/sin-imagen.svg' %>" onerror="this.src='/img/sin-imagen.svg'">
+        <div class="body">
+          <h3><%= p.name %></h3>
+          <% if (p.category_name) { %><div class="cat"><%= p.category_name %></div><% } %>
+          <div class="price">
+            <%= money(p.price) %>
+            <% if (p.old_price) { %> <span class="old"><%= money(p.old_price) %></span><% } %>
+          </div>
+          <% if (p.shortDesc) { %><div class="desc"><%= p.shortDesc %></div><% } %>
+        </div>
+      </div>
+    <% }) %>
+  </div>
+
+  <% if (!products.length) { %>
+    <p style="text-align:center;color:#94a3b8;padding:40px">No hay productos todavía.</p>
+  <% } %>
+</body>
+</html>

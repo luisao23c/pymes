@@ -1,0 +1,573 @@
+/* ============================================================
+   MATERIAL DESIGN 3 — VERSIÓN MINIMALISTA Y COMPACTA
+   Sobrescritura global para reducir espaciado y simplificar inputs
+   ============================================================ */
+
+:root {
+  --md-primary: #4f46e5;
+  --md-on-primary: #ffffff;
+  --md-primary-container: #e0e7ff;
+  --md-on-primary-container: #1e1b4b;
+  --md-secondary-container: #f1f5f9;
+  --md-on-secondary-container: #1e293b;
+  --md-surface: #ffffff;
+  --md-surface-dim: #f8f7f4;
+  --md-surface-container-low: #fafaf8;
+  --md-outline: #d1cdc6;
+  --md-outline-soft: #e5e2db;
+  --md-on-surface: #1a1a1a;
+  --md-on-surface-variant: #6b6560;
+  --md-error: #b3261e;
+  --md-error-container: #fce9e7;
+  --md-radius: 12px;
+  --md-radius-sm: 8px;
+  --md-radius-xs: 4px;
+  --md-elevation-1: 0 1px 3px rgba(0,0,0,0.04);
+  --md-elevation-2: 0 2px 8px rgba(0,0,0,0.06);
+  --md-elevation-3: 0 4px 16px rgba(0,0,0,0.08);
+  --md-motion: .15s ease;
+  --md-font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* ---------- Base ---------- */
+.m-material {
+  font-family: var(--md-font-family);
+  color: var(--md-on-surface);
+  background: var(--md-surface-dim);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ============================================================
+   📦 TARJETAS (compactas)
+   ============================================================ */
+.m-card {
+  background: var(--md-surface);
+  border-radius: var(--md-radius);
+  box-shadow: var(--md-elevation-1);
+  border: 1px solid var(--md-outline-soft);
+  padding: 0.75rem 1rem;
+  transition: box-shadow var(--md-motion), transform var(--md-motion), border-color var(--md-motion);
+}
+.m-card.m-hover:hover {
+  box-shadow: var(--md-elevation-2);
+  transform: translateY(-1px);
+  border-color: var(--md-outline);
+}
+.m-float {
+  box-shadow: var(--md-elevation-2) !important;
+}
+
+/* ============================================================
+   🌊 RIPPLE (efecto de onda)
+   ============================================================ */
+.m-ripple { position: relative; overflow: hidden; cursor: pointer; }
+.m-ripple-ink {
+  position: absolute;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: .12;
+  transform: scale(0);
+  animation: mRipple .6s ease-out forwards;
+  pointer-events: none;
+  z-index: 0;
+}
+@keyframes mRipple {
+  to { transform: scale(1); opacity: 0; }
+}
+
+/* ============================================================
+   🎛️ BOTONES (compactos)
+   ============================================================ */
+.m-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 32px;
+  padding: 0 1rem;
+  border-radius: 60px;
+  font-weight: 700;
+  font-size: 0.8rem;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  border: none;
+  transition: background var(--md-motion), box-shadow var(--md-motion), transform var(--md-motion), filter var(--md-motion);
+  user-select: none;
+  white-space: nowrap;
+}
+.m-btn:active { transform: scale(.97); }
+.m-btn-filled {
+  background: var(--md-primary);
+  color: var(--md-on-primary);
+  box-shadow: var(--md-elevation-1);
+}
+.m-btn-filled:hover {
+  box-shadow: var(--md-elevation-2);
+  filter: brightness(1.05);
+}
+.m-btn-tonal {
+  background: var(--md-secondary-container);
+  color: var(--md-on-secondary-container);
+}
+.m-btn-tonal:hover { background: #e2e8f0; }
+.m-btn-outlined {
+  background: transparent;
+  color: var(--md-primary);
+  border: 1px solid var(--md-outline);
+}
+.m-btn-outlined:hover { background: rgba(79,70,229,0.04); }
+.m-btn-text {
+  background: transparent;
+  color: var(--md-primary);
+  padding: 0 0.8rem;
+}
+.m-btn-text:hover { background: rgba(79,70,229,0.04); }
+.m-btn-danger {
+  background: var(--md-error);
+  color: #fff;
+  box-shadow: var(--md-elevation-1);
+}
+.m-btn-danger:hover { box-shadow: var(--md-elevation-2); filter: brightness(1.05); }
+.m-btn-sm { min-height: 28px; padding: 0 0.8rem; font-size: 0.7rem; }
+.m-btn-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; border-radius: 50%; border: none; background: transparent;
+  color: var(--md-on-surface-variant); cursor: pointer; position: relative; overflow: hidden;
+  transition: background var(--md-motion);
+}
+.m-btn-icon:hover { background: rgba(27,27,31,.06); }
+
+/* ============================================================
+   📝 CAMPOS DE TEXTO (minimalistas y compactos)
+   ============================================================ */
+.m-field {
+  position: relative;
+  margin-top: 0.5rem;
+}
+.m-field label {
+  display: block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--md-on-surface-variant);
+  margin-bottom: 0.2rem;
+  background: transparent;
+  padding: 0;
+  position: static;
+  transform: none;
+  transition: none;
+}
+.m-field input,
+.m-field textarea,
+.m-field select {
+  width: 100%;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid var(--md-outline);
+  border-radius: var(--md-radius-sm);
+  background: var(--md-surface-container-low);
+  font-size: 0.85rem;
+  font-family: var(--md-font-family);
+  color: var(--md-on-surface);
+  transition: border-color var(--md-motion), background var(--md-motion);
+  outline: none;
+}
+.m-field select { background: var(--md-surface-container-low); }
+.m-field textarea { resize: vertical; min-height: 60px; }
+.m-field input:focus,
+.m-field textarea:focus,
+.m-field select:focus {
+  border-color: var(--md-primary);
+  background: var(--md-surface);
+  box-shadow: none;
+}
+.m-field input::placeholder,
+.m-field textarea::placeholder {
+  color: var(--md-outline);
+  opacity: 0.6;
+}
+/* Eliminamos el label flotante que subía */
+.m-field input:focus + label,
+.m-field input:not(:placeholder-shown) + label,
+.m-field textarea:focus + label,
+.m-field textarea:not(:placeholder-shown) + label {
+  top: auto;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--md-on-surface-variant);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  transform: none;
+}
+.m-field select + label {
+  top: auto;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--md-on-surface-variant);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ============================================================
+   🏷️ CHIPS (compactos)
+   ============================================================ */
+.m-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  height: 28px;
+  padding: 0 0.7rem;
+  border-radius: 60px;
+  border: 1px solid var(--md-outline-soft);
+  background: var(--md-surface);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--md-on-surface-variant);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: all var(--md-motion);
+  user-select: none;
+}
+.m-chip:hover { background: rgba(27,27,31,.04); }
+.m-chip-selected {
+  background: var(--md-primary-container);
+  border-color: transparent;
+  color: var(--md-on-primary-container);
+  font-weight: 700;
+}
+.m-chip-selected::before { content: '✓ '; }
+
+/* ============================================================
+   🎯 BADGES
+   ============================================================ */
+.m-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  height: 18px;
+  padding: 0 0.5rem;
+  border-radius: 60px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.m-badge-success { background: #e6f4ea; color: #137333; }
+.m-badge-warn { background: #fef7e0; color: #a86600; }
+.m-badge-error { background: #fce8e6; color: #c5221f; }
+.m-badge-neutral { background: #eef1f6; color: #444746; }
+.m-badge-primary { background: var(--md-primary-container); color: var(--md-on-primary-container); }
+
+/* ============================================================
+   📋 LISTAS / FILAS (compactas)
+   ============================================================ */
+.m-list-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.5rem 0.6rem;
+  border-radius: var(--md-radius-sm);
+  transition: background var(--md-motion);
+  cursor: pointer;
+}
+.m-list-item:hover { background: rgba(27,27,31,.04); }
+.m-list-item:active { background: rgba(27,27,31,.06); }
+
+/* ============================================================
+   🧭 NAVEGACIÓN
+   ============================================================ */
+.m-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.4rem 0.7rem;
+  border-radius: var(--md-radius-sm);
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: var(--md-on-surface-variant);
+  position: relative;
+  overflow: hidden;
+  transition: background var(--md-motion), color var(--md-motion);
+  cursor: pointer;
+}
+.m-nav-item:hover { background: rgba(255,255,255,.06); color: #fff; }
+.m-nav-item-active {
+  background: var(--md-primary-container);
+  color: var(--md-on-primary-container);
+}
+.m-nav-item-active:hover {
+  background: var(--md-primary-container);
+  color: var(--md-on-primary-container);
+}
+
+/* ============================================================
+   🗂️ SUPERFICIES / DRAWER
+   ============================================================ */
+.m-surface {
+  background: var(--md-surface);
+  border-radius: var(--md-radius);
+}
+
+/* ============================================================
+   ✨ ANIMACIONES DE ENTRADA (más rápidas)
+   ============================================================ */
+.m-rise {
+  animation: mRise .25s cubic-bezier(.2,0,0,1) both;
+}
+@keyframes mRise {
+  from { opacity: 0; transform: translateY(6px) scale(.99); }
+  to { opacity: 1; transform: none; }
+}
+.m-pop {
+  animation: mPop .18s cubic-bezier(.2,0,0,1) both;
+}
+@keyframes mPop {
+  from { opacity: 0; transform: scale(.96); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ============================================================
+   🔘 SWITCH (interruptor)
+   ============================================================ */
+.m-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+}
+.m-switch input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.m-switch .track {
+  width: 36px;
+  height: 20px;
+  border-radius: 60px;
+  background: #b0aaa2;
+  transition: background var(--md-motion);
+  position: relative;
+}
+.m-switch input:checked + .track {
+  background: var(--md-primary);
+}
+.m-switch .thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: var(--md-elevation-1);
+  transition: transform var(--md-motion), top var(--md-motion);
+}
+.m-switch input:checked + .track .thumb {
+  transform: translateX(16px);
+}
+
+/* ============================================================
+   ✨ FAB (botón flotante) – más compacto
+   ============================================================ */
+.m-fab {
+  position: fixed;
+  right: 16px;
+  bottom: 72px;
+  z-index: 50;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  border: none;
+  cursor: pointer;
+  background: var(--md-primary);
+  color: var(--md-on-primary);
+  box-shadow: var(--md-elevation-3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: box-shadow var(--md-motion), transform var(--md-motion), background var(--md-motion);
+}
+@media (min-width: 768px) {
+  .m-fab { bottom: 16px; right: 20px; }
+}
+.m-fab:hover { box-shadow: var(--md-elevation-3); filter: brightness(1.06); }
+.m-fab:active { transform: scale(.94); }
+.m-fab-label {
+  position: fixed;
+  right: 76px;
+  bottom: 24px;
+  z-index: 50;
+  background: var(--md-on-surface);
+  color: var(--md-surface);
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.3rem 0.7rem;
+  border-radius: 60px;
+  box-shadow: var(--md-elevation-2);
+}
+
+/* ============================================================
+   📱 BOTTOM NAV (móvil) – compacto
+   ============================================================ */
+.m-bottomnav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 45;
+  background: var(--md-surface);
+  box-shadow: var(--md-elevation-3);
+  border-radius: 16px 16px 0 0;
+  display: flex;
+}
+.m-bottomnav a, .m-bottomnav button {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 0.4rem 0 0.6rem;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--md-on-surface-variant);
+  text-decoration: none;
+  position: relative;
+  overflow: hidden;
+  transition: color var(--md-motion);
+}
+.m-bottomnav button { background: none; border: none; cursor: pointer; font-family: inherit; }
+.m-bottomnav a.m-active, .m-bottomnav button.m-active {
+  color: var(--md-primary);
+}
+.m-bottomnav a.m-active::before, .m-bottomnav button.m-active::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 24px;
+  height: 2px;
+  border-radius: 0 0 2px 2px;
+  background: var(--md-primary);
+}
+
+/* ============================================================
+   📜 SCROLLBAR personalizada (más delgada)
+   ============================================================ */
+.m-scroll::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+.m-scroll::-webkit-scrollbar-thumb {
+  background: #d1cdc6;
+  border-radius: 60px;
+}
+.m-scroll::-webkit-scrollbar-thumb:hover {
+  background: #b0aaa2;
+}
+.m-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ============================================================
+   💀 SKELETON (shimmer) – compacto
+   ============================================================ */
+.m-shimmer {
+  position: relative;
+  overflow: hidden;
+  background: #e9edf3;
+  border-radius: var(--md-radius-sm);
+}
+.m-shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.5), transparent);
+  transform: translateX(-100%);
+  animation: mShimmer 1.4s infinite;
+}
+@keyframes mShimmer {
+  to { transform: translateX(100%); }
+}
+
+/* ============================================================
+   ♿ REDUCIR MOVIMIENTO (accesibilidad)
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  .m-rise, .m-pop { animation: none; }
+  .m-ripple-ink { display: none; }
+  .m-shimmer::after { animation: none; }
+}
+
+/* ============================================================
+   🌙 MODO OSCURO (compacto)
+   ============================================================ */
+body.dark {
+  background: #0d1117;
+  --md-primary: #8ab4f8;
+  --md-on-primary: #062e6f;
+  --md-primary-container: #1a2a4a;
+  --md-on-primary-container: #d6e3ff;
+  --md-secondary-container: #1c2a3a;
+  --md-on-secondary-container: #cfd5df;
+  --md-surface: #161b22;
+  --md-surface-dim: #0d1117;
+  --md-surface-container-low: #0d1117;
+  --md-on-surface: #e6edf3;
+  --md-on-surface-variant: #9aa7b4;
+  --md-outline: #30363d;
+  --md-outline-soft: #21262d;
+  --md-error-container: #4c1d24;
+  --md-elevation-1: 0 1px 2px rgba(0,0,0,.4);
+  --md-elevation-2: 0 2px 8px rgba(0,0,0,.5);
+  --md-elevation-3: 0 4px 16px rgba(0,0,0,.6);
+}
+body.dark .m-field input,
+body.dark .m-field select,
+body.dark .m-field textarea {
+  background: #0d1117;
+  border-color: #30363d;
+  color: #e6edf3;
+}
+body.dark .m-field input:focus,
+body.dark .m-field select:focus,
+body.dark .m-field textarea:focus {
+  border-color: #8ab4f8;
+  background: #161b22;
+}
+body.dark .m-field input::placeholder,
+body.dark .m-field textarea::placeholder {
+  color: #6e7681;
+}
+body.dark .m-field label {
+  color: #9aa7b4;
+}
+body.dark .m-card {
+  background: #161b22;
+  border-color: #21262d;
+}
+body.dark .m-list-item:hover { background: #1c222b; }
+body.dark .m-chip {
+  background: #161b22;
+  border-color: #30363d;
+  color: #c9d1d9;
+}
+body.dark .m-chip:hover { background: #21262d; }
+body.dark .m-badge-neutral { background: #21262d; color: #9aa7b4; }
+body.dark .m-btn-outlined {
+  border-color: #30363d;
+  color: #c9d1d9;
+}
+body.dark .m-btn-outlined:hover { background: #21262d; }
+body.dark .m-btn-tonal {
+  background: #1c2a3a;
+  color: #d6e3ff;
+}
+body.dark .m-bottomnav { background: #161b22; }
+body.dark .toast-in { filter: brightness(.95); }

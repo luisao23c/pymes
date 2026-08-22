@@ -1,0 +1,26 @@
+<a href="/<%= ad.store.slug %>" class="product-card flex flex-col bg-white rounded-2xl shadow-sm overflow-hidden hover:shadow-md transition border-2 border-dashed border-amber-300 group" data-cat="0" data-search="">
+  <div class="relative">
+    <img src="<%= ad.image || '/img/sin-imagen.svg' %>" class="w-full aspect-square object-cover">
+    <span class="absolute top-2 left-2 bg-amber-400 text-amber-950 text-[9px] font-black px-2 py-1 rounded-full uppercase tracking-wide">Otro negocio</span>
+    <% if (ad.old_price) { %>
+      <span class="absolute top-2 right-2 bg-red-500 text-white text-[10px] font-black px-2 py-1 rounded-full"><%= Math.round((1 - ad.price / ad.old_price) * 100) %>% OFF</span>
+    <% } %>
+  </div>
+  <div class="p-3 flex flex-col flex-1">
+    <span class="text-[11px] font-bold uppercase tracking-wide" style="color:<%= ad.store.color_hex || '#2563eb' %>"><%= ad.store.name %></span>
+    <h3 class="font-semibold text-sm mt-1"><%= ad.name %></h3>
+    <div class="mt-2">
+      <% if (ad.old_price) { %>
+        <span class="text-xs text-slate-400 line-through"><%= money(ad.old_price) %></span>
+      <% } %>
+      <span class="font-extrabold text-slate-900 block"><%= money(ad.price) %></span>
+    </div>
+    <div class="flex items-center gap-1.5 mt-auto pt-2">
+      <button type="button" onclick="event.preventDefault();event.stopPropagation();addAdToCart(this)"
+        data-store-slug="<%= ad.store.slug %>" data-store-name="<%= ad.store.name %>" data-store-whatsapp="<%= ad.store.whatsapp %>" data-store-logo="<%= ad.store.logo || '' %>" data-store-wa-message="<%= ad.store.wa_message || '' %>"
+        data-id="<%= ad.id %>" data-name="<%= ad.name %>" data-price="<%= ad.price %>" data-image="<%= ad.image || '/img/sin-imagen.svg' %>"
+        class="flex-1 min-w-0 bg-emerald-500 hover:bg-emerald-600 text-white text-[11px] font-bold px-2 py-2 rounded-lg transition whitespace-nowrap overflow-hidden">Agregar</button>
+      <span class="flex-1 min-w-0 bg-amber-400 hover:bg-amber-500 text-amber-950 text-[11px] font-bold px-2 py-2 rounded-lg transition text-center whitespace-nowrap overflow-hidden">Ver en tienda</span>
+    </div>
+  </div>
+</a>

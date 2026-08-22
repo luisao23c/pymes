@@ -1,0 +1,28 @@
+<script>
+  // Toast unificado con SweetAlert2.
+  function mostrarToast(msg, tipo) {
+    const t = tipo || 'ok';
+    Swal.fire({
+      toast: true,
+      position: 'bottom',
+      timer: 2600,
+      timerProgressBar: true,
+      showConfirmButton: false,
+      icon: t === 'error' ? 'error' : (t === 'info' ? 'info' : 'success'),
+      title: msg,
+      didOpen: (el) => el.style.fontWeight = '600'
+    });
+  }
+
+  // Confirmación con SweetAlert2. Resuelve true/false.
+  function pedirConfirmacion(mensaje, textoBoton) {
+    return Swal.fire({
+      title: mensaje,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: textoBoton || 'Sí, continuar',
+      confirmButtonColor: '#dc2626',
+      cancelButtonColor: '#64748b'
+    }).then(function (r) { return !!r.isConfirmed; });
+  }
+</script>

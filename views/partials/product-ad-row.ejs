@@ -1,0 +1,25 @@
+<a href="/<%= ad.store.slug %>" class="flex gap-4 bg-white rounded-3xl p-4 shadow-sm hover:shadow-md transition border-2 border-dashed border-amber-300 items-center">
+  <img src="<%= ad.image || '/img/sin-imagen.svg' %>" class="w-20 h-20 rounded-2xl object-cover shrink-0">
+  <div class="flex-1 min-w-0">
+    <div class="flex items-center justify-between gap-2">
+      <div class="min-w-0">
+        <span class="text-[10px] font-bold uppercase tracking-wide block" style="color:<%= ad.store.color_hex || '#2563eb' %>"><%= ad.store.name %></span>
+        <h3 class="font-bold text-sm truncate"><%= ad.name %></h3>
+      </div>
+      <div class="text-right shrink-0">
+        <% if (ad.old_price) { %>
+          <span class="block text-xs text-slate-400 line-through"><%= money(ad.old_price) %></span>
+        <% } %>
+        <span class="font-black text-slate-900 whitespace-nowrap"><%= money(ad.price) %></span>
+      </div>
+    </div>
+    <div class="mt-2 flex items-center gap-2">
+      <span class="text-[10px] font-black text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">Otro negocio</span>
+      <button type="button" onclick="event.preventDefault();event.stopPropagation();addAdToCart(this)"
+        data-store-slug="<%= ad.store.slug %>" data-store-name="<%= ad.store.name %>" data-store-whatsapp="<%= ad.store.whatsapp %>" data-store-logo="<%= ad.store.logo || '' %>" data-store-wa-message="<%= ad.store.wa_message || '' %>"
+        data-id="<%= ad.id %>" data-name="<%= ad.name %>" data-price="<%= ad.price %>" data-image="<%= ad.image || '/img/sin-imagen.svg' %>"
+        class="bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold px-4 py-1.5 rounded-full ml-auto transition">Agregar</button>
+      <span class="bg-amber-400 hover:bg-amber-500 text-amber-950 text-xs font-bold px-4 py-1.5 rounded-full transition">Ver en tienda →</span>
+    </div>
+  </div>
+</a>

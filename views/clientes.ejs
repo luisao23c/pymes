@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <%- include('admin/head', { title: 'Clientes', biz }) %>
+</head>
+<body class="m-material bg-slate-100 min-h-screen">
+  <%- include('admin/sidebar', { biz, active: 'clientes', canDesign }) %>
+
+  <main class="md:pl-60">
+    <div class="max-w-5xl mx-auto px-3 md:px-6 py-4 md:py-5 pb-24 md:pb-6">
+
+      <div class="mb-4">
+        <h1 class="text-lg md:text-xl font-black tracking-tight text-slate-900">Clientes 👥</h1>
+        <p class="text-xs text-slate-500 mt-0.5">Tus clientes frecuentes, su historial y un botón directo a WhatsApp.</p>
+      </div>
+
+      <% if (ok) { %>
+        <div class="mb-3 bg-emerald-50 text-emerald-700 text-sm font-bold px-4 py-3 rounded-xl m-pop">Cliente guardado ✓</div>
+      <% } %>
+
+      <!-- Nuevo cliente -->
+      <section class="m-card p-4 mb-3">
+        <h2 class="font-extrabold text-slate-900 text-sm mb-3">Nuevo cliente</h2>
+        <form method="POST" action="/<%= biz.slug %>/admin/cliente" class="grid sm:grid-cols-3 gap-3">
+          <div class="m-field"><label>Nombre *</label><input name="name" required placeholder="Ej: María González"></div>
+          <div class="m-field"><label>Teléfono</label><input name="phone" inputmode="numeric" placeholder="Ej: 8712345678"></div>
+          <div class="m-field"><label>Notas</label><input name="notes" placeholder="Ej: prefiere WhatsApp"></div>
+          <div class="sm:col-span-3"><button class="m-btn m-btn-filled w-full !min-h-11">Guardar cliente</button></div>
+        </form>
+      </section>
+
+      <!-- Enviar promo -->
+      <section class="m-card p-4 mb-3">
+        <h2 class="font-extrabold text-slate-900 text-sm mb-1">Enviar promo 📣</h2>
+        <p class="text-xs text-slate-500 mb-3">Escribe un mensaje y envíalo por WhatsApp a tus clientes. Usa <b>{nombre}</b> para personalizarlo con el nombre de cada quien.</p>
+        <textarea id="promo-msg" rows="3" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">¡Hola {nombre}! Te aviso que tenemos promociones nuevas esta semana. ¿Te interesa? 😊</textarea>
+        <div class="flex flex-wrap gap-2 mt-3">
+          <button type="button" onclick="prepararPromo('todos')" class="m-btn m-btn-filled m-btn-sm">Enviar a todos</button>
+          <button type="button" onclick="prepararPromo('frecuentes')" class="m-btn m-btn-tonal m-btn-sm">Solo frecuentes (2+ pedidos)</button>
+          <button type="button" onclick="copiarPromo()" class="m-btn m-btn-outlined m-btn-sm">Copiar mensaje</button>
+        </div>
+        <div id="promo-result" class="mt-3"></div>
+      </section>
+
+      <!-- Lista -->
+      <section class="m-card p-4">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="font-extrabold text-slate-900 text-sm">Clientes <span class="m-badge m-badge-neutral !ml-1"><%= customers.length %></span></h2>
+          <div class="relative">
+            <input id="cliente-search" type="text" placeholder="Buscar cliente…" class="border border-slate-200 rounded-full pl-9 pr-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z"/></svg>
+          </div>
+        </div>
+
+        <% if (customers.length === 0) { %>
+          <div class="text-center py-8 border-2 border-dashed border-slate-200 rounded-xl">
+            <p class="text-2xl mb-1">👥</p>
+            <p class="text-xs text-slate-500 font-semibold">Aún no tienes clientes. Se guardan solos cuando alguien pide por WhatsApp con su nombre o teléfono.</p>
+          </div>
+        <% } else { %>
+          <div id="cliente-list" class="divide-y divide-slate-100">
+            <% customers.forEach(c => { %>
+              <div class="m-list-item m-ripple px-2 py-3 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3" data-search="<%= (c.name + ' ' + c.phone).toLowerCase() %>">
+                <div class="flex items-center gap-3 min-w-0">
+                <div class="w-10 h-10 rounded-full bg-indigo-100 text-indigo-700 font-black flex items-center justify-center shrink-0 text-sm">
+                  <%= (c.name || '?').trim().charAt(0).toUpperCase() %>
+                </div>
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <p class="font-bold text-slate-800 text-sm truncate"><%= c.name %></p>
+                    <% if (c.phone) { %><span class="text-[11px] text-slate-400 font-semibold"><%= c.phone %></span><% } %>
+                    <% if (c.orderCount >= 2) { %><span class="m-badge m-badge-warn !h-5 !text-[10px]">⭐ Frecuente</span><% } %>
+                  </div>
+                  <p class="text-[11px] text-slate-400 mt-0.5">
+                    <%= c.orderCount %> pedido<%= c.orderCount === 1 ? '' : 's' %> ·
+                    <% if (c.totalSpent > 0) { %><b class="text-slate-600"><%= money(c.totalSpent) %></b> comprado<% } else { %>sin compras aún<% } %>
+                    <% if (c.orders.length) { %> · último: <%= c.orders[0].created_at.slice(0, 10) %><% } %>
+                    <% if (c.notes) { %> · <span class="text-amber-600"><%= c.notes %></span><% } %>
+                  </p>
+                </div>
+                </div>
+                <div class="flex items-center gap-1 flex-wrap justify-start sm:justify-end sm:shrink-0">
+                  <% if (c.phone) { %>
+                    <a href="https://wa.me/<%= c.phone.startsWith('52') ? c.phone : '52' + c.phone %>" target="_blank" class="m-btn m-btn-sm !min-h-0 !py-1.5 !bg-emerald-500 !text-white" title="Enviar WhatsApp">
+                      💬 WhatsApp
+                    </a>
+                  <% } %>
+                  <form method="POST" action="/<%= biz.slug %>/admin/cliente/<%= c.id %>/eliminar" data-confirm="¿Eliminar a <%= c.name %>?" class="inline">
+                    <button class="m-btn-icon !w-8 !h-8 hover:!bg-red-50 hover:!text-red-500" title="Eliminar">✕</button>
+                  </form>
+                </div>
+              </div>
+            <% }) %>
+          </div>
+        <% } %>
+      </section>
+
+    </div>
+  </main>
+
+  <%- include('admin/panel-ajax') %>
+  <%- include('admin/toast') %>
+
+  <script>
+    var CLIENTES = <%- safeJson(customers.map(c => ({ id: c.id, name: c.name, phone: c.phone, orderCount: c.orderCount }))) %>;
+    function escHtml(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+    function promoTexto(c) {
+      var msg = (document.getElementById('promo-msg') || {}).value || '';
+      var nombre = (c.name || '').trim().split(/\s+/)[0] || 'cliente';
+      return msg.replace(/\{nombre\}/g, nombre);
+    }
+    function prepararPromo(filtro) {
+      var msg = (document.getElementById('promo-msg') || {}).value || '';
+      if (!msg.trim()) { mostrarToast('Escribe el mensaje primero', 'error'); return; }
+      var list = CLIENTES.filter(function (c) { return filtro === 'todos' ? true : c.orderCount >= 2; });
+      var box = document.getElementById('promo-result');
+      if (!list.length) {
+        box.innerHTML = '<p class="text-xs text-slate-400 mt-3">No hay clientes' + (filtro === 'frecuentes' ? ' frecuentes (2+ pedidos)' : '') + ' todavía.</p>';
+        return;
+      }
+      box.innerHTML = '<p class="text-xs text-slate-500 mb-2">Se preparó el envío para <b>' + list.length + '</b> cliente(s). Pica cada botón para abrir su chat:</p>'
+        + '<div class="space-y-1 max-h-72 overflow-y-auto m-scroll">'
+        + list.map(function (c) {
+            var phone = (c.phone || '').replace(/[^0-9]/g, '');
+            var url = phone ? 'https://wa.me/' + (phone.indexOf('52') === 0 ? phone : '52' + phone) + '?text=' + encodeURIComponent(promoTexto(c)) : '';
+            return '<div class="flex items-center justify-between gap-2 py-1.5 border-b border-slate-50">'
+              + '<span class="text-xs font-semibold text-slate-700 truncate">' + escHtml(c.name) + ' <span class="text-slate-400 font-normal">(' + c.orderCount + ' ped.)</span></span>'
+              + (phone ? '<a href="' + url + '" target="_blank" class="m-btn m-btn-sm !min-h-0 !py-1 !bg-emerald-500 !text-white shrink-0">💬 Enviar</a>' : '<span class="text-[11px] text-slate-400 shrink-0">sin teléfono</span>')
+              + '</div>';
+          }).join('')
+        + '</div>';
+    }
+    function copiarPromo() {
+      var msg = (document.getElementById('promo-msg') || {}).value || '';
+      if (navigator.clipboard) { navigator.clipboard.writeText(msg).then(function () { mostrarToast('Mensaje copiado ✓', 'ok'); }); }
+      else mostrarToast('Copia el texto manualmente', 'info');
+    }
+    var s = document.getElementById('cliente-search');
+    if (s) {
+      s.oninput = function () {
+        var q = (s.value || '').toLowerCase().trim();
+        document.querySelectorAll('#cliente-list [data-search]').forEach(function (row) {
+          row.style.display = (!q || (row.getAttribute('data-search') || '').indexOf(q) !== -1) ? '' : 'none';
+        });
+      };
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= product.name %> · <%= biz.name %></title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Inter', system-ui, sans-serif; background:#f1f5f9; color:#0f172a; min-height:100vh; }
+    .btn-primary { background:#2563eb; color:#fff; border:none; cursor:pointer; transition:all .2s; }
+    .btn-primary:hover { opacity:.9; }
+  </style>
+</head>
+<body>
+
+  <header data-sec="hero" class="sticky top-0 z-40 header-gradient">
+    <div class="max-w-screen-2xl mx-auto px-4 md:px-6 py-3 flex items-center gap-3">
+      <a href="/<%= biz.slug %>" class="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center text-white font-bold">←</a>
+      <div class="min-w-0">
+        <p class="font-extrabold text-white cat-title truncate"><%= biz.name %></p>
+        <p class="text-xs text-white/70">Producto</p>
+      </div>
+    </div>
+  </header>
+
+  <main class="w-full px-4 md:px-6 py-5 pb-28">
+    <div class="lg:max-w-screen-2xl lg:mx-auto lg:grid lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-6 lg:items-start">
+    <div class="product-card bg-white rounded-2xl overflow-hidden border border-slate-200"
+         data-search="<%= (product.name + ' ' + (product.category_name || '') + ' ' + (product.tags || '')).toLowerCase() %>"
+         data-cat="<%= product.category_id || 0 %>">
+
+      <div class="relative">
+        <img src="<%= product.imgs[0] || '/img/sin-imagen.svg' %>" id="prod-main-img" class="w-full aspect-square object-cover" alt="<%= product.name %>" />
+        <% if (product.imgs.length > 1) { %>
+          <div class="flex gap-2 p-3 overflow-x-auto bg-slate-50 border-t border-slate-100">
+            <% product.imgs.forEach((u, i) => { %>
+              <img src="<%= u %>" onclick="document.getElementById('prod-main-img').src = this.src" class="w-16 h-16 rounded-lg object-cover cursor-pointer border-2 <%= i === 0 ? 'border-blue-500' : 'border-transparent' %>" />
+            <% }) %>
+          </div>
+        <% } %>
+      </div>
+
+      <div class="p-4">
+        <span class="text-xs font-bold uppercase tracking-wider text-indigo-500"><%= product.category_name || 'General' %></span>
+        <h1 class="text-xl font-extrabold mt-1"><%= product.name %></h1>
+        <div class="flex items-baseline gap-2 mt-1.5">
+          <% if (product.old_price) { %><span class="text-sm text-slate-400 line-through"><%= money(product.old_price) %></span><% } %>
+          <span id="prod-price" class="text-2xl font-black"><%= money(product.price) %></span>
+        </div>
+        <% if (product.description) { %>
+          <p class="text-sm text-slate-500 mt-3 leading-relaxed"><%= product.description %></p>
+        <% } %>
+
+        <% const specsLines = (product.specs || '').split('\n').map(s => s.trim()).filter(s => s.includes(':')); %>
+        <% if (specsLines.length) { %>
+          <div class="mt-5 border-t border-slate-100 pt-4">
+            <h2 class="text-sm font-bold text-slate-800 mb-2.5">Características</h2>
+            <dl class="space-y-2">
+              <% specsLines.forEach(line => { const idx = line.indexOf(':'); const k = line.slice(0, idx).trim(); const v = line.slice(idx + 1).trim(); %>
+                <div class="flex text-sm border-b border-slate-50 pb-1.5">
+                  <dt class="w-32 shrink-0 text-slate-400"><%= k %></dt>
+                  <dd class="text-slate-700 font-medium"><%= v %></dd>
+                </div>
+              <% }) %>
+            </dl>
+          </div>
+        <% } %>
+
+        <div id="prod-variants" class="mt-4"></div>
+
+        <div class="flex gap-2 mt-5">
+          <button onclick="addProductToCart()" class="btn-primary flex-1 text-sm font-bold px-4 py-3 rounded-xl">Agregar al carrito</button>
+          <button onclick="shareProduct(<%= product.id %>)" class="w-12 flex items-center justify-center rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 transition" title="Compartir">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 12v7a2 2 0 002 2h12a2 2 0 002-2v-7M16 6l-4-4-4 4M12 2v13"/></svg>
+          </button>
+          <a href="<%= `https://wa.me/${biz.whatsapp.startsWith('52') ? biz.whatsapp : '52' + biz.whatsapp}?text=${encodeURIComponent('Hola ' + biz.name + ', me interesa: ' + product.name + ' — ' + money(product.price))}` %>"
+             target="_blank" rel="noopener" class="flex items-center gap-2 text-sm font-bold px-4 py-3 rounded-xl bg-slate-900 text-white">💬 Pedir</a>
+        </div>
+
+        <a href="/<%= biz.slug %>" class="block text-center text-sm text-slate-400 mt-4">← Ver todo el catálogo</a>
+      </div>
+    </div>
+
+    <aside class="space-y-6 mt-6 lg:mt-0">
+      <% if (related.length) { %>
+        <div>
+          <h2 class="text-sm font-bold text-slate-800 mb-3">Productos relacionados</h2>
+          <div class="space-y-3">
+            <% related.forEach(r => { %>
+              <a href="/<%= biz.slug %>/p/<%= r.id %>" class="flex gap-3 p-2.5 rounded-xl border border-slate-100 bg-white hover:shadow-md transition">
+                <img src="<%= r.image || '/img/sin-imagen.svg' %>" class="w-16 h-16 rounded-lg object-cover shrink-0" alt="<%= r.name %>">
+                <div class="min-w-0">
+                  <p class="text-sm font-semibold text-slate-800 line-clamp-2"><%= r.name %></p>
+                  <p class="text-sm font-bold mt-1"><%= money(r.price) %></p>
+                </div>
+              </a>
+            <% }) %>
+          </div>
+        </div>
+      <% } %>
+      <% ads.forEach(ad => { %>
+        <%- include('partials/product-ad', { ad }) %>
+      <% }) %>
+    </aside>
+    </div>
+  </main>
+
+  <%- include('partials/cart-js', { biz, products: [product] }) %>
+
+  <script>
+    (function () {
+      var PROD_ID = <%- product.id %>;
+      var vm = { attrs: [], images: {} };
+      try { var d = JSON.parse(<%- safeJson(product.variants || '') %>); if (d && d.attrs) vm = d; } catch (e) {}
+      var sel = {};
+      var params = new URLSearchParams(location.search);
+      vm.attrs.forEach(function (a) { var pv = params.get(a.name); if (pv) sel[a.name] = pv; });
+      window.__prodSel = sel;
+      function esc(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+      function colorFor(v) { var map={rojo:'#ef4444',azul:'#3b82f6',verde:'#22c55e',amarillo:'#eab308',negro:'#111827',blanco:'#f8fafc',gris:'#9ca3af',rosa:'#ec4899',morado:'#8b5cf6',naranja:'#f97316',cafe:'#8b5e3c'}; var k=String(v).toLowerCase().trim(); if(map[k])return map[k]; return '#94a3b8'; }
+      function comboKey() { return vm.attrs.map(function (a) { return sel[a.name] || ''; }).join('|'); }
+      function render() {
+        var box = document.getElementById('prod-variants');
+        if (!box || !vm.attrs.length) { if (box) box.innerHTML = ''; return; }
+        box.innerHTML = '';
+        vm.attrs.forEach(function (a) {
+          var isColor = /color/i.test(a.name);
+          var wrap = document.createElement('div');
+          wrap.className = 'mb-3';
+          wrap.innerHTML = '<p class="text-xs font-bold text-slate-700 mb-1.5">' + esc(a.name) + '</p>';
+          var row = document.createElement('div');
+          row.className = 'flex flex-wrap gap-2';
+          a.values.forEach(function (v) {
+            var b = document.createElement('button');
+            b.type = 'button';
+            b.dataset.v = v;
+            if (isColor) {
+              b.className = 'pv-chip p-0.5 rounded-full border-2 transition ' + (sel[a.name] === v ? 'border-blue-600' : 'border-transparent');
+              b.innerHTML = '<span class="w-8 h-8 rounded-full border border-black/10 inline-block" style="background:' + colorFor(v) + '"></span>';
+              b.title = v;
+            } else {
+              b.className = 'pv-chip text-sm font-semibold px-4 py-2 rounded-full border transition ' + (sel[a.name] === v ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-300 bg-white text-slate-700');
+              b.textContent = v;
+            }
+            b.onclick = function () { sel[a.name] = v; render(); updateImg(); };
+            row.appendChild(b);
+          });
+          wrap.appendChild(row);
+          box.appendChild(wrap);
+        });
+      }
+      function updateImg() {
+        var img = document.getElementById('prod-main-img');
+        var key = comboKey();
+        var url = (vm.images && vm.images[key]) || null;
+        if (img && url) img.src = url;
+        var comboPrice = (vm.prices && vm.prices[key]) ? Number(vm.prices[key]) : <%- product.price %>;
+        var pe = document.getElementById('prod-price');
+        if (pe) pe.textContent = money(comboPrice);
+        var se = document.getElementById('sticky-price');
+        if (se) se.textContent = money(comboPrice);
+      }
+      function selectedLabel() { return vm.attrs.map(function (a) { return sel[a.name]; }).filter(Boolean).join(' / '); }
+      window.addProductToCart = function () {
+        var complete = !vm.attrs.length || vm.attrs.every(function (a) { return sel[a.name]; });
+        if (!complete) { addToCart(PROD_ID); return; }
+        var label = selectedLabel();
+        var key = comboKey();
+        var img = (vm.images && vm.images[key]) || null;
+        var comboPrice = (vm.prices && vm.prices[key]) ? Number(vm.prices[key]) : <%- product.price %>;
+        addToCart(PROD_ID, undefined, comboPrice, label || undefined, undefined, img || undefined);
+      };
+      render();
+      updateImg();
+    })();
+  </script>
+
+  <div class="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur border-t border-slate-200 px-4 py-3 shadow-[0_-4px_16px_rgba(0,0,0,.08)]" style="padding-bottom:calc(12px + env(safe-area-inset-bottom))">
+    <div class="flex items-center gap-3">
+      <div class="shrink-0">
+        <% if (product.old_price) { %><p class="text-xs text-slate-400 line-through leading-tight"><%= money(product.old_price) %></p><% } %>
+        <p id="sticky-price" class="font-black text-lg leading-tight"><%= money(product.price) %></p>
+      </div>
+      <button onclick="addProductToCart()" class="btn-primary flex-1 py-3 rounded-xl font-bold text-sm">Agregar al carrito</button>
+    </div>
+  </div>
+  <style>@media(max-width:1023px){#chat-fab{bottom:86px!important}}</style>
+</body>
+</html>

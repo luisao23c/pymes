@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="csrf" content="<%= csrf %>" />
+  <title><%= list ? 'Panel maestro · Nessik' : 'Acceso maestro · Nessik' %></title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800;14..32,900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/material.css" />
+  <script src="/js/material.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script>
+    (function () {
+      function csrfValue() {
+        var m = document.querySelector('meta[name="csrf"]');
+        return m ? m.getAttribute('content') : '';
+      }
+      function injectAll() {
+        var t = csrfValue();
+        if (!t) return;
+        document.querySelectorAll('form').forEach(function (f) {
+          if (f.querySelector('input[name="_csrf"]')) return;
+          var i = document.createElement('input');
+          i.type = 'hidden'; i.name = '_csrf'; i.value = t;
+          f.appendChild(i);
+        });
+      }
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', injectAll);
+      else injectAll();
+      window.__csrfValue = csrfValue;
+    })();
+  </script>
+  <style>
+    /* ============================================================
+       MEJORAS ESPECÍFICAS PARA EL PANEL MAESTRO
+       ============================================================ */
+
+    /* Transiciones globales */
+    * {
+      transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+    }
+
+    /* Tarjeta de tienda */
+    .store-card {
+      background: #ffffff;
+      border-radius: 20px;
+      border: 1px solid #e8e5e0;
+      padding: 1rem 1.25rem;
+      transition: all 0.25s ease;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.01);
+    }
+    .store-card:hover {
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.04);
+      border-color: #d6d0c8;
+      transform: translateY(-2px);
+    }
+    .store-card.expired {
+      border-color: #f5c6cb;
+      background: #fdf6f5;
+    }
+    .store-card.suspended {
+      border-color: #f5c6cb;
+      background: #fdf6f5;
+      opacity: 0.7;
+    }
+
+    /* Badges de estado mejorados */
+    .badge-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.15rem 0.7rem;
+      border-radius: 60px;
+      font-size: 0.6rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+      border: 1px solid transparent;
+    }
+    .badge-status.active {
+      background: #eaf6ed;
+      color: #1a4d2e;
+      border-color: #b8d9c7;
+    }
+    .badge-status.inactive {
+      background: #f5f3f0;
+      color: #6b6560;
+      border-color: #ddd9d2;
+    }
+    .badge-status.suspended {
+      background: #fce9e7;
+      color: #8c1d18;
+      border-color: #f5c6cb;
+    }
+    .badge-status.pro {
+      background: #e6f4ea;
+      color: #137333;
+      border-color: #b7d9c6;
+    }
+    .badge-status.free {
+      background: #f1f3f4;
+      color: #444746;
+      border-color: #d4d7da;
+    }
+    .badge-status.expired {
+      background: #fce9e7;
+      color: #8c1d18;
+      border-color: #f5c6cb;
+    }
+    .badge-status.ads {
+      background: #fef7e0;
+      color: #a86600;
+      border-color: #fdebb3;
+    }
+    .badge-status.no-ads {
+      background: #f1f3f4;
+      color: #444746;
+      border-color: #d4d7da;
+    }
+
+    /* Botones de acción compactos */
+    .action-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.3rem;
+      padding: 0.3rem 0.7rem;
+      border-radius: 60px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      border: 1px solid #e8e5e0;
+      background: transparent;
+      color: #6b6560;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      min-height: 28px;
+      line-height: 1;
+    }
+    .action-btn:hover {
+      background: #f5f3f0;
+      border-color: #c8c2bb;
+      color: #1a1a1a;
+    }
+    .action-btn.primary {
+      background: #4f46e5;
+      border-color: #4f46e5;
+      color: #fff;
+    }
+    .action-btn.primary:hover {
+      background: #4338ca;
+      border-color: #4338ca;
+    }
+    .action-btn.danger {
+      color: #8c1d18;
+      border-color: #f5c6cb;
+    }
+    .action-btn.danger:hover {
+      background: #fce9e7;
+      border-color: #f5c6cb;
+    }
+    .action-btn.success {
+      color: #1a4d2e;
+      border-color: #b8d9c7;
+    }
+    .action-btn.success:hover {
+      background: #eaf6ed;
+    }
+    .action-btn.warning {
+      color: #a86600;
+      border-color: #fdebb3;
+    }
+    .action-btn.warning:hover {
+      background: #fef7e0;
+    }
+    .action-btn.small {
+      padding: 0.2rem 0.5rem;
+      font-size: 0.65rem;
+      min-height: 24px;
+    }
+
+    /* Selector de plan */
+    .plan-select {
+      font-size: 0.75rem;
+      padding: 0.25rem 0.6rem;
+      border-radius: 60px;
+      border: 1px solid #e8e5e0;
+      background: #faf9f7;
+      color: #1a1a1a;
+      font-weight: 600;
+      cursor: pointer;
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .plan-select:focus {
+      border-color: #4f46e5;
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.08);
+    }
+
+    /* Inputs pequeños dentro del panel */
+    .input-compact {
+      font-size: 0.75rem;
+      padding: 0.25rem 0.6rem;
+      border-radius: 60px;
+      border: 1px solid #e8e5e0;
+      background: #faf9f7;
+      color: #1a1a1a;
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      width: auto;
+      min-width: 60px;
+    }
+    .input-compact:focus {
+      border-color: #4f46e5;
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.08);
+    }
+
+    /* Header del panel */
+    .panel-header {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(12px) saturate(1.6);
+      border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+    }
+
+    /* Ajustes modo oscuro */
+    body.dark .panel-header {
+      background: rgba(22, 27, 34, 0.85);
+      border-bottom-color: #21262d;
+    }
+    body.dark .store-card {
+      background: #161b22;
+      border-color: #21262d;
+    }
+    body.dark .store-card:hover {
+      border-color: #30363d;
+    }
+    body.dark .store-card.expired,
+    body.dark .store-card.suspended {
+      border-color: #8b2d32;
+      background: #1c1114;
+    }
+    body.dark .badge-status.active {
+      background: #1a3a2a;
+      color: #b7e4c7;
+      border-color: #2d6a4f;
+    }
+    body.dark .badge-status.inactive {
+      background: #21262d;
+      color: #9aa7b4;
+      border-color: #30363d;
+    }
+    body.dark .badge-status.suspended {
+      background: #4c1d24;
+      color: #f8a5a0;
+      border-color: #8b2d32;
+    }
+    body.dark .badge-status.pro {
+      background: #1a3a2a;
+      color: #b7e4c7;
+      border-color: #2d6a4f;
+    }
+    body.dark .badge-status.free {
+      background: #21262d;
+      color: #9aa7b4;
+      border-color: #30363d;
+    }
+    body.dark .badge-status.expired {
+      background: #4c1d24;
+      color: #f8a5a0;
+      border-color: #8b2d32;
+    }
+    body.dark .badge-status.ads {
+      background: #3a2a1a;
+      color: #fdebb3;
+      border-color: #5a4a2a;
+    }
+    body.dark .badge-status.no-ads {
+      background: #21262d;
+      color: #9aa7b4;
+      border-color: #30363d;
+    }
+    body.dark .action-btn {
+      border-color: #30363d;
+      color: #9aa7b4;
+    }
+    body.dark .action-btn:hover {
+      background: #21262d;
+      border-color: #484f58;
+      color: #e6edf3;
+    }
+    body.dark .action-btn.primary {
+      background: #8ab4f8;
+      border-color: #8ab4f8;
+      color: #062e6f;
+    }
+    body.dark .action-btn.primary:hover {
+      background: #a0c4ff;
+      border-color: #a0c4ff;
+    }
+    body.dark .action-btn.danger {
+      color: #f8a5a0;
+      border-color: #8b2d32;
+    }
+    body.dark .action-btn.danger:hover {
+      background: #4c1d24;
+      border-color: #8b2d32;
+    }
+    body.dark .action-btn.success {
+      color: #b7e4c7;
+      border-color: #2d6a4f;
+    }
+    body.dark .action-btn.success:hover {
+      background: #1a3a2a;
+    }
+    body.dark .action-btn.warning {
+      color: #fdebb3;
+      border-color: #5a4a2a;
+    }
+    body.dark .action-btn.warning:hover {
+      background: #3a2a1a;
+    }
+    body.dark .plan-select {
+      background: #0d1117;
+      border-color: #30363d;
+      color: #e6edf3;
+    }
+    body.dark .plan-select:focus {
+      border-color: #8ab4f8;
+      box-shadow: 0 0 0 3px rgba(138, 180, 248, 0.12);
+    }
+    body.dark .input-compact {
+      background: #0d1117;
+      border-color: #30363d;
+      color: #e6edf3;
+    }
+    body.dark .input-compact:focus {
+      border-color: #8ab4f8;
+      box-shadow: 0 0 0 3px rgba(138, 180, 248, 0.12);
+    }
+
+    /* Animación de entrada para tarjetas */
+    .stagger-item {
+      animation: fadeSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+    @keyframes fadeSlideUp {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    .stagger-item:nth-child(1) { animation-delay: 0.02s; }
+    .stagger-item:nth-child(2) { animation-delay: 0.04s; }
+    .stagger-item:nth-child(3) { animation-delay: 0.06s; }
+    .stagger-item:nth-child(4) { animation-delay: 0.08s; }
+    .stagger-item:nth-child(5) { animation-delay: 0.10s; }
+    .stagger-item:nth-child(6) { animation-delay: 0.12s; }
+    .stagger-item:nth-child(7) { animation-delay: 0.14s; }
+    .stagger-item:nth-child(8) { animation-delay: 0.16s; }
+    .stagger-item:nth-child(9) { animation-delay: 0.18s; }
+    .stagger-item:nth-child(10) { animation-delay: 0.20s; }
+    .stagger-item:nth-child(11) { animation-delay: 0.22s; }
+    .stagger-item:nth-child(12) { animation-delay: 0.24s; }
+    .stagger-item:nth-child(13) { animation-delay: 0.26s; }
+    .stagger-item:nth-child(14) { animation-delay: 0.28s; }
+    .stagger-item:nth-child(15) { animation-delay: 0.30s; }
+    .stagger-item:nth-child(16) { animation-delay: 0.32s; }
+    .stagger-item:nth-child(17) { animation-delay: 0.34s; }
+    .stagger-item:nth-child(18) { animation-delay: 0.36s; }
+    .stagger-item:nth-child(19) { animation-delay: 0.38s; }
+    .stagger-item:nth-child(20) { animation-delay: 0.40s; }
+  </style>
+</head>
+<body class="m-material min-h-screen bg-slate-100 dark:bg-[#0d1117]">
+
+  <% if (!list) { %>
+
+    <!-- ============================================================
+    LOGIN – Acceso maestro
+    ============================================================ -->
+    <div class="min-h-screen flex items-center justify-center p-4 bg-slate-50">
+      <div class="w-full max-w-sm">
+        <div class="bg-white rounded-3xl border border-slate-200 shadow-[0_12px_40px_rgba(15,23,42,0.08)] p-8 m-rise">
+          <div class="flex flex-col items-center text-center mb-6">
+            <div class="w-16 h-16 rounded-2xl bg-slate-800 text-white flex items-center justify-center text-3xl shadow-sm mb-4">🔐</div>
+            <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Panel maestro</h1>
+            <p class="text-sm text-slate-400 mt-1">Control global de todas las tiendas</p>
+          </div>
+
+          <% if (error) { %>
+            <div class="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl p-3.5 mb-4 font-semibold flex items-center gap-2">
+              <span>⚠️</span>
+              <span><%= error %></span>
+            </div>
+          <% } %>
+
+          <form method="POST" action="/maestro">
+            <label class="block text-[0.7rem] font-bold uppercase tracking-wide text-slate-400 mb-2" for="f-master">Código maestro</label>
+            <input type="password" name="master" id="f-master" placeholder="••••" autofocus class="w-full border-2 border-slate-200 rounded-2xl px-4 py-3 text-lg font-semibold tracking-[0.4em] text-center text-slate-900 focus:outline-none focus:border-slate-500 focus:ring-4 focus:ring-slate-200" />
+            <button class="m-btn m-btn-filled w-full !min-h-11 mt-4 !bg-slate-800 hover:!bg-slate-700">
+              Entrar al panel
+            </button>
+          </form>
+
+          <a href="/" class="block text-center text-sm text-slate-400 font-semibold hover:text-slate-600 transition mt-5">
+            ← Volver al inicio
+          </a>
+        </div>
+      </div>
+    </div>
+
+  <% } else { %>
+
+    <!-- ============================================================
+    PANEL – Listado de tiendas
+    ============================================================ -->
+
+    <!-- HEADER -->
+    <header class="panel-header sticky top-0 z-10">
+      <div class="max-w-6xl mx-auto px-4 md:px-6 py-4 flex items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <span class="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-800 to-blue-600 text-white flex items-center justify-center text-lg shadow-sm">🔐</span>
+          <div>
+            <h1 class="font-extrabold text-slate-900 dark:text-white leading-tight text-lg">Panel maestro</h1>
+            <p class="text-xs text-slate-400 dark:text-slate-500"><%= list.length %> tiendas registradas</p>
+          </div>
+        </div>
+        <form method="POST" action="/maestro/cerrar">
+          <button class="text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white bg-slate-100 dark:bg-[#21262d] hover:bg-slate-200 dark:hover:bg-[#30363d] px-4 py-2 rounded-xl transition">
+            Cerrar sesión
+          </button>
+        </form>
+      </div>
+    </header>
+
+    <!-- MAIN -->
+    <main class="max-w-6xl mx-auto px-3 md:px-6 py-5">
+
+      <!-- SECCIÓN: PLANES -->
+      <section class="bg-white dark:bg-[#161b22] rounded-2xl border border-slate-200 dark:border-[#21262d] p-4 md:p-5 mb-5 shadow-sm hover:shadow-md transition">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center text-lg">🎛</div>
+          <div>
+            <h2 class="font-extrabold text-slate-900 dark:text-white text-sm">Planes</h2>
+            <p class="text-xs text-slate-400 dark:text-slate-500">Precio, duración, límite de productos, publicidad y diseño. Un plan con "Diseño personalizable" deja que el dueño edite el diseño de su catálogo.</p>
+          </div>
+        </div>
+
+        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
+          <% plans.forEach(p => { %>
+            <div class="border border-slate-200 dark:border-[#30363d] rounded-2xl p-3 <%= p.active ? 'bg-white dark:bg-[#0d1117]' : 'opacity-50 bg-slate-50 dark:bg-[#0d1117]/50' %>">
+              <div class="flex items-center justify-between">
+                <p class="font-bold text-sm text-slate-800 dark:text-white"><%= p.name %></p>
+                <div class="flex flex-col items-end gap-1">
+                  <span class="text-[10px] font-black px-2 py-0.5 rounded-full <%= p.ads ? 'bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400' %>">
+                    📣 <%= p.ads ? 'con publicidad' : 'sin publicidad' %>
+                  </span>
+                  <span class="text-[10px] font-black px-2 py-0.5 rounded-full <%= p.design ? 'bg-fuchsia-50 text-fuchsia-600 dark:bg-fuchsia-900/30 dark:text-fuchsia-400' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400' %>">
+                    🎨 <%= p.design ? 'con diseño' : 'sin diseño' %>
+                  </span>
+                </div>
+              </div>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                $<%= p.price.toFixed(2) %> · <%= p.days ? p.days + ' días' : 'sin vencimiento' %> · <%= p.max_products === -1 ? '∞ productos' : p.max_products + ' productos' %>
+              </p>
+              <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5"><%= planUsage[p.key] || 0 %> tiendas usándolo</p>
+              <% if (p.key !== 'free' && p.key !== 'pro') { %>
+                <form method="POST" action="/maestro/plan/<%= p.id %>/eliminar" data-confirm="¿Eliminar el plan <%= p.name.replace(/'/g, "\\'") %>?" class="mt-2">
+                  <button class="text-[11px] font-bold text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition">Eliminar</button>
+                </form>
+              <% } %>
+            </div>
+          <% }) %>
+        </div>
+
+        <details class="border border-dashed border-slate-300 dark:border-[#30363d] rounded-2xl p-3 transition hover:border-slate-400 dark:hover:border-[#484f58]">
+          <summary class="text-xs font-bold text-slate-600 dark:text-slate-400 cursor-pointer">＋ Crear nuevo plan</summary>
+          <form method="POST" action="/maestro/plan" class="grid sm:grid-cols-2 lg:grid-cols-5 gap-2 mt-3">
+            <input name="name" required placeholder="Nombre del plan" class="input-compact w-full rounded-xl px-3 py-2 text-sm dark:bg-[#0d1117] dark:border-[#30363d] dark:text-white" />
+            <input name="price" type="number" step="0.01" min="0" placeholder="Precio $/mes" class="input-compact w-full rounded-xl px-3 py-2 text-sm dark:bg-[#0d1117] dark:border-[#30363d] dark:text-white" />
+            <input name="days" type="number" min="0" placeholder="Días del periodo" class="input-compact w-full rounded-xl px-3 py-2 text-sm dark:bg-[#0d1117] dark:border-[#30363d] dark:text-white" />
+            <input name="max_products" type="number" min="-1" placeholder="Productos (-1 = ∞)" class="input-compact w-full rounded-xl px-3 py-2 text-sm dark:bg-[#0d1117] dark:border-[#30363d] dark:text-white" />
+            <label class="flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-slate-400 cursor-pointer">
+              <input type="checkbox" name="ads" class="w-4 h-4 accent-amber-500 dark:accent-amber-400" />
+              Con publicidad cruzada
+            </label>
+            <label class="flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-slate-400 cursor-pointer">
+              <input type="checkbox" name="design" class="w-4 h-4 accent-fuchsia-500 dark:accent-fuchsia-400" />
+              Diseño personalizable
+            </label>
+            <button class="m-btn m-btn-filled m-btn-sm sm:col-span-2 lg:col-span-5 dark:bg-[#8ab4f8] dark:text-[#062e6f] dark:hover:bg-[#a0c4ff]">Crear plan</button>
+          </form>
+        </details>
+      </section>
+
+      <!-- FILTROS DE TIENDAS -->
+      <div class="flex flex-wrap items-center gap-2 mb-3">
+        <select id="giro-filtro" class="input-compact rounded-xl px-3 py-2 text-sm border border-slate-200 dark:bg-[#0d1117] dark:border-[#30363d] dark:text-white bg-white focus:outline-none focus:border-blue-400">
+          <option value="">Todos los giros</option>
+          <% GIROS.forEach(g => { %>
+            <option value="<%= g %>"><%= g.charAt(0).toUpperCase() + g.slice(1) %></option>
+          <% }) %>
+        </select>
+        <input id="busca-tienda" type="search" placeholder="Buscar por nombre o slug…"
+          class="input-compact flex-1 min-w-[180px] rounded-xl px-3 py-2 text-sm border border-slate-200 dark:bg-[#0d1117] dark:border-[#30363d] dark:text-white bg-white focus:outline-none focus:border-blue-400">
+      </div>
+
+      <!-- LISTADO DE TIENDAS -->
+      <div class="grid gap-3">
+        <% list.forEach((b, i) => { %>
+          <div class="store-card <%= b.expired ? 'expired' : '' %> <%= b.suspended ? 'suspended' : '' %> stagger-item" data-giro="<%= b.giro || '' %>" data-busca="<%= (b.name + ' ' + b.slug).toLowerCase() %>" style="animation-delay: <%= (i * 0.03) %>s">
+            <div class="flex flex-col md:flex-row md:items-center gap-3">
+
+              <!-- Info tienda -->
+              <div class="flex items-center gap-3 min-w-0 flex-1">
+                <img src="<%= b.logo || '/img/sin-imagen.svg' %>" class="w-10 h-10 rounded-xl object-cover border border-slate-200 dark:border-[#30363d] shrink-0" />
+                <div class="min-w-0">
+                  <p class="font-bold text-slate-900 dark:text-white truncate">
+                    <%= b.name %>
+                    <a href="/<%= b.slug %>" target="_blank" class="text-blue-500 dark:text-[#8ab4f8] text-xs font-bold hover:underline">/<%= b.slug %></a>
+                  </p>
+                  <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5">
+                    <span>📦 <%= b.products_count || 0 %> productos</span>
+                    <span>🧾 <%= b.orders_count || 0 %> pedidos</span>
+                    <span>👁 <%= b.visits_count || 0 %> visitas</span>
+                    <span>📅 <%= b.created_at %></span>
+                  </p>
+                  <div class="flex items-center gap-1.5 mt-1 flex-wrap">
+                    <% if (b.giro) { %><span class="badge-status giro">🏪 <%= b.giro %></span><% } %>
+                    <span class="badge-status <%= b.plan === 'pro' ? 'pro' : 'free' %>"><%= b.plan_name.toUpperCase() %></span>
+                    <span class="badge-status neutral">$<%= Number(b.plan_price || 0).toFixed(2) %></span>
+                    <% if (b.plan_ends_at) { %>
+                      <span class="badge-status <%= b.expired ? 'expired' : 'warning' %>">
+                        Vence <%= b.plan_ends_at %> <%= b.expired ? '· VENCIDO' : '' %>
+                      </span>
+                    <% } %>
+                    <% if (b.suspended) { %><span class="badge-status suspended">⏸ Suspendida</span><% } %>
+                    <span class="badge-status <%= b.ads_enabled ? 'ads' : 'no-ads' %>">📣 <%= b.ads_enabled ? 'anuncio' : 'sin anuncio' %></span>
+                    <span class="badge-status <%= b.active ? 'active' : 'inactive' %>"><%= b.active ? '● Activa' : '○ Inactiva' %></span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Acciones -->
+              <div class="flex items-center gap-1.5 flex-wrap shrink-0 justify-end md:justify-start">
+                <!-- Cambiar plan -->
+                <form method="POST" action="/maestro/<%= b.id %>/plan" class="inline">
+                  <select name="plan" onchange="this.form.submit()" class="plan-select">
+                    <% plans.forEach(p => { %>
+                      <option value="<%= p.key %>" <%= b.plan === p.key ? 'selected' : '' %> <%= p.active ? '' : 'disabled' %>><%= p.name %></option>
+                    <% }) %>
+                  </select>
+                </form>
+
+                <!-- Vencimiento y precio -->
+                <form method="POST" action="/maestro/<%= b.id %>/vencimiento" class="flex items-center gap-1">
+                  <input name="plan_price" type="number" step="0.01" min="0" value="<%= b.plan_price || 0 %>" title="Precio ($)" class="input-compact w-14" />
+                  <input name="plan_ends_at" type="date" value="<%= b.plan_ends_at || '' %>" title="Vence el" class="input-compact w-28" />
+                  <button class="action-btn primary small">OK</button>
+                </form>
+
+                <!-- Editar diseño -->
+                <a href="/maestro/<%= b.id %>/diseno" class="action-btn primary small" title="Editar diseño del catálogo">✏️ Diseño</a>
+
+                <!-- Alternar anuncio -->
+                <form method="POST" action="/maestro/<%= b.id %>/ads" class="inline">
+                  <button class="action-btn <%= b.ads_enabled ? 'warning' : '' %> small" title="Mostrar como anuncio en otros catálogos">
+                    📣
+                  </button>
+                </form>
+
+                <!-- Suspender / Reactivar -->
+                <% if (b.suspended) { %>
+                  <form method="POST" action="/maestro/<%= b.id %>/reactivar" class="inline">
+                    <button class="action-btn success small">▶ Reactivar</button>
+                  </form>
+                <% } else { %>
+                  <form method="POST" action="/maestro/<%= b.id %>/suspender" class="inline">
+                    <button class="action-btn danger small" title="Pausar catálogo y panel">⏸</button>
+                  </form>
+                <% } %>
+
+                <!-- Activar / Desactivar -->
+                <form method="POST" action="/maestro/<%= b.id %>/toggle" class="inline">
+                  <button class="action-btn <%= b.active ? 'primary' : 'danger' %> small">
+                    <%= b.active ? '● Activa' : '○ Inactiva' %>
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+    </main>
+  <% } %>
+
+  <!-- ============================================================
+  SCRIPT DE CONFIRMACIÓN
+  ============================================================ -->
+  <script>
+    function toastMaestro(msg, ok) {
+      Swal.fire({ toast: true, position: 'bottom', timer: 2600, timerProgressBar: true, showConfirmButton: false,
+        icon: ok ? 'success' : 'error', title: msg });
+    }
+    (function () {
+      var ok = new URLSearchParams(window.location.search).get('ok');
+      if (ok) toastMaestro(ok, true);
+    })();
+    document.addEventListener('submit', function (e) {
+      var f = e.target;
+      if (f && f.hasAttribute && f.hasAttribute('data-confirm')) {
+        var msg = f.getAttribute('data-confirm');
+        e.preventDefault();
+        Swal.fire({
+          title: msg, icon: 'warning', showCancelButton: true,
+          confirmButtonText: 'Sí, continuar', cancelButtonText: 'Cancelar',
+          confirmButtonColor: '#dc2626', cancelButtonColor: '#64748b'
+        }).then(function (r) { if (r.isConfirmed) f.submit(); });
+      }
+    });
+
+    // Filtro por giro + búsqueda en el listado de tiendas
+    (function () {
+      var sel = document.getElementById('giro-filtro');
+      var inp = document.getElementById('busca-tienda');
+      if (!sel || !inp) return;
+      var cards = Array.prototype.slice.call(document.querySelectorAll('.store-card[data-giro]'));
+      function apply() {
+        var g = sel.value, q = inp.value.trim().toLowerCase();
+        cards.forEach(function (c) {
+          var okG = !g || c.getAttribute('data-giro').toLowerCase() === g;
+          var okQ = !q || (c.getAttribute('data-busca') || '').indexOf(q) !== -1;
+          c.style.display = okG && okQ ? '' : 'none';
+        });
+      }
+      sel.addEventListener('change', apply);
+      inp.addEventListener('input', apply);
+    })();
+  </script>
+</body>
+</html>

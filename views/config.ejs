@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <%- include('admin/head', { title: 'Configuración', biz }) %>
+  <style>
+    /* ============================================================
+       MEJORAS ADICIONALES PARA EL PANEL DE CONFIGURACIÓN
+       ============================================================ */
+
+    /* Transiciones suaves para todo */
+    .config-section {
+      transition: box-shadow 0.25s ease, transform 0.25s ease;
+    }
+    .config-section:hover {
+      box-shadow: var(--md-elevation-2);
+    }
+
+    /* Inputs con estilo más refinado */
+    .config-input {
+      width: 100%;
+      padding: 0.7rem 1rem;
+      border: 1.5px solid var(--md-outline-soft);
+      border-radius: var(--md-radius-sm);
+      font-size: 0.9rem;
+      font-family: var(--md-font-family);
+      background: var(--md-surface);
+      color: var(--md-on-surface);
+      transition: border-color var(--md-motion), box-shadow var(--md-motion), background var(--md-motion);
+      outline: none;
+    }
+    .config-input:focus {
+      border-color: var(--md-primary);
+      box-shadow: 0 0 0 4px rgba(26, 115, 232, 0.12);
+      background: var(--md-surface);
+    }
+    .config-input::placeholder {
+      color: var(--md-on-surface-variant);
+      opacity: 0.5;
+    }
+
+    /* Etiquetas de campo */
+    .config-label {
+      display: block;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--md-on-surface-variant);
+      margin-bottom: 0.4rem;
+    }
+
+    /* Preview de colores */
+    .color-preview {
+      width: 100%;
+      height: 40px;
+      border-radius: 12px;
+      border: 2px solid transparent;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+    .color-preview:hover {
+      transform: scale(1.02);
+    }
+    .color-radio:checked + .color-preview {
+      border-color: var(--md-primary);
+      box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.2);
+    }
+
+    /* Opciones de plantilla */
+    .template-option {
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+    .template-option:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--md-elevation-1);
+    }
+    .template-radio:checked + .template-option {
+      border-color: var(--md-primary);
+      box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.15);
+    }
+
+    /* Selector de columnas */
+    .cols-option {
+      transition: all 0.2s ease;
+      cursor: pointer;
+      min-width: 60px;
+    }
+    .cols-option:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--md-elevation-1);
+    }
+    .cols-radio:checked + .cols-option {
+      border-color: var(--md-primary);
+      box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.15);
+    }
+
+    /* Indicador de selección (check) en plantillas, estilos, colores y columnas */
+    .template-option, .cols-option, .color-preview {
+      position: relative;
+    }
+    .template-radio:checked + .template-option,
+    .cols-radio:checked + .cols-option {
+      border-color: var(--md-primary) !important;
+      box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.25);
+      transform: translateY(-2px);
+    }
+    .template-radio:checked + .template-option::after,
+    .cols-radio:checked + .cols-option::after,
+    .color-radio:checked + .color-preview::after {
+      content: '✓';
+      position: absolute;
+      top: 5px; right: 5px;
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      background: var(--md-primary);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 900;
+      line-height: 20px;
+      text-align: center;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+      z-index: 5;
+    }
+    body.dark .template-radio:checked + .template-option,
+    body.dark .cols-radio:checked + .cols-option {
+      border-color: #8ab4f8 !important;
+      box-shadow: 0 0 0 3px rgba(138, 180, 248, 0.25);
+    }
+    body.dark .template-radio:checked + .template-option::after,
+    body.dark .cols-radio:checked + .cols-option::after,
+    body.dark .color-radio:checked + .color-preview::after {
+      background: #8ab4f8;
+      color: #062e6f;
+    }
+
+    /* Chips de giros */
+    .giro-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.3rem 0.8rem;
+      border-radius: 60px;
+      background: var(--md-secondary-container);
+      color: var(--md-on-secondary-container);
+      font-size: 0.75rem;
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+    .giro-chip .remove-giro {
+      cursor: pointer;
+      opacity: 0.5;
+      transition: opacity 0.2s ease;
+      background: none;
+      border: none;
+      font-size: 0.8rem;
+      padding: 0 0.2rem;
+      color: inherit;
+    }
+    .giro-chip .remove-giro:hover {
+      opacity: 1;
+    }
+
+    /* Dropdown de giros */
+    .giro-dropdown-item {
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding: 0.5rem 1rem;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--md-on-surface);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+    .giro-dropdown-item:hover {
+      background: var(--md-primary-container);
+      color: var(--md-on-primary-container);
+    }
+
+    /* Mensajes de éxito/error */
+    .toast-message {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.8rem 1.2rem;
+      border-radius: var(--md-radius-sm);
+      font-size: 0.85rem;
+      font-weight: 600;
+      animation: mPop 0.3s cubic-bezier(0.2, 0, 0, 1) both;
+    }
+    .toast-success {
+      background: var(--md-secondary-container);
+      border: 1px solid #a7d7b5;
+      color: var(--md-on-secondary-container);
+    }
+    .toast-error {
+      background: var(--md-error-container);
+      border: 1px solid #f5c6cb;
+      color: #8c1d18;
+    }
+
+    /* Ajustes modo oscuro */
+    body.dark .config-input {
+      background: #0d1117;
+      border-color: #30363d;
+      color: #e6edf3;
+    }
+    body.dark .config-input:focus {
+      border-color: var(--md-primary);
+      box-shadow: 0 0 0 4px rgba(138, 180, 248, 0.15);
+    }
+    body.dark .config-label {
+      color: #9aa7b4;
+    }
+    body.dark .giro-chip {
+      background: #20334d;
+      color: #d6e3ff;
+    }
+    body.dark .giro-dropdown-item:hover {
+      background: #264f9e;
+      color: #d6e3ff;
+    }
+    body.dark .toast-success {
+      background: #1a3a2a;
+      border-color: #2d6a4f;
+      color: #b7e4c7;
+    }
+    body.dark .toast-error {
+      background: #4c1d24;
+      border-color: #8b2d32;
+      color: #f8a5a0;
+    }
+  </style>
+</head>
+<body class="m-material bg-slate-100 min-h-screen dark:bg-[#0d1117]">
+  <% if (!esMaestro) { %>
+    <%- include('admin/sidebar', { biz, active: 'config', canDesign }) %>
+  <% } else { %>
+    <nav class="sticky top-0 z-50 bg-[#141210] text-white border-b border-white/10">
+      <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+        <a href="/maestro/panel" class="flex items-center gap-2 text-sm font-bold hover:text-slate-300 transition">
+          ← Panel maestro
+        </a>
+        <span class="text-xs font-black uppercase tracking-wider text-emerald-400">Diseño de <%= biz.name %></span>
+      </div>
+    </nav>
+  <% } %>
+
+  <main class="<%= esMaestro ? '' : 'md:pl-60' %>">
+    <div class="max-w-4xl mx-auto px-4 md:px-8 py-5 md:py-7 space-y-4">
+
+      <!-- HEADER -->
+      <div class="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h1 class="text-xl md:text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+            ⚙️ <%= esMaestro ? 'Diseño y datos de la tienda' : (canDesign ? 'Diseño y configuración' : 'Configuración') %>
+          </h1>
+          <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+            <%= esMaestro ? 'Controlas el diseño, las imágenes, los datos y el acceso de esta tienda.' : (canDesign ? 'Personaliza el diseño, los datos y el acceso de tu tienda.' : 'Cambia los datos y el acceso de tu tienda.') %>
+          </p>
+        </div>
+        <a href="/<%= biz.slug %>" target="_blank" class="m-btn m-btn-tonal m-btn-sm dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0zM2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z"/></svg>
+          Ver catálogo
+        </a>
+      </div>
+
+      <%
+        const cfgAction = esMaestro ? '/maestro/' + biz.id + '/config' : '/' + biz.slug + '/admin/config';
+        const prevSrc = esMaestro ? '/maestro/' + biz.id + '/preview' : '/' + biz.slug + '/admin/preview';
+      %>
+
+      <!-- MENSAJES (se muestran como toast de SweetAlert2) -->
+      <% if (ok || error) { %>
+        <div id="panel-msg" class="hidden" data-tipo="<%= ok ? 'ok' : 'error' %>"><%= ok || error %></div>
+      <% } %>
+
+      <!-- ============================================================
+      SECCIÓN 1: DATOS DEL NEGOCIO
+      ============================================================ -->
+      <section class="m-card config-section p-5 md:p-6 dark:bg-[#161b22] dark:border-[#21262d]">
+        <div class="flex items-center gap-3 mb-5">
+          <div class="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+          </div>
+          <div>
+            <h2 class="font-extrabold text-slate-900 dark:text-white">Datos del negocio</h2>
+            <p class="text-xs text-slate-400 dark:text-slate-500">Nombre, contacto y giro</p>
+          </div>
+        </div>
+
+        <form method="POST" action="<%= cfgAction %>" class="space-y-4">
+          <div class="grid md:grid-cols-2 gap-4">
+            <div>
+              <label class="config-label">Nombre del negocio *</label>
+              <input name="name" value="<%= biz.name %>" class="config-input" placeholder="Ej: Ferretería El Toro" required>
+            </div>
+            <div>
+              <label class="config-label">WhatsApp (10 dígitos) *</label>
+              <input name="whatsapp" value="<%= biz.whatsapp %>" type="tel" inputmode="numeric" class="config-input" placeholder="8712345678" required>
+              <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">Los pedidos llegarán a este número.</p>
+            </div>
+            <div>
+              <label class="config-label">Moneda</label>
+              <select name="currency" class="config-input">
+                <% CURRENCIES.forEach(c => { %>
+                  <option value="<%= c.code %>" <%= biz.currency === c.code ? 'selected' : '' %>><%= c.symbol %> · <%= c.name %> (<%= c.code %>)</option>
+                <% }) %>
+              </select>
+              <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">Los precios de tu catálogo y los pedidos usan esta moneda.</p>
+            </div>
+          </div>
+
+          <div>
+            <label class="config-label">Descripción</label>
+            <textarea name="description" rows="2" class="config-input" placeholder="¿Qué vende tu negocio?"><%= biz.description %></textarea>
+          </div>
+
+          <div>
+            <label class="config-label">Mensaje personalizado de WhatsApp <span class="font-normal text-slate-400">(opcional)</span></label>
+            <textarea name="wa_message" rows="4" class="config-input" placeholder="Déjalo vacío para usar el mensaje por defecto."><%= biz.wa_message || '' %></textarea>
+            <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">Es el mensaje que recibe el cliente al pedir. Puedes usar <b>{tienda}</b>, <b>{productos}</b> y <b>{total}</b>.</p>
+          </div>
+
+          <div class="border-t border-slate-200 dark:border-[#30363d] pt-4 mt-3">
+            <input type="hidden" name="horario_set" value="1">
+            <div class="flex items-center justify-between mb-1 flex-wrap gap-2">
+              <label class="config-label !mb-0">Horario de atención</label>
+              <button type="button" onclick="copiarHorarioATodos()" class="text-xs font-bold text-blue-600 hover:text-blue-700">Copiar Lunes → días abiertos</button>
+            </div>
+            <p class="text-xs text-slate-400 dark:text-slate-500 mb-3">Enciende los días que abres y marca su horario.</p>
+            <% const diasSemana = [['1','Lunes'],['2','Martes'],['3','Miércoles'],['4','Jueves'],['5','Viernes'],['6','Sábado'],['7','Domingo']]; %>
+            <div class="rounded-xl border border-slate-200 dark:border-[#30363d] overflow-hidden divide-y divide-slate-100 dark:divide-[#30363d]">
+              <% diasSemana.forEach(d => { const diaData = horario[d[0]] || null; const isOpen = !!(diaData && diaData.o); %>
+                <div class="dia-row flex items-center gap-2 sm:gap-3 px-3 py-2 bg-white dark:bg-slate-900/40" data-dia="<%= d[0] %>">
+                  <label class="m-switch shrink-0" title="Abierto / cerrado">
+                    <input type="checkbox" class="dia-open" data-dia="<%= d[0] %>" <%= isOpen ? 'checked' : '' %> onchange="toggleDia(this)">
+                    <span class="track"><span class="thumb"></span></span>
+                  </label>
+                  <span class="w-20 shrink-0 text-xs font-bold <%= isOpen ? 'text-slate-700 dark:text-slate-200' : 'text-slate-400 dark:text-slate-500' %>"><%= d[1] %></span>
+                  <input type="time" name="h_open_<%= d[0] %>" value="<%= diaData ? diaData.o : '' %>" <%= isOpen ? '' : 'disabled' %> class="flex-1 min-w-0 border border-slate-200 dark:border-[#30363d] rounded-lg px-2 py-1.5 text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-40">
+                  <span class="text-slate-400 text-xs shrink-0">a</span>
+                  <input type="time" name="h_close_<%= d[0] %>" value="<%= diaData ? diaData.c : '' %>" <%= isOpen ? '' : 'disabled' %> class="flex-1 min-w-0 border border-slate-200 dark:border-[#30363d] rounded-lg px-2 py-1.5 text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-40">
+                </div>
+              <% }) %>
+            </div>
+            <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-2">Los días apagados se mostrarán como "Cerrado" en tu tienda.</p>
+          </div>
+
+          <div>
+            <label class="config-label">Mensaje cuando esté cerrado</label>
+            <textarea name="horario_msg" rows="2" class="config-input" placeholder="Estamos cerrados. Recibimos tu pedido y te respondemos en cuanto abramos."><%= horarioMsg %></textarea>
+          </div>
+
+          <div class="flex gap-3 pt-2">
+            <button class="m-btn m-btn-filled flex-1 !min-h-11 dark:bg-[#8ab4f8] dark:text-[#062e6f] dark:hover:bg-[#a0c4ff]">
+              Guardar cambios
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- ============================================================
+      SECCIÓN 2: DISEÑO DEL CATÁLOGO (maestro o dueño con plan que lo incluya)
+      ============================================================ -->
+      <% if (canDesign) { %>
+      <%
+        const hdrRaw = biz.header || diseno.header;
+        const hdrColor = /^#[0-9a-fA-F]{6}$/.test(hdrRaw || '') ? hdrRaw : ((hdrRaw || '').match(/#[0-9a-fA-F]{6}/) || ['#334155'])[0];
+        const accentVal = biz.accent || diseno.accent || '#2563eb';
+        const accent2Val = biz.accent2 || diseno.accent2 || accentVal;
+        const headerTextVal = biz.header_text || diseno.headerText || '#ffffff';
+      %>
+      <section class="m-card config-section p-5 md:p-6 dark:bg-[#161b22] dark:border-[#21262d]">
+          <div class="flex items-center gap-4 flex-wrap">
+            <div class="w-12 h-12 rounded-xl bg-fuchsia-50 dark:bg-fuchsia-900/30 text-fuchsia-600 dark:text-fuchsia-400 flex items-center justify-center text-2xl shrink-0">🎨</div>
+            <div class="flex-1 min-w-[200px]">
+              <h2 class="font-extrabold text-slate-900 dark:text-white">Diseño del catálogo</h2>
+              <p class="text-xs text-slate-400 dark:text-slate-500">Plantillas, estilos, colores, tipografía y vista previa en vivo, ahora en su propio apartado.</p>
+            </div>
+            <a href="<%= esMaestro ? '/maestro/' + biz.id + '/diseno' : '/' + biz.slug + '/admin/diseno' %>" class="m-btn m-btn-filled">Abrir el constructor →</a>
+          </div>
+        </section>
+
+      <!-- ============================================================
+      SECCIÓN 3: IMÁGENES
+      ============================================================ -->
+      <section class="m-card config-section p-5 md:p-6 dark:bg-[#161b22] dark:border-[#21262d]">
+        <div class="flex items-center gap-3 mb-5">
+          <div class="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M4 20h16M6 8h.01M6 8a2 2 0 100-4 2 2 0 000 4z"/></svg>
+          </div>
+          <div>
+            <h2 class="font-extrabold text-slate-900 dark:text-white">Imágenes</h2>
+            <p class="text-xs text-slate-400 dark:text-slate-500">Logo y banner de tu tienda</p>
+          </div>
+        </div>
+
+        <form method="POST" action="<%= cfgAction %>" class="space-y-4">
+          <div>
+            <label class="config-label">Logo</label>
+            <div class="flex items-center gap-3">
+              <label class="cursor-pointer bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-bold px-4 py-2.5 rounded-xl transition text-slate-700 dark:text-slate-300">
+                📷 Subir logo
+                <input id="foto-logo" type="file" accept="image/*" class="hidden" onchange="subirConEditor('foto-logo', 'logo-url', 'prev-logo')">
+              </label>
+              <img id="prev-logo" src="<%= biz.logo || '/img/sin-imagen.svg' %>" class="w-12 h-12 rounded-full object-cover border border-slate-200 dark:border-[#30363d]">
+            </div>
+            <input name="logo" id="logo-url" type="hidden" value="<%= biz.logo || '' %>">
+          </div>
+
+          <div>
+            <label class="config-label">Banner de portada <span class="text-slate-400 font-normal">(plantillas con portada)</span></label>
+            <div class="flex items-center gap-3">
+              <label class="cursor-pointer bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-bold px-4 py-2.5 rounded-xl transition text-slate-700 dark:text-slate-300">
+                📷 Subir banner
+                <input id="foto-banner" type="file" accept="image/*" class="hidden" onchange="subirConEditor('foto-banner', 'banner-url', 'prev-banner')">
+              </label>
+              <img id="prev-banner" src="<%= biz.banner || '/img/sin-imagen.svg' %>" class="w-16 h-10 rounded-lg object-cover border border-slate-200 dark:border-[#30363d]">
+            </div>
+            <input name="banner" id="banner-url" type="hidden" value="<%= biz.banner || '' %>">
+          </div>
+
+          <div class="flex gap-3 pt-2">
+            <button class="m-btn m-btn-filled flex-1 !min-h-11 dark:bg-[#8ab4f8] dark:text-[#062e6f] dark:hover:bg-[#a0c4ff]">
+              Guardar cambios
+            </button>
+          </div>
+        </form>
+      </section>
+      <% } %>
+
+      <!-- ============================================================
+      SECCIÓN 4: SEGURIDAD (solo visible para el dueño)
+      ============================================================ -->
+      <% if (!esMaestro) { %>
+      <section class="m-card config-section p-5 md:p-6 dark:bg-[#161b22] dark:border-[#21262d]">
+        <div class="flex items-center gap-3 mb-5">
+          <div class="w-10 h-10 rounded-xl bg-red-50 dark:bg-red-900/30 text-red-500 dark:text-red-400 flex items-center justify-center shrink-0">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+          </div>
+          <div>
+            <h2 class="font-extrabold text-slate-900 dark:text-white">Acceso seguro</h2>
+            <p class="text-xs text-slate-400 dark:text-slate-500">Tu PIN para entrar al panel</p>
+          </div>
+        </div>
+
+        <form method="POST" action="/<%= biz.slug %>/admin/cambiar-pin" class="space-y-3 mb-6">
+          <div class="grid md:grid-cols-3 gap-3">
+            <input name="pin_actual" type="text" inputmode="numeric" placeholder="PIN actual" class="config-input" required>
+            <input name="pin_nuevo" type="text" inputmode="numeric" placeholder="PIN nuevo (6 a 12 dígitos)" class="config-input" required>
+            <input name="pin_repite" type="text" inputmode="numeric" placeholder="Repite el PIN nuevo" class="config-input" required>
+          </div>
+          <button class="m-btn m-btn-filled m-btn-sm dark:bg-[#8ab4f8] dark:text-[#062e6f] dark:hover:bg-[#a0c4ff]">
+            Cambiar PIN
+          </button>
+        </form>
+
+        <div class="border-t border-slate-200 dark:border-[#30363d] pt-4">
+          <p class="text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">¿El dueño olvidó su PIN?</p>
+          <form method="POST" action="/<%= biz.slug %>/admin/resetear-pin" class="flex flex-wrap gap-2">
+            <input name="master" type="password" placeholder="Código maestro" class="config-input flex-1 max-w-xs" required>
+            <button class="m-btn m-btn-danger m-btn-sm dark:bg-[#8b2d32] dark:text-white dark:hover:bg-[#a03a3f]">
+              Resetear a 1234
+            </button>
+          </form>
+        </div>
+      </section>
+      <% } %>
+
+    </div>
+  </main>
+
+  <%- include('admin/panel-ajax') %>
+  <%- include('admin/toast') %>
+  <%- include('partials/upload-js', { biz, esMaestro }) %>
+
+  <script>
+    <% if (canDesign) { %>
+    // Preview en vivo del color + cambio automático de modo al elegir un color
+    (function () {
+      function init() {
+        var modeInputs = document.querySelectorAll('input[name="color_mode"]');
+        var presetInputs = document.querySelectorAll('input[name="color"]');
+        var hex1 = document.querySelector('input[name="color_hex"]');
+        var hex2 = document.querySelector('input[name="color_hex2"]');
+        var preview = document.getElementById('color-live-preview');
+        function setMode(m) {
+          modeInputs.forEach(function (r) { r.checked = r.value === m; });
+        }
+        function refresh() {
+          var m = (document.querySelector('input[name="color_mode"]:checked') || {}).value;
+          var h1 = (hex1 && hex1.value) || '#2563eb';
+          var h2 = (hex2 && hex2.value) || h1;
+          if (preview) preview.style.background = m === 'solido' ? h1 : 'linear-gradient(135deg, ' + h1 + ', ' + h2 + ')';
+          var sw = document.getElementById('mode-solid-swatch');
+          if (sw) sw.style.background = h1;
+          var dw = document.getElementById('mode-degradado-swatch');
+          if (dw) dw.style.background = 'linear-gradient(135deg, ' + h1 + ', ' + h2 + ')';
+        }
+        presetInputs.forEach(function (r) {
+          r.addEventListener('change', function () { setMode('degradado'); refresh(); });
+        });
+        if (hex1) hex1.addEventListener('input', function () {
+          var cur = (document.querySelector('input[name="color_mode"]:checked') || {}).value;
+          if (cur === 'estilo') setMode('degradado');
+          refresh();
+        });
+        if (hex2) hex2.addEventListener('input', function () { setMode('degradado'); refresh(); });
+        modeInputs.forEach(function (r) { r.addEventListener('change', refresh); });
+        refresh();
+      }
+      var prevSwap = window.onPanelSwap;
+      window.onPanelSwap = function () { if (typeof prevSwap === 'function') prevSwap(); init(); };
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+      else init();
+    })();
+
+    // Editor visual: vista previa en vivo + ajustes finos del diseño
+    (function () {
+      var ESTILOS = <%- safeJson(ESTILOS) %>;
+      var SLUG = '<%= prevSrc %>';
+      var NAMES = ['template', 'estilo', 'color', 'color_mode', 'color_hex', 'color_hex2', 'grid_cols', 'bg', 'card', 'text', 'muted', 'border', 'radius', 'font', 'header_text'];
+      function init() {
+        var form = document.getElementById('diseno-form');
+        var iframe = document.getElementById('diseno-preview');
+        if (!form || !iframe) return;
+        var timer = null;
+        function q(n) { return form.querySelector('[name="' + n + '"]'); }
+        function qc(n) { return form.querySelector('[name="' + n + '"]:checked'); }
+        // Valor inicial del color de botones: si no cambia, la vista previa usa el color elegido arriba
+        var accentInit = (function () { var el = q('accent'); return el ? el.value : ''; })();
+        var accent2Init = (function () { var el = q('accent2'); return el ? el.value : ''; })();
+        window.updatePreview = function () {
+          var f = document.getElementById('diseno-form');
+          var fr = document.getElementById('diseno-preview');
+          if (!f || !fr) return;
+          var p = new URLSearchParams();
+          NAMES.forEach(function (n) {
+            var el = (f.querySelector('[name="' + n + '"]:checked') || f.querySelector('[name="' + n + '"]'));
+            if (el && el.value !== '') p.append(n, el.value);
+          });
+          // Color de botones: solo se envía si el usuario lo cambió (si no, sigue el color elegido arriba)
+          var a1 = q('accent'), a2 = q('accent2');
+          if (a1 && a1.value !== accentInit) p.append('accent', a1.value);
+          if (a2 && a2.value !== accent2Init) p.append('accent2', a2.value);
+          // Cabecera: solo se envía si el usuario marcó "usar mi color propio"
+          var hc = document.getElementById('header-user');
+          var hcol = document.getElementById('header-color');
+          if (hc && hcol) p.append('header', hc.checked ? hcol.value : '');
+          // Logo y banner viven en la sección Imágenes; se reflejan en la vista previa
+          var lg = document.getElementById('logo-url'); if (lg && lg.value) p.append('logo', lg.value);
+          var bn = document.getElementById('banner-url'); if (bn && bn.value) p.append('banner', bn.value);
+          fr.src = SLUG + '?' + p.toString();
+        };
+        // Cambia el ancho de la vista previa (celular / computadora)
+        window.setPreviewDevice = function (btn) {
+          var fr = document.getElementById('diseno-preview');
+          if (!fr) return;
+          var mobile = btn && btn.getAttribute('data-device') === 'mobile';
+          fr.style.width = mobile ? '390px' : '100%';
+          fr.classList.toggle('mx-auto', mobile);
+        };
+        function schedule() { clearTimeout(timer); timer = setTimeout(window.updatePreview, 150); }
+        function updateRadiusLabel() {
+          var rr = document.getElementById('radius-range');
+          var lbl = document.getElementById('radius-label');
+          if (rr && lbl) lbl.textContent = rr.value + 'px';
+        }
+        function setColor(name, val) {
+          var el = q(name); if (!el) return;
+          el.value = val;
+          var sp = el.parentElement.querySelector('span');
+          if (sp) sp.textContent = val;
+        }
+        function setFont(css) {
+          var sel = q('font'); if (!sel) return;
+          for (var i = 0; i < sel.options.length; i++) if (sel.options[i].value === css) { sel.selectedIndex = i; break; }
+        }
+        function aplicarEstilo(id) {
+          var e = ESTILOS.find(function (x) { return x.id === id; });
+          if (!e) return;
+          setColor('bg', e.bg); setColor('card', e.card); setColor('text', e.text);
+          setColor('muted', e.muted); setColor('border', e.border);
+          setColor('header_text', e.headerText || '#ffffff');
+          // Al cambiar de estilo la cabecera vuelve a usar el degradado del estilo
+          var hc = document.getElementById('header-user');
+          var hcol = document.getElementById('header-color');
+          var hlbl = document.getElementById('header-color-label');
+          if (hc) hc.checked = false;
+          var hcolor = (e.header || '').match(/#[0-9a-fA-F]{6}/);
+          var hv = (hcolor || ['#334155'])[0];
+          if (hcol) hcol.value = hv;
+          if (hlbl) hlbl.textContent = hv;
+          var rr = document.getElementById('radius-range');
+          var rv = document.getElementById('radius-val');
+          if (rr) rr.value = parseInt(e.radius) || 16;
+          if (rv) rv.value = e.radius;
+          updateRadiusLabel();
+          setFont(e.font);
+          schedule();
+        }
+        ['bg', 'card', 'text', 'muted', 'border', 'accent', 'accent2', 'header_text'].forEach(function (n) {
+          var el = q(n); if (!el) return;
+          el.addEventListener('input', function () {
+            var sp = el.parentElement.querySelector('span');
+            if (sp) sp.textContent = el.value;
+            schedule();
+          });
+        });
+        var hcol = document.getElementById('header-color');
+        if (hcol) hcol.addEventListener('input', function () {
+          var hlbl = document.getElementById('header-color-label');
+          if (hlbl) hlbl.textContent = hcol.value;
+          schedule();
+        });
+        var huser = document.getElementById('header-user');
+        if (huser) huser.addEventListener('change', schedule);
+        var rr = document.getElementById('radius-range');
+        if (rr) rr.addEventListener('input', function () {
+          var rv = document.getElementById('radius-val');
+          if (rv) rv.value = rr.value + 'px';
+          updateRadiusLabel();
+          schedule();
+        });
+        var fontSel = q('font');
+        if (fontSel) fontSel.addEventListener('change', schedule);
+        form.querySelectorAll('input[type="radio"]').forEach(function (r) {
+          r.addEventListener('change', function () {
+            if (r.name === 'estilo') aplicarEstilo(r.value);
+            schedule();
+          });
+        });
+        ['color_hex', 'color_hex2'].forEach(function (n) {
+          var el = q(n); if (el) el.addEventListener('input', schedule);
+        });
+        // Al subir logo/banner se refresca la vista previa automáticamente
+        ['logo-url', 'banner-url'].forEach(function (id) {
+          var el = document.getElementById(id);
+          if (el) el.addEventListener('change', window.updatePreview);
+        });
+        updateRadiusLabel();
+        window.updatePreview();
+      }
+      var prevSwap = window.onPanelSwap;
+      window.onPanelSwap = function () { if (typeof prevSwap === 'function') prevSwap(); init(); };
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+      else init();
+    })();
+    <% } %>
+
+    // Muestra los mensajes de guardado como toast de SweetAlert2
+    (function () {
+      var t = document.getElementById('panel-msg');
+      if (t && t.textContent.trim() && window.Swal && Swal.isLoaded) {
+        var ok = t.getAttribute('data-tipo') === 'ok';
+        Swal.fire({ toast: true, position: 'bottom', timer: 3000, timerProgressBar: true, showConfirmButton: false, icon: ok ? 'success' : 'error', title: t.textContent.trim() });
+      }
+    })();
+  </script>
+
+  <script>
+    function toggleDia(cb) {
+      var row = cb.closest('.dia-row');
+      if (!row) return;
+      row.querySelectorAll('input[type="time"]').forEach(function (i) { i.disabled = !cb.checked; });
+      var label = row.querySelector('span');
+      if (label) label.className = label.className.replace(/text-slate-700 dark:text-slate-200|text-slate-400 dark:text-slate-500/g, cb.checked ? 'text-slate-700 dark:text-slate-200' : 'text-slate-400 dark:text-slate-500');
+    }
+    function copiarHorarioATodos() {
+      var lunes = document.querySelector('.dia-row[data-dia="1"]');
+      if (!lunes) return;
+      var o = lunes.querySelector('input[name="h_open_1"]').value;
+      var c = lunes.querySelector('input[name="h_close_1"]').value;
+      if (!o || !c) { mostrarToast('Primero pon el horario de Lunes', 'error'); return; }
+      var n = 0;
+      document.querySelectorAll('.dia-row').forEach(function (row) {
+        var d = row.getAttribute('data-dia');
+        var cb = row.querySelector('.dia-open');
+        if (!cb || !cb.checked) return;
+        var oi = row.querySelector('input[name="h_open_' + d + '"]');
+        var ci = row.querySelector('input[name="h_close_' + d + '"]');
+        if (oi) oi.value = o;
+        if (ci) ci.value = c;
+        n++;
+      });
+      mostrarToast('Horario copiado a ' + n + ' día(s) abierto(s) ✓', 'ok');
+    }
+  </script>
+
+  <style>
+    .img-editor-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9000;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .2s;}
+    .img-editor-overlay.open{opacity:1;pointer-events:auto;}
+    .img-editor-modal{background:#fff;border-radius:14px;width:100%;max-width:540px;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3);}
+    .img-editor-head{padding:14px 18px;border-bottom:1px solid #eef1f6;display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:14px;color:#0f172a;}
+    .img-editor-head button{background:none;border:none;font-size:20px;cursor:pointer;color:#94a3b8;}
+    .img-editor-body{padding:16px;}
+    .img-editor-wrap{position:relative;width:100%;overflow:hidden;border-radius:10px;max-height:52vh;display:flex;align-items:center;justify-content:center;background-image:linear-gradient(45deg,#eef1f6 25%,transparent 25%),linear-gradient(-45deg,#eef1f6 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#eef1f6 75%),linear-gradient(-45deg,transparent 75%,#eef1f6 75%);background-size:16px 16px;background-position:0 0,0 8px,8px -8px,-8px 0;user-select:none;}
+    .img-editor-canvas{max-width:100%;max-height:52vh;display:block;}
+    .img-editor-tools{display:flex;align-items:center;gap:6px;margin-top:10px;flex-wrap:wrap;}
+    .img-editor-tools button{font-size:12px;font-weight:700;padding:6px 11px;border-radius:20px;border:1px solid #e2e8f0;background:#fff;color:#334155;cursor:pointer;}
+    .img-editor-tools button.on,.img-editor-tools button:hover{background:#3858e9;border-color:#3858e9;color:#fff;}
+    .img-editor-zoom{display:flex;align-items:center;gap:10px;margin-top:12px;}
+    .img-editor-zoom input{flex:1;}
+    .img-editor-foot{display:flex;gap:10px;margin-top:14px;}
+    .img-editor-foot button{flex:1;padding:9px;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;border:1px solid #e2e8f0;background:#fff;color:#334155;}
+    .img-editor-foot .btn-primary{background:#3858e9;border-color:#3858e9;color:#fff;}
+    .img-editor-foot .btn-primary:hover{background:#2f4ad4;}
+    .img-hint{font-size:11px;color:#94a3b8;}
+    .img-sep{color:#e2e8f0;margin:0 2px;}
+  </style>
+
+  <!-- Editor de imagen (logo / banner) -->
+  <div class="img-editor-overlay" id="img-editor">
+    <div class="img-editor-modal">
+      <div class="img-editor-head">✏️ Editar imagen <button type="button" onclick="cerrarEditorImagen()">✕</button></div>
+      <div class="img-editor-body">
+        <div id="img-editor-wrap" class="img-editor-wrap">
+          <canvas id="img-editor-canvas" width="800" height="800" class="img-editor-canvas"></canvas>
+        </div>
+        <div class="img-editor-tools">
+          <button type="button" id="img-btn-fit" onclick="imgModo('contain')">Ajustar</button>
+          <button type="button" id="img-btn-cover" onclick="imgModo('cover')">Expandir</button>
+          <span class="img-hint" style="flex:1;text-align:right;">Arrastra para mover</span>
+        </div>
+        <div class="img-editor-tools">
+          <span class="img-hint">Aspecto</span>
+          <button type="button" class="img-aspect" data-a="1:1" onclick="imgAspect('1:1')">1:1</button>
+          <button type="button" class="img-aspect" data-a="4:3" onclick="imgAspect('4:3')">4:3</button>
+          <button type="button" class="img-aspect" data-a="16:9" onclick="imgAspect('16:9')">16:9</button>
+          <button type="button" class="img-aspect" data-a="3:4" onclick="imgAspect('3:4')">3:4</button>
+          <span class="img-sep">|</span>
+          <button type="button" onclick="imgRotar()" title="Rotar 90°">⟳ Rotar</button>
+          <button type="button" onclick="imgEspejo()" title="Voltear horizontal">⇋ Voltear</button>
+          <button type="button" onclick="imgReset()" title="Restaurar original">↺ Restaurar</button>
+        </div>
+        <div class="img-editor-zoom">
+          <span class="img-hint">Zoom</span>
+          <input id="img-zoom" type="range" min="1" max="3" step="0.01" value="1" oninput="imgZoomChange(this.value)">
+        </div>
+        <div class="img-editor-foot">
+          <button type="button" onclick="cerrarEditorImagen()">Cancelar</button>
+          <button type="button" class="btn-primary" onclick="aplicarEditorImagen()">Aplicar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    var imgEditor = { img: null, mode: 'cover', zoom: 1, panX: 0, panY: 0, baseScale: 1, rotation: 0, flip: false, aspect: '1:1' };
+    var _imgOnDone = null;
+    var _imgOnCancel = null;
+    var IMG_UP_URL = '<%= esMaestro ? "/maestro/" + biz.id + "/upload" : "/" + biz.slug + "/admin/upload" %>';
+    function imgOutSize() {
+      switch (imgEditor.aspect) {
+        case '4:3': return { W: 800, H: 600 };
+        case '16:9': return { W: 800, H: 450 };
+        case '3:4': return { W: 600, H: 800 };
+        default: return { W: 800, H: 800 };
+      }
+    }
+    function imgEff() {
+      var img = imgEditor.img;
+      var rotated = imgEditor.rotation % 180 !== 0;
+      return { iw: rotated ? img.height : img.width, ih: rotated ? img.width : img.height };
+    }
+    function abrirEditorImagen(src, onDone, onCancel) {
+      if (!src) return;
+      _imgOnDone = onDone || null;
+      _imgOnCancel = onCancel || null;
+      var img = new Image();
+      img.onload = function () {
+        imgEditor.img = img;
+        imgEditor.zoom = 1; imgEditor.panX = 0; imgEditor.panY = 0;
+        imgEditor.mode = 'cover'; imgEditor.rotation = 0; imgEditor.flip = false; imgEditor.aspect = '1:1';
+        var z = document.getElementById('img-zoom'); if (z) z.value = 1;
+        document.querySelectorAll('.img-aspect').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-a') === '1:1'); });
+        document.getElementById('img-editor').classList.add('open');
+        document.body.style.overflow = 'hidden';
+        imgModo('cover');
+      };
+      img.onerror = function () { if (window.mostrarToast) mostrarToast('No se pudo cargar la imagen', 'error'); };
+      img.src = src;
+    }
+    function imgRecalc() {
+      var img = imgEditor.img; if (!img) return;
+      var sz = imgOutSize();
+      var eff = imgEff();
+      var s;
+      if (imgEditor.mode === 'contain') { s = Math.min(sz.W / eff.iw, sz.H / eff.ih); var zz = document.getElementById('img-zoom'); if (zz) zz.disabled = true; }
+      else { s = Math.max(sz.W / eff.iw, sz.H / eff.ih); var z2 = document.getElementById('img-zoom'); if (z2) z2.disabled = false; }
+      imgEditor.baseScale = s;
+      imgEditor.panX = 0; imgEditor.panY = 0;
+      imgDraw();
+    }
+    function imgModo(m) {
+      imgEditor.mode = m;
+      var fit = document.getElementById('img-btn-fit');
+      var cover = document.getElementById('img-btn-cover');
+      if (fit) fit.classList.toggle('on', m === 'contain');
+      if (cover) cover.classList.toggle('on', m === 'cover');
+      imgEditor.zoom = 1;
+      var z = document.getElementById('img-zoom'); if (z) z.value = 1;
+      imgRecalc();
+    }
+    function imgAspect(a) {
+      imgEditor.aspect = a;
+      document.querySelectorAll('.img-aspect').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-a') === a); });
+      imgEditor.zoom = 1;
+      var z = document.getElementById('img-zoom'); if (z) z.value = 1;
+      imgRecalc();
+    }
+    function imgRotar() { imgEditor.rotation = (imgEditor.rotation + 90) % 360; imgRecalc(); }
+    function imgEspejo() { imgEditor.flip = !imgEditor.flip; imgDraw(); }
+    function imgReset() {
+      imgEditor.rotation = 0; imgEditor.flip = false; imgEditor.aspect = '1:1';
+      document.querySelectorAll('.img-aspect').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-a') === '1:1'); });
+      imgEditor.mode = 'cover';
+      imgModo('cover');
+    }
+    function imgZoomChange(v) { imgEditor.zoom = parseFloat(v); imgClamp(); imgDraw(); }
+    function imgDraw() {
+      var canvas = document.getElementById('img-editor-canvas');
+      var img = imgEditor.img;
+      if (!canvas || !img) return;
+      var sz = imgOutSize();
+      if (canvas.width !== sz.W) canvas.width = sz.W;
+      if (canvas.height !== sz.H) canvas.height = sz.H;
+      var ctx = canvas.getContext('2d');
+      var eff = imgEff();
+      var scale = imgEditor.baseScale * imgEditor.zoom;
+      ctx.clearRect(0, 0, sz.W, sz.H);
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, sz.W, sz.H);
+      ctx.save();
+      ctx.translate(sz.W / 2, sz.H / 2);
+      if (imgEditor.flip) ctx.scale(-1, 1);
+      if (imgEditor.rotation) ctx.rotate(imgEditor.rotation * Math.PI / 180);
+      ctx.drawImage(img, imgEditor.panX - (eff.iw * scale) / 2, imgEditor.panY - (eff.ih * scale) / 2, eff.iw * scale, eff.ih * scale);
+      ctx.restore();
+    }
+    function imgClamp() {
+      var img = imgEditor.img; if (!img) return;
+      if (imgEditor.mode !== 'cover') { imgEditor.panX = 0; imgEditor.panY = 0; return; }
+      var sz = imgOutSize();
+      var eff = imgEff();
+      var scale = imgEditor.baseScale * imgEditor.zoom;
+      var w = eff.iw * scale, h = eff.ih * scale;
+      var maxX = Math.max(0, (w - sz.W) / 2);
+      var maxY = Math.max(0, (h - sz.H) / 2);
+      imgEditor.panX = Math.min(maxX, Math.max(-maxX, imgEditor.panX));
+      imgEditor.panY = Math.min(maxY, Math.max(-maxY, imgEditor.panY));
+    }
+    function imgInitDrag() {
+      var wrap = document.getElementById('img-editor-wrap');
+      if (!wrap) return;
+      var dragging = false, sx = 0, sy = 0, sox = 0, soy = 0;
+      function start(e) {
+        if (imgEditor.mode !== 'cover') return;
+        dragging = true;
+        var p = e.touches && e.touches.length ? e.touches[0] : e;
+        sx = p.clientX; sy = p.clientY;
+        sox = imgEditor.panX; soy = imgEditor.panY;
+        e.preventDefault();
+      }
+      function move(e) {
+        if (!dragging) return;
+        var p = e.touches && e.touches.length ? e.touches[0] : e;
+        var sz = imgOutSize();
+        var rect = wrap.getBoundingClientRect();
+        var kx = sz.W / rect.width;
+        var ky = sz.H / rect.height;
+        imgEditor.panX = sox + (p.clientX - sx) * kx;
+        imgEditor.panY = soy + (p.clientY - sy) * ky;
+        imgClamp();
+        imgDraw();
+      }
+      function end() { dragging = false; }
+      wrap.addEventListener('mousedown', start);
+      window.addEventListener('mousemove', move);
+      window.addEventListener('mouseup', end);
+      wrap.addEventListener('touchstart', start, { passive: false });
+      window.addEventListener('touchmove', move, { passive: false });
+      window.addEventListener('touchend', end);
+    }
+    function aplicarEditorImagen() {
+      var canvas = document.getElementById('img-editor-canvas');
+      if (!canvas || !imgEditor.img) return;
+      canvas.toBlob(function (blob) {
+        if (!blob) { if (window.mostrarToast) mostrarToast('No se pudo procesar la imagen', 'error'); return; }
+        var cb = _imgOnDone; var cc = _imgOnCancel;
+        _imgOnDone = null; _imgOnCancel = null;
+        var fd = new FormData();
+        fd.append('foto', blob, 'editada.png');
+        var tok = (window.__csrfValue && window.__csrfValue()) || '';
+        if (tok) fd.append('_csrf', tok);
+        fetch(IMG_UP_URL, { method: 'POST', body: fd, headers: tok ? { 'x-csrf-token': tok } : {} })
+          .then(function (r) { return r.json(); })
+          .then(function (d) {
+            cerrarEditorImagen();
+            if (d && d.url && cb) cb(d.url);
+            else { if (window.mostrarToast) mostrarToast('No se pudo guardar la imagen', 'error'); if (cc) cc(); }
+          })
+          .catch(function () { cerrarEditorImagen(); if (window.mostrarToast) mostrarToast('Error al guardar la imagen', 'error'); if (cc) cc(); });
+      }, 'image/png');
+    }
+    function cerrarEditorImagen() {
+      var cc = _imgOnCancel;
+      _imgOnDone = null; _imgOnCancel = null;
+      document.getElementById('img-editor').classList.remove('open');
+      document.body.style.overflow = '';
+      if (cc) cc();
+    }
+    function subirConEditor(inputId, campoId, previewId) {
+      var input = document.getElementById(inputId);
+      if (!input || !input.files || !input.files[0]) return;
+      var f = input.files[0];
+      var rd = new FileReader();
+      rd.onload = function () {
+        abrirEditorImagen(rd.result, function (url) {
+          var campo = document.getElementById(campoId);
+          if (campo) { campo.value = url; campo.dispatchEvent(new Event('change')); }
+          var prev = document.getElementById(previewId);
+          if (prev) prev.src = url;
+          if (window.mostrarToast) mostrarToast('Imagen aplicada ✓', 'ok');
+        });
+      };
+      rd.readAsDataURL(f);
+      input.value = '';
+    }
+    imgInitDrag();
+  </script>
+</body>
+</html>

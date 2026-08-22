@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= biz.name %> | Tienda pausada</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100 min-h-screen flex items-center justify-center px-4">
+  <div class="text-center bg-white p-8 md:p-10 rounded-2xl shadow max-w-md w-full">
+    <p class="text-5xl mb-3"><%= reason === 'expired' ? '⏰' : '⏸️' %></p>
+    <h1 class="font-extrabold text-lg text-slate-900"><%= biz.name %></h1>
+    <% if (reason === 'expired') { %>
+      <p class="text-sm text-slate-500 mt-2">El plan de esta tienda ha <b class="text-slate-700">vencido</b> y el catálogo está temporalmente pausado.</p>
+      <p class="text-xs text-slate-400 mt-2">Para renovar o reactivar tu tienda, ponte en contacto con el soporte.</p>
+    <% } else { %>
+      <p class="text-sm text-slate-500 mt-2">Esta tienda está <b class="text-slate-700">pausada</b> por el momento.</p>
+      <p class="text-xs text-slate-400 mt-2">Vuelve pronto o contacta al negocio por otros medios.</p>
+    <% } %>
+    <a href="/" class="inline-block mt-5 text-sm font-bold text-blue-600 hover:text-blue-800 transition">← Volver al inicio</a>
+  </div>
+</body>
+</html>

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <%- include('admin/head', { title: 'Planes', biz }) %>
+</head>
+<body class="m-material bg-slate-100 min-h-screen">
+  <%- include('admin/sidebar', { biz, active: 'planes' }) %>
+
+  <main class="md:pl-60">
+    <div class="max-w-5xl mx-auto px-3 md:px-6 py-4 md:py-6 pb-24 md:pb-6">
+
+      <div class="text-center mb-6">
+        <h1 class="text-xl md:text-2xl font-black tracking-tight text-slate-900">Elige tu plan</h1>
+        <p class="text-sm text-slate-500 mt-1">Cambia de plan cuando quieras. El plan se aplica de inmediato.</p>
+      </div>
+
+      <% if (ok) { %>
+        <div class="mb-4 bg-emerald-50 text-emerald-700 text-sm font-bold px-4 py-3 rounded-xl m-pop">Plan actualizado correctamente ✓</div>
+      <% } %>
+
+      <div class="grid md:grid-cols-3 gap-4 items-start">
+        <% plans.forEach(p => { %>
+          <% const esActual = biz.plan === p.key; %>
+          <div class="m-card p-5 relative <%= esActual ? 'ring-2 ring-blue-500' : '' %>">
+            <% if (esActual) { %>
+              <span class="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-[10px] font-black uppercase tracking-wide px-3 py-1 rounded-full">Tu plan</span>
+            <% } %>
+            <h2 class="font-black text-lg text-slate-900"><%= p.name %></h2>
+            <div class="flex items-baseline gap-1 mt-1 mb-4">
+              <span class="text-2xl font-black text-slate-900">$<%= Number(p.price || 0).toFixed(0) %></span>
+              <span class="text-xs text-slate-400"><%= p.days > 0 ? '/ ' + p.days + ' días' : 'para siempre' %></span>
+            </div>
+            <ul class="space-y-2 text-sm text-slate-600 mb-5">
+              <li class="flex items-center gap-2">
+                <span class="<%= p.max_products === -1 ? 'text-emerald-500' : 'text-slate-400' %>">✓</span>
+                <%= p.max_products === -1 ? 'Productos ilimitados' : 'Hasta ' + p.max_products + ' productos' %>
+              </li>
+              <li class="flex items-center gap-2">
+                <span class="<%= p.ads === 0 ? 'text-emerald-500' : 'text-slate-400' %>">✓</span>
+                <%= p.ads === 0 ? 'Sin publicidad de otras tiendas' : 'Muestra publicidad de otras tiendas' %>
+              </li>
+              <li class="flex items-center gap-2">
+                <span class="<%= p.design === 1 ? 'text-emerald-500' : 'text-slate-400' %>">✓</span>
+                <%= p.design === 1 ? 'Diseño personalizable (constructor)' : 'Diseño básico' %>
+              </li>
+              <li class="flex items-center gap-2">
+                <span class="text-emerald-500">✓</span> Pedidos por WhatsApp
+              </li>
+            </ul>
+            <% if (esActual) { %>
+              <button class="m-btn m-btn-outlined w-full" disabled>Plan actual</button>
+            <% } else { %>
+              <form method="POST" action="/<%= biz.slug %>/admin/plan">
+                <input type="hidden" name="plan" value="<%= p.key %>">
+                <button class="m-btn m-btn-filled w-full">Contratar <%= p.name %></button>
+              </form>
+            <% } %>
+          </div>
+        <% }) %>
+      </div>
+
+      <p class="text-center text-xs text-slate-400 mt-6">El pago se procesa fuera de la plataforma. Si tienes dudas, escríbenos por WhatsApp.</p>
+
+    </div>
+  </main>
+
+  <%- include('admin/panel-ajax') %>
+  <%- include('admin/toast') %>
+</body>
+</html>

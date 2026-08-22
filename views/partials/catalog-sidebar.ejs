@@ -1,0 +1,77 @@
+<% var _f = typeof filters !== 'undefined' && filters ? filters : {}; %>
+<% var _id = _f.id || 'g'; %>
+<% var _fi = (typeof fi !== 'undefined' && typeof fi === 'number') ? fi : 0; %>
+<% var _anyF = (_f.filtroBusqueda !== 'no') || (_f.filtroCategorias !== 'no') || (_f.filtroPrecio !== 'no') || (_f.filtroAtributos !== 'no'); %>
+<% if (_anyF) { %>
+<aside data-sec="categorias" class="catalog-sidebar w-full lg:w-64 lg:shrink-0 mb-5 lg:mb-0">
+  <div class="lg:sticky lg:top-20">
+    <!-- Encabezado del drawer en móvil -->
+    <div class="lg:hidden flex items-center justify-between mb-3">
+      <span class="font-extrabold text-slate-800 text-base">Filtros</span>
+      <button type="button" id="filters-close-<%= _id %>" class="w-8 h-8 rounded-full bg-slate-100 text-slate-500 font-bold flex items-center justify-center">✕</button>
+    </div>
+
+    <% if (_f.filtroBusqueda !== 'no') { %>
+    <div class="relative mb-4">
+      <input id="search-input-<%= _id %>" oninput="applySearch('<%= _id %>')" placeholder="Buscar productos…"
+             class="search-input w-full text-sm rounded-xl px-4 py-3 pl-11 focus:outline-none placeholder:text-neutral-400" />
+      <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400/70" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+    </div>
+    <% } %>
+
+    <div class="lg:max-h-[calc(100vh-170px)] lg:overflow-y-auto lg:pr-1">
+      <% if (_f.filtroCategorias !== 'no') { %>
+      <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Categorías</p>
+      <nav class="catalog-cats flex flex-wrap lg:flex-col gap-1 lg:gap-0.5 pb-3 lg:pb-0">
+        <button onclick="filterCat('<%= _id %>', 0)" class="cat-chip chip-active flex items-center justify-between gap-2 text-left text-sm font-semibold px-3 py-2 rounded-lg whitespace-nowrap transition w-full">✨ Todos <span class="cat-chip-count text-[10px] font-bold bg-black/10 rounded-full px-1.5 py-0.5"><%= categories.reduce((s,c)=>s+(c.count||0),0) %></span></button>
+        <% categories.forEach(c => { %>
+          <button onclick="filterCat('<%= _id %>', <%= c.id %>)" data-cat="<%= c.id %>" class="cat-chip chip-idle flex items-center justify-between gap-2 text-left text-sm font-semibold px-3 py-2 rounded-lg whitespace-nowrap transition w-full"><%= c.name %> <span class="cat-chip-count text-[10px] font-bold bg-black/5 rounded-full px-1.5 py-0.5"><%= c.count || 0 %></span></button>
+        <% }) %>
+      </nav>
+      <% } %>
+
+      <% if (_f.filtroPrecio !== 'no') { %>
+      <div id="price-filters-<%= _id %>" class="mt-4 border-t border-slate-100 pt-3">
+        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Precio</p>
+        <div class="flex items-center gap-1.5">
+          <input id="price-min-<%= _id %>" type="number" min="0" inputmode="numeric" placeholder="Mín" oninput="applySearch('<%= _id %>')" class="price-min w-full min-w-0 text-sm border border-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+          <span class="text-slate-400 text-xs">–</span>
+          <input id="price-max-<%= _id %>" type="number" min="0" inputmode="numeric" placeholder="Máx" oninput="applySearch('<%= _id %>')" class="price-max w-full min-w-0 text-sm border border-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+        </div>
+      </div>
+      <% } %>
+
+      <% if (_f.filtroAtributos !== 'no') { %>
+      <div id="variant-filters-<%= _id %>" data-attrs="<%= _f.filtroAttrs || '' %>" class="variant-filters mt-4"></div>
+      <% } %>
+
+      <button type="button" id="clear-filters-<%= _id %>" onclick="resetFilters('<%= _id %>')" style="display:none" class="clear-filters mt-4 w-full text-xs font-bold text-red-500 hover:text-red-700 flex items-center justify-center gap-1.5 py-2 rounded-xl hover:bg-red-50 transition">
+        ✕ Limpiar filtros
+      </button>
+    </div>
+  </div>
+</aside>
+
+<!-- Drawer móvil: botón flotante + fondo (uno por bloque) -->
+<button type="button" id="filters-fab-<%= _id %>" class="lg:hidden fixed left-4 z-[1190] flex items-center gap-1.5 px-4 py-3 rounded-full bg-slate-900 text-white text-sm font-bold shadow-xl active:scale-95 transition" style="bottom:calc(16px + <%= _fi %> * 60px)">
+  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M6 12h12M10 18h4"/></svg>
+  Filtros
+</button>
+<div id="filters-backdrop-<%= _id %>" class="lg:hidden fixed inset-0 z-[1240] bg-black/40 hidden"></div>
+
+<script>
+  (function () {
+    var fab = document.getElementById('filters-fab-<%= _id %>');
+    var backdrop = document.getElementById('filters-backdrop-<%= _id %>');
+    var close = document.getElementById('filters-close-<%= _id %>');
+    var block = fab ? fab.closest('[data-sec="productos"]') : null;
+    var sb = block ? block.querySelector('.catalog-sidebar') : null;
+    if (!sb || !fab || !backdrop) return;
+    function open() { sb.classList.add('drawer-open'); backdrop.classList.remove('hidden'); document.body.style.overflow = 'hidden'; }
+    function closeFn() { sb.classList.remove('drawer-open'); backdrop.classList.add('hidden'); document.body.style.overflow = ''; }
+    fab.addEventListener('click', open);
+    backdrop.addEventListener('click', closeFn);
+    if (close) close.addEventListener('click', closeFn);
+  })();
+</script>
+<% } %>

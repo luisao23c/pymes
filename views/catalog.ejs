@@ -1,0 +1,6 @@
+<%
+  const templates = ['clasica', 'premium', 'juvenil', 'minimal', 'restaurante', 'portada', 'revista', 'barrio', 'galeria', 'ofertas'];
+  const ctorTemplates = ['abarrotes', 'frutas', 'carniceria', 'panaderia', 'braza', 'cafeteria', 'fotografo', 'viaje', 'peluqueria', 'spa', 'dentista', 'veterinaria', 'eventos', 'limpieza', 'construccion', 'tienda'];
+  const tpl = templates.includes(biz.template) ? biz.template : (ctorTemplates.includes(biz.template) ? 'constructor' : 'clasica');
+%>
+<%- include('templates/' + tpl, { biz, categories, products, estilo, components, pages, theme: typeof theme !== 'undefined' ? theme : null, editMode: typeof editMode !== 'undefined' ? editMode : undefined }) %>

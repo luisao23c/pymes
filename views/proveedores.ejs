@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <%- include('admin/head', { title: 'Proveedores', biz }) %>
+</head>
+<body class="m-material bg-slate-100 min-h-screen">
+  <%- include('admin/sidebar', { biz, active: 'proveedores', canDesign }) %>
+
+  <main class="md:pl-60">
+    <div class="max-w-4xl mx-auto px-3 md:px-6 py-4 md:py-5 pb-24 md:pb-6">
+
+      <div class="mb-4">
+        <h1 class="text-lg md:text-xl font-black tracking-tight text-slate-900">Proveedores y compras</h1>
+        <p class="text-xs text-slate-500 mt-0.5">Registra proveedores, arma pedidos y repón stock al recibir.</p>
+      </div>
+
+      <% if (ok) { %>
+        <div class="mb-3 bg-emerald-50 text-emerald-700 text-sm font-bold px-4 py-3 rounded-xl m-pop">Guardado ✓</div>
+      <% } %>
+
+      <!-- Proveedores -->
+      <section class="m-card p-4 mb-3">
+        <h2 class="font-extrabold text-slate-900 text-sm mb-3">Proveedores <span class="m-badge m-badge-neutral !ml-1"><%= suppliers.length %></span></h2>
+        <form method="POST" action="/<%= biz.slug %>/admin/proveedor" class="grid sm:grid-cols-2 gap-3 mb-3">
+          <div class="m-field"><label>Nombre *</label><input name="name" required placeholder="Ej: Distribuidora Torres"></div>
+          <div class="m-field"><label>WhatsApp</label><input name="phone" inputmode="numeric" placeholder="Ej: 8712345678"></div>
+          <div class="m-field sm:col-span-2"><label>Notas</label><input name="notes" placeholder="Ej: entrega los martes"></div>
+          <div class="sm:col-span-2"><button class="m-btn m-btn-filled w-full !min-h-11">Guardar proveedor</button></div>
+        </form>
+        <div class="flex flex-wrap gap-2">
+          <% suppliers.forEach(s => { %>
+            <span class="m-chip">
+              <%= s.name %><% if (s.phone) { %> · <%= s.phone %><% } %>
+              <form method="POST" action="/<%= biz.slug %>/admin/proveedor/<%= s.id %>/eliminar" data-confirm="¿Eliminar a <%= s.name %>?" class="inline">
+                <button class="text-slate-400 hover:text-red-500 font-bold leading-none" title="Eliminar">✕</button>
+              </form>
+            </span>
+          <% }) %>
+          <% if (!suppliers.length) { %><p class="text-xs text-slate-400">Aún no tienes proveedores.</p><% } %>
+        </div>
+      </section>
+
+      <!-- Nuevo pedido de compra -->
+      <section class="m-card p-4 mb-3">
+        <h2 class="font-extrabold text-slate-900 text-sm mb-3">Nuevo pedido de compra</h2>
+        <form method="POST" action="/<%= biz.slug %>/admin/compra" id="po-form">
+          <div class="m-field mb-3">
+            <label>Proveedor</label>
+            <select name="supplier_id" id="po-supplier">
+              <option value="">Selecciona…</option>
+              <% suppliers.forEach(s => { %><option value="<%= s.id %>"><%= s.name %></option><% }) %>
+            </select>
+          </div>
+
+          <p class="font-bold text-xs text-slate-600 mb-1.5">Productos del pedido</p>
+          <div id="po-items" class="space-y-2 mb-2"></div>
+          <div class="flex flex-wrap items-center gap-2 mb-3">
+            <button type="button" onclick="poAddRow()" class="m-btn m-btn-tonal m-btn-sm">＋ Agregar línea</button>
+            <details class="inline-block">
+              <summary class="text-xs font-bold text-blue-600 hover:text-blue-700 cursor-pointer">📋 Pegar lista (Excel/CSV)</summary>
+              <div class="mt-2">
+                <textarea id="po-paste" rows="4" placeholder="producto, cantidad, costo&#10;Tornillos 8mm, 10, 3.50" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                <button type="button" onclick="poPaste()" class="m-btn m-btn-tonal m-btn-sm mt-1">Cargar lista</button>
+              </div>
+            </details>
+          </div>
+
+          <div class="flex items-center justify-between bg-slate-50 rounded-xl px-4 py-3 mb-3">
+            <span class="text-xs font-bold text-slate-500">Total estimado</span>
+            <span id="po-total" class="font-black text-lg text-slate-900">$0.00</span>
+          </div>
+
+          <input type="hidden" name="items" id="po-items-json">
+          <button type="submit" class="m-btn m-btn-filled w-full !min-h-11">Registrar pedido</button>
+        </form>
+      </section>
+
+      <!-- Historial -->
+      <section class="m-card p-4">
+        <h2 class="font-extrabold text-slate-900 text-sm mb-3">Pedidos de compra</h2>
+        <% if (pos.length === 0) { %>
+          <p class="text-xs text-slate-400">Sin pedidos todavía.</p>
+        <% } else { %>
+          <div class="space-y-2.5">
+            <% pos.forEach(po => { %>
+              <div class="p-3 rounded-xl border <%= po.received ? 'border-emerald-200 bg-emerald-50/40' : 'border-slate-100' %>">
+                <div class="flex items-center justify-between gap-2 flex-wrap">
+                  <div class="flex items-center gap-2">
+                    <p class="font-bold text-sm text-slate-800"><%= po.supplier_name || 'Sin proveedor' %></p>
+                    <% if (po.received) { %><span class="m-badge m-badge-success !h-5 !text-[10px]">RECIBIDO</span><% } else { %><span class="m-badge m-badge-warn !h-5 !text-[10px]">PENDIENTE</span><% } %>
+                  </div>
+                  <span class="font-black text-slate-900"><%= money(po.total) %></span>
+                </div>
+                <div class="mt-1.5 text-xs text-slate-600 space-y-0.5">
+                  <% po.items.forEach(it => { %>
+                    <div class="flex justify-between gap-2"><span>• <%= it.qty %> x <%= it.name %><% if (it.variant) { %> <span class="text-slate-400">(<%= it.variant %>)</span><% } %></span><span class="text-slate-400"><%= money(it.cost * it.qty) %></span></div>
+                  <% }) %>
+                </div>
+                <p class="text-[10px] text-slate-400 mt-1.5"><%= po.created_at %></p>
+                <div class="flex flex-wrap items-center gap-1.5 mt-2">
+                  <% if (po.supplier_phone) { %>
+                    <a href="https://wa.me/<%= po.supplier_phone.startsWith('52') ? po.supplier_phone : '52' + po.supplier_phone %>?text=<%= po.msg %>" target="_blank" class="m-btn m-btn-sm m-btn-tonal !min-h-0 !py-1.5">💬 Pedir por WhatsApp</a>
+                  <% } %>
+                  <button type="button" onclick="copiarPedido('<%= po.msg %>')" class="m-btn m-btn-sm m-btn-outlined !min-h-0 !py-1.5">📋 Copiar texto</button>
+                  <% if (!po.received) { %>
+                    <form method="POST" action="/<%= biz.slug %>/admin/compra/<%= po.id %>/recibido" data-confirm="¿Marcar como RECIBIDO y sumar el stock a tus productos?" class="inline">
+                      <button class="m-btn m-btn-sm m-btn-filled !min-h-0 !py-1.5 !bg-emerald-600">✓ Recibido (suma stock)</button>
+                    </form>
+                  <% } %>
+                  <form method="POST" action="/<%= biz.slug %>/admin/compra/<%= po.id %>/eliminar" data-confirm="¿Eliminar este pedido?" class="inline">
+                    <button class="m-btn-icon !w-8 !h-8 hover:!bg-red-50 hover:!text-red-500" title="Eliminar">🗑</button>
+                  </form>
+                </div>
+              </div>
+            <% }) %>
+          </div>
+        <% } %>
+      </section>
+
+    </div>
+  </main>
+
+  <%- include('admin/panel-ajax') %>
+  <%- include('admin/toast') %>
+
+  <script>
+    var PRODS = <%- safeJson(products.map(p => ({ id: p.id, name: p.name, sku: p.sku, variantOpts: p.variantOpts || [] }))) %>;
+    var prodNameToId = {};
+    PRODS.forEach(p => prodNameToId[p.name.toLowerCase()] = p.id);
+    var prodById = {};
+    PRODS.forEach(p => prodById[p.id] = p);
+    var prodOptions = '<option value="">— Producto libre —</option>' + PRODS.map(p => '<option value="' + p.id + '">' + p.name.replace(/"/g,'&quot;') + (p.sku ? ' (' + p.sku.replace(/"/g,'&quot;') + ')' : '') + '</option>').join('');
+
+    function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+    function poAddRow(opts) {
+      opts = opts || {};
+      var row = document.createElement('div');
+      row.className = 'po-row flex flex-wrap gap-2 items-center';
+      row.innerHTML =
+        '<select class="po-prod w-full sm:w-auto sm:flex-1 border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">' + prodOptions + '</select>' +
+        '<select class="po-variant w-full sm:w-40 border border-amber-300 bg-amber-50 rounded-xl px-2 py-2 text-sm hidden" title="Atributo"></select>' +
+        '<input type="text" class="po-name w-full sm:w-32 border border-slate-200 rounded-xl px-3 py-2 text-sm hidden" placeholder="Producto">' +
+        '<input type="text" class="po-vname w-full sm:w-32 border border-amber-300 bg-amber-50 rounded-xl px-3 py-2 text-sm hidden" placeholder="Atributo">' +
+        '<input type="number" min="1" class="po-qty w-16 border border-slate-200 rounded-xl px-2 py-2 text-sm" placeholder="Cant.">' +
+        '<input type="number" min="0" step="0.01" class="po-cost w-20 border border-slate-200 rounded-xl px-2 py-2 text-sm" placeholder="Costo">' +
+        '<button type="button" class="po-del w-8 h-8 rounded-full bg-slate-100 text-slate-400 font-bold">✕</button>';
+      var sel = row.querySelector('.po-prod');
+      var vsel = row.querySelector('.po-variant');
+      var name = row.querySelector('.po-name');
+      var vname = row.querySelector('.po-vname');
+      function refreshVariant() {
+        var id = sel.value;
+        var p = id ? prodById[id] : null;
+        if (p && p.variantOpts && p.variantOpts.length) {
+          vsel.innerHTML = '<option value="">— Atributo —</option>' + p.variantOpts.map(function(v){ return '<option value="' + esc(v) + '">' + esc(v) + '</option>'; }).join('');
+          vsel.classList.remove('hidden');
+          vname.classList.add('hidden');
+        } else if (id) {
+          vsel.classList.add('hidden');
+          vsel.innerHTML = '';
+          vname.classList.add('hidden');
+        } else {
+          vsel.classList.add('hidden');
+          vsel.innerHTML = '';
+          vname.classList.remove('hidden');
+        }
+        name.classList.toggle('hidden', sel.value !== '');
+        poRecalc();
+      }
+      sel.addEventListener('change', refreshVariant);
+      vsel.addEventListener('change', poRecalc);
+      name.addEventListener('input', poRecalc);
+      vname.addEventListener('input', poRecalc);
+      row.querySelector('.po-qty').addEventListener('input', poRecalc);
+      row.querySelector('.po-cost').addEventListener('input', poRecalc);
+      row.querySelector('.po-del').onclick = function(){ row.remove(); poRecalc(); };
+      if (opts.product_id) sel.value = opts.product_id;
+      else if (opts.name) { sel.value = ''; name.value = opts.name; }
+      if (opts.qty) row.querySelector('.po-qty').value = opts.qty;
+      if (opts.cost) row.querySelector('.po-cost').value = opts.cost;
+      refreshVariant();
+      if (opts.variant) { vsel.value = opts.variant; }
+      document.getElementById('po-items').appendChild(row);
+      poRecalc();
+    }
+
+    function poRows() { return Array.prototype.slice.call(document.querySelectorAll('.po-row')); }
+
+    function poRecalc() {
+      var total = 0;
+      poRows().forEach(function(r){
+        var qty = parseInt(r.querySelector('.po-qty').value) || 0;
+        var cost = parseFloat(r.querySelector('.po-cost').value) || 0;
+        total += qty * cost;
+      });
+      document.getElementById('po-total').textContent = '$' + total.toFixed(2);
+      document.getElementById('po-items-json').value = JSON.stringify(poSerialize());
+    }
+
+    function poSerialize() {
+      return poRows().map(function(r){
+        var sel = r.querySelector('.po-prod');
+        var prodId = sel.value ? parseInt(sel.value) : null;
+        var prodName = sel.value ? (sel.options[sel.selectedIndex].text.replace(/\s*\(.*\)$/,'')) : r.querySelector('.po-name').value.trim();
+        var variant = r.querySelector('.po-variant').value || r.querySelector('.po-vname').value.trim();
+        return { product_id: prodId, name: prodName, variant: variant, qty: parseInt(r.querySelector('.po-qty').value) || 0, cost: parseFloat(r.querySelector('.po-cost').value) || 0 };
+      }).filter(function(x){ return x.name && x.qty > 0; });
+    }
+
+    function poPaste() {
+      var txt = document.getElementById('po-paste').value;
+      var lines = txt.split(/\r?\n/).map(function(l){ return l.trim(); }).filter(Boolean);
+      lines.forEach(function(line){
+        var m1 = line.match(/^(\d+)\s*[x*]\s*(.+)$/);
+        var parts = line.split(/[,;\t]/).map(function(p){ return p.trim(); });
+        var name, qty, cost;
+        if (m1) { qty = parseInt(m1[1]); name = m1[2]; cost = 0; }
+        else { name = parts[0]; qty = parseInt(parts[1]) || 0; cost = parseFloat(parts[2]) || 0; }
+        if (name && qty > 0) {
+          var id = prodNameToId[name.toLowerCase()] || null;
+          poAddRow({ product_id: id, name: id ? null : name, qty: qty, cost: cost });
+        }
+      });
+      document.getElementById('po-paste').value = '';
+    }
+
+    function copiarPedido(msg) {
+      var text = decodeURIComponent(msg);
+      try { navigator.clipboard.writeText(text); mostrarToast('Texto copiado ✓', 'ok'); } catch(e) { mostrarToast('No se pudo copiar', 'error'); }
+    }
+
+    document.getElementById('po-form').addEventListener('submit', function(e){
+      var items = poSerialize();
+      if (!items.length) { e.preventDefault(); mostrarToast('Agrega al menos un producto', 'error'); return; }
+      if (!document.getElementById('po-supplier').value) { e.preventDefault(); mostrarToast('Selecciona un proveedor', 'error'); return; }
+      document.getElementById('po-items-json').value = JSON.stringify(items);
+    });
+
+    poAddRow();
+  </script>
+</body>
+</html>

@@ -1,0 +1,121 @@
+<script>
+  // SPA-lite: envía los formularios del panel por fetch y reemplaza solo el <main>.
+  // Evita la recarga completa al picar switches, estrellas, cobrar, eliminar, etc.
+  (function () {
+    var main = document.querySelector('main');
+    if (!main) return;
+
+    function loader(on) {
+      var el = document.getElementById('panel-loader');
+      if (!el && on) {
+        el = document.createElement('div');
+        el.id = 'panel-loader';
+        el.innerHTML = '<div class="fixed inset-0 z-[70] flex items-center justify-center bg-white/60 backdrop-blur-[1px]">'
+          + '<div class="flex flex-col items-center gap-2 bg-white rounded-2xl px-5 py-4 shadow-xl border border-slate-100">'
+          + '<span class="w-6 h-6 border-[3px] border-[var(--md-primary)] border-t-transparent rounded-full animate-spin"></span>'
+          + '<p class="text-xs font-bold text-slate-500">Guardando…</p></div></div>';
+        document.body.appendChild(el);
+      }
+      if (el) el.style.display = on ? '' : 'none';
+    }
+
+    function busy(form, on) {
+      var btn = form.querySelector('button[type="submit"], button:not([type])');
+      if (!btn) return;
+      if (on) {
+        btn.dataset.orig = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-1 align-middle"></span>' + btn.innerHTML;
+      } else {
+        btn.disabled = false;
+        if (btn.dataset.orig) btn.innerHTML = btn.dataset.orig;
+      }
+    }
+
+    function swap(html) {
+      var doc = new DOMParser().parseFromString(html, 'text/html');
+      var nuevo = doc.querySelector('main');
+      if (!nuevo) return false;
+      main.innerHTML = nuevo.innerHTML;
+      var modal = document.getElementById('edit-modal');
+      if (modal) modal.classList.add('hidden');
+      document.body.style.overflow = '';
+      if (typeof window.mRefresh === 'function') window.mRefresh();
+      if (typeof window.onPanelSwap === 'function') window.onPanelSwap();
+      return true;
+    }
+
+    document.addEventListener('submit', function (e) {
+      var form = e.target;
+      if (!form || form.tagName !== 'FORM') return;
+      if (!form.closest('main') && !form.hasAttribute('data-ajax')) return;
+      var confirmMsg = form.getAttribute('data-confirm');
+      e.preventDefault();
+      if (confirmMsg) {
+        var fn = function (ok) {
+          if (!ok) return;
+          enviar(form);
+        };
+        pedirConfirmacion(confirmMsg, form.getAttribute('data-confirm-ok') || undefined).then(fn);
+        return;
+      }
+      enviar(form);
+    });
+
+    function enviar(form) {
+      var esNuevoProducto = !!form.querySelector('[name="name"]');
+      busy(form, true);
+      loader(true);
+      var headers = {};
+      if (window.__csrfValue && window.__csrfValue()) headers['x-csrf-token'] = window.__csrfValue();
+      // Se envía urlencoded (no FormData) porque Express no parsea multipart.
+      var params = new URLSearchParams();
+      new FormData(form).forEach(function (v, k) { params.append(k, v); });
+      fetch(form.action, { method: 'POST', body: params, redirect: 'follow', credentials: 'same-origin', headers: headers })
+        .then(function (r) {
+          if (!r.ok) {
+            if (r.status === 403) return Promise.reject({ csrf: true });
+            return r.text().then(function (t) {
+              var doc = new DOMParser().parseFromString(t, 'text/html');
+              var err = doc.getElementById && doc.getElementById('panel-error');
+              return Promise.reject({ msg: err ? err.textContent.replace(/^⚠️\s*/, '').trim() : 'No se pudo guardar.' });
+            });
+          }
+          return r.text();
+        })
+        .then(function (html) {
+          busy(form, false);
+          loader(false);
+          if (swap(html)) {
+            if (esNuevoProducto) {
+              var sec = document.getElementById('productos');
+              if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+            var msgBox = main.querySelector('#panel-msg');
+            var errBox = main.querySelector('#panel-error');
+            if (msgBox) {
+              mostrarToast(msgBox.textContent.trim(), msgBox.getAttribute('data-tipo') === 'error' ? 'error' : 'ok');
+              msgBox.remove();
+            } else if (errBox) {
+              mostrarToast('No se pudo guardar. Revisa el mensaje.', 'error');
+            } else {
+              mostrarToast('Listo ✓', 'ok');
+            }
+          } else {
+            location.reload();
+          }
+        })
+        .catch(function (err) {
+          busy(form, false);
+          loader(false);
+          if (err && err.csrf) {
+            mostrarToast('Sesión expirada. Recarga la página.', 'error');
+          } else if (err && err.msg) {
+            mostrarToast(err.msg, 'error');
+          } else {
+            mostrarToast('Error de red. Intenta de nuevo.', 'error');
+          }
+        });
+    }
+  })();
+</script>

@@ -1,0 +1,30 @@
+<script>
+  function subirFoto(inputId, campoId, previewId, fileInput) {
+    const input = fileInput || document.getElementById(inputId);
+    if (!input || !input.files || !input.files[0]) return;
+    const fd = new FormData();
+    fd.append('foto', input.files[0]);
+    const tok = (window.__csrfValue && window.__csrfValue()) || '';
+    if (tok) fd.append('_csrf', tok);
+    const prev = document.getElementById(previewId);
+    if (prev) prev.classList.add('opacity-50');
+    const uploadUrl = '<%= locals.esMaestro ? "/maestro/" + biz.id + "/upload" : "/" + biz.slug + "/admin/upload" %>';
+    fetch(uploadUrl, { method: 'POST', body: fd, headers: tok ? { 'x-csrf-token': tok } : {} })
+      .then(r => r.json())
+      .then(d => {
+        if (d.url) {
+          document.getElementById(campoId).value = d.url;
+          document.getElementById(campoId).dispatchEvent(new Event('change'));
+          if (prev) prev.src = d.url;
+          if (window.mostrarToast) mostrarToast('Imagen subida ✓', 'ok');
+        } else {
+          if (window.mostrarToast) mostrarToast('No se pudo subir. Usa .jpg, .png o .webp y menos de 5MB.', 'error');
+        }
+      })
+      .catch(() => { if (window.mostrarToast) mostrarToast('Error al subir la imagen.', 'error'); })
+      .finally(() => {
+        if (prev) prev.classList.remove('opacity-50');
+        input.value = '';
+      });
+  }
+</script>

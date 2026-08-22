@@ -1,0 +1,270 @@
+<%
+  const permsList = (typeof perms !== 'undefined' && Array.isArray(perms)) ? perms : ['productos.ver','productos.crear','productos.editar','productos.eliminar','pedidos.gestionar','reportes','diseno','config','empleados'];
+  const has = (p) => permsList.includes(p);
+  const hasModule = (m) => permsList.some(p => p === m || p.indexOf(m + '.') === 0);
+  const items = [
+    { id: 'panel', label: 'Panel', show: () => has('reportes') || has('pedidos.gestionar'), href: '/' + biz.slug + '/admin/panel', icon: 'M3 12h18M3 6h18M3 18h12M17 18h4' },
+    { id: 'productos', label: 'Productos', show: () => hasModule('productos'), href: '/' + biz.slug + '/admin/productos', icon: 'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4' },
+    { id: 'importar', label: 'Carga masiva', show: () => has('productos.crear'), href: '/' + biz.slug + '/admin/importar', icon: 'M12 4v12m0 0l-4-4m4 4l4-4M4 20h16' },
+    { id: 'diseno', label: 'Diseño', show: () => has('diseno'), href: '/' + biz.slug + '/admin/diseno', icon: 'M12 3v3m0 12v3m-9-9h3m12 0h3M5.6 5.6l2.1 2.1m8.6 8.6l2.1 2.1m0-12.8l-2.1 2.1M7.7 16.3l-2.1 2.1' },
+    { id: 'empleados', label: 'Empleados', show: () => has('empleados'), href: '/' + biz.slug + '/admin/empleados', icon: 'M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zm14 10v-2a4 4 0 00-3-3.87M15 3.13a4 4 0 010 7.75' },
+    { id: 'clientes', label: 'Clientes', show: () => has('clientes'), href: '/' + biz.slug + '/admin/clientes', icon: 'M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m9-6.13a4 4 0 100-8 4 4 0 000 8zM16 7a4 4 0 11-8 0 4 4 0 018 0z' },
+    { id: 'proveedores', label: 'Proveedores', show: () => has('config'), href: '/' + biz.slug + '/admin/proveedores', icon: 'M3 3v18h18M8 14h4m-4-4h4M7 7h10m-7 12h10' },
+    { id: 'config', label: 'Configuración', show: () => has('config'), href: '/' + biz.slug + '/admin/config', icon: 'M4 6h16M4 12h16M4 18h10M14 18h6' },
+    { id: 'planes', label: 'Planes', show: () => has('config'), href: '/' + biz.slug + '/admin/planes', icon: 'M5 3h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2zm4 12h6m-6-4h6m-6-4h6' }
+  ].filter(it => it.show());
+  const avatar = biz.logo || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(biz.name) + '&background=4f46e5&color=fff');
+  const isPro = biz.plan === 'pro';
+  const esEmpleado = typeof isEmployee !== 'undefined' && isEmployee;
+%>
+
+<!-- ============================================================
+SIDEBAR NUEVO (diseño totalmente distinto)
+- Fondo claro con borde lateral
+- Perfil en la parte superior con nombre y plan
+- Enlaces principales centrados, con icono + texto, estilo "botón"
+- Opciones secundarias (modo oscuro, upgrade, salir) en la parte inferior
+- Barra lateral sutil en el borde izquierdo
+============================================================ -->
+<aside class="fixed inset-y-0 left-0 w-56 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm border-r border-slate-200/70 dark:border-slate-700/50 text-slate-700 dark:text-slate-300 hidden md:flex flex-col z-40 shadow-sm transition-colors duration-300">
+  
+  <!-- Perfil: logo + nombre + plan, alineado horizontalmente -->
+  <div class="px-4 pt-5 pb-3 shrink-0 border-b border-slate-200/60 dark:border-slate-700/40">
+    <div class="flex items-center gap-3">
+      <div class="relative shrink-0">
+        <img src="<%= avatar %>" class="w-10 h-10 rounded-xl object-cover ring-2 ring-white/20 dark:ring-slate-700/30 shadow-sm">
+        <span class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-400 ring-2 ring-white dark:ring-slate-900"></span>
+      </div>
+      <div class="min-w-0 flex-1">
+        <p class="font-semibold text-sm truncate leading-tight"><%= esEmpleado ? (typeof empName !== 'undefined' ? empName : 'Empleado') : biz.name %></p>
+        <span class="inline-block text-[10px] font-bold tracking-wide mt-0.5 px-2 py-0.5 rounded-full <%= esEmpleado ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300' : (isPro ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400') %>">
+          <%= esEmpleado ? 'EMPLEADO' : (isPro ? '★ PRO' : 'GRATIS') %>
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Enlaces principales (centrados, estilo botón) -->
+  <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto m-scroll">
+    <% items.forEach(it => { %>
+      <% const act = active === it.id; %>
+      <a href="<%= it.href %>"
+         class="m-ripple group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200
+                <%= act ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300 shadow-[inset_0_1px_0_rgba(255,255,255,.1)]' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800/60' %>">
+        <span class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition
+                     <%= act ? 'bg-indigo-100 text-indigo-600 dark:bg-indigo-500/30 dark:text-indigo-300' : 'bg-transparent text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300' %>">
+          <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="1.9"><path d="<%= it.icon %>"/></svg>
+        </span>
+        <span class="flex-1"><%= it.label %></span>
+        <% if (it.id === 'panel') { %><span id="new-orders-badge" style="display:none" class="min-w-5 h-5 px-1.5 rounded-full bg-red-500 text-white text-[10px] font-black items-center justify-center">0</span><% } %>
+        <% if (it.id === 'productos') { %><span id="low-stock-badge" style="display:<%= (typeof lowStockCount !== 'undefined' && lowStockCount > 0) ? 'flex' : 'none' %>" class="min-w-5 h-5 px-1.5 rounded-full bg-red-500 text-white text-[10px] font-black items-center justify-center" title="Productos con stock bajo o agotado"><%= (typeof lowStockCount !== 'undefined') ? lowStockCount : 0 %></span><% } %>
+        <% if (act) { %>
+          <span class="w-1.5 h-1.5 rounded-full bg-indigo-400 shadow-[0_0_8px_2px_rgba(129,140,248,.3)]"></span>
+        <% } %>
+      </a>
+    <% }) %>
+  </nav>
+
+  <!-- Pie: opciones secundarias (modo oscuro, salir) -->
+  <div class="px-3 pb-3 space-y-2 border-t border-slate-200/60 dark:border-slate-700/40 pt-2">
+    <div class="flex items-center justify-between px-2 py-1.5">
+      <span class="flex items-center gap-2 text-xs font-medium text-slate-400 dark:text-slate-500">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12.8A9 9 0 1111.2 3 7 7 0 0021 12.8z"/></svg>
+        Modo oscuro
+      </span>
+      <button type="button" onclick="toggleDark()" class="m-switch m-ripple">
+        <input id="dark-toggle" type="checkbox">
+        <span class="track"><span class="thumb"></span></span>
+      </button>
+    </div>
+
+    <a href="/<%= biz.slug %>/admin/salir"
+       class="m-ripple flex items-center gap-3 px-2 py-2 rounded-xl text-xs font-semibold text-red-400 hover:text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-500/10 transition">
+      <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4m7 14l5-5-5-5m5 5H9"/></svg>
+      Salir
+    </a>
+  </div>
+</aside>
+
+<!-- ============================================================
+SCRIPT: Toggle modo oscuro
+============================================================ -->
+<script>
+  function toggleDark() {
+    var on = document.body.classList.toggle('dark');
+    try { localStorage.setItem('panel_dark', on ? '1' : '0'); } catch (e) {}
+  }
+  (function () {
+    var dark = false;
+    try { dark = localStorage.getItem('panel_dark') === '1'; } catch (e) {}
+    if (dark) document.body.classList.add('dark');
+    var t = document.getElementById('dark-toggle');
+    if (t) t.checked = dark;
+  })();
+</script>
+
+<script>
+  // Notificación de pedidos nuevos (sin recargar): badge + sonido cuando llega un pedido.
+  (function () {
+    var badge = document.getElementById('new-orders-badge');
+    var onPanel = <%= (active === 'panel') ? 'true' : 'false' %>;
+    var showPanel = <%= (has('reportes') || has('pedidos.gestionar')) ? 'true' : 'false' %>;
+    if (!showPanel) return;
+    var slug = '<%= biz.slug %>';
+    var key = 'lastOrder_' + slug;
+    var lastSeen = 0, initialized = false, prevCount = 0;
+    try { lastSeen = parseInt(localStorage.getItem(key) || '0', 10) || 0; } catch (e) {}
+    function beep() {
+      try {
+        var AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return;
+        var ctx = new AC();
+        var o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sine'; o.frequency.value = 880;
+        o.connect(g); g.connect(ctx.destination);
+        g.gain.setValueAtTime(0.0001, ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.18, ctx.currentTime + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.4);
+        o.start(); o.stop(ctx.currentTime + 0.42);
+      } catch (e) {}
+    }
+    function poll() {
+      fetch('/' + slug + '/admin/api/new-orders', { credentials: 'same-origin' })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (!d || d.lastId === undefined) return;
+          if (!initialized) {
+            if (!lastSeen) lastSeen = d.lastId;
+            initialized = true;
+          }
+          if (onPanel) {
+            lastSeen = d.lastId;
+            if (badge) badge.style.display = 'none';
+            try { localStorage.setItem(key, String(lastSeen)); } catch (e) {}
+            prevCount = 0;
+            return;
+          }
+          var count = d.lastId - lastSeen;
+          if (count > 0) {
+            if (badge) { badge.textContent = count; badge.style.display = 'flex'; }
+            if (count > prevCount) {
+              beep();
+              if (window.mostrarToast) mostrarToast(count + ' pedido(s) nuevo(s) 🛎️', 'ok');
+            }
+          }
+          prevCount = count;
+        }).catch(function () {});
+    }
+    poll();
+    setInterval(poll, 15000);
+  })();
+</script>
+
+<script>
+  // Aviso de stock bajo (sin recargar): badge + sonido cuando algo se va agotando.
+  (function () {
+    var badge = document.getElementById('low-stock-badge');
+    if (!badge) return;
+    var slug = '<%= biz.slug %>';
+    var prev = parseInt(badge.textContent, 10) || 0;
+    var first = true;
+    function beep() {
+      try {
+        var AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return;
+        var ctx = new AC();
+        var o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sine'; o.frequency.value = 660;
+        o.connect(g); g.connect(ctx.destination);
+        g.gain.setValueAtTime(0.0001, ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.18, ctx.currentTime + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.35);
+        o.start(); o.stop(ctx.currentTime + 0.37);
+      } catch (e) {}
+    }
+    function poll() {
+      fetch('/' + slug + '/admin/api/low-stock', { credentials: 'same-origin' })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (!d || d.count === undefined) return;
+          if (badge) {
+            if (d.count > 0) { badge.textContent = d.count; badge.style.display = 'flex'; }
+            else badge.style.display = 'none';
+          }
+          if (!first && d.count > prev) {
+            beep();
+            if (window.mostrarToast) mostrarToast('⚠️ ' + d.count + ' producto(s) con stock bajo', 'info');
+          }
+          first = false;
+          prev = d.count;
+        }).catch(function () {});
+    }
+    poll();
+    setInterval(poll, 30000);
+  })();
+</script>
+
+<!-- ============================================================
+BARRA SUPERIOR MÓVIL (sin cambios, solo para móvil)
+============================================================ -->
+<div class="md:hidden sticky top-0 z-40 bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm border-b border-slate-200/60 dark:border-slate-700/50 text-slate-700 dark:text-slate-300 shadow-sm">
+  <div class="flex items-center justify-between px-4 h-14">
+    <a href="/<%= biz.slug %>/admin/panel" class="flex items-center gap-2 min-w-0">
+      <img src="<%= avatar %>" class="w-8 h-8 rounded-lg object-cover ring-1 ring-white/20 dark:ring-slate-700/30 shrink-0">
+      <span class="font-extrabold text-sm truncate"><%= biz.name %></span>
+    </a>
+    <div class="flex items-center gap-1">
+      <a href="/<%= biz.slug %>" target="_blank" class="p-2 text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 rounded-lg transition" title="Ver catálogo">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0zM2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z"/></svg>
+      </a>
+      <a href="/<%= biz.slug %>/admin/salir" class="p-2 text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition" title="Salir">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4m7 14l5-5-5-5m5 5H9"/></svg>
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+BOTTOM NAV MÓVIL (máx 4 opciones + "Más")
+============================================================ -->
+<% const PRIO = { panel:0, productos:1, clientes:2, proveedores:3, config:4, diseno:5, importar:6, empleados:7, planes:8 }; %>
+<% const navItems = items.slice().sort((a, b) => ((PRIO[a.id] !== undefined ? PRIO[a.id] : 99) - (PRIO[b.id] !== undefined ? PRIO[b.id] : 99))); %>
+<% const mainNav = navItems.slice(0, 4); const moreNav = navItems.slice(4); %>
+<nav class="m-bottomnav md:hidden m-scroll">
+  <div class="flex w-full">
+    <% mainNav.forEach(it => { %>
+      <a href="<%= it.href %>" class="m-ripple <%= active === it.id ? 'm-active' : '' %>">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8"><path d="<%= it.icon %>"/></svg>
+        <span><%= it.label %></span>
+      </a>
+    <% }) %>
+    <% if (moreNav.length) { %>
+      <button type="button" class="m-ripple <%= moreNav.some(x => x.id === active) ? 'm-active' : '' %>" onclick="abrirMasMenu()">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z"/></svg>
+        <span>Más</span>
+      </button>
+    <% } %>
+  </div>
+</nav>
+
+<!-- Menú "Más" (móvil) -->
+<div id="mas-menu" class="md:hidden fixed inset-0 z-[60] hidden">
+  <div class="absolute inset-0 bg-black/50" onclick="document.getElementById('mas-menu').classList.add('hidden')"></div>
+  <div class="absolute bottom-0 left-0 right-0 bg-white dark:bg-slate-900 rounded-t-2xl p-4 pb-8 max-h-[72vh] overflow-y-auto m-scroll">
+    <div class="flex items-center justify-between mb-3">
+      <p class="font-extrabold text-slate-800 dark:text-white text-sm">Más opciones</p>
+      <button type="button" onclick="document.getElementById('mas-menu').classList.add('hidden')" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 font-bold">✕</button>
+    </div>
+    <div class="grid grid-cols-3 gap-2">
+      <% moreNav.forEach(it => { %>
+        <a href="<%= it.href %>" class="flex flex-col items-center gap-1.5 py-3 rounded-xl <%= active === it.id ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300' %>">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8"><path d="<%= it.icon %>"/></svg>
+          <span class="text-[11px] font-bold text-center leading-tight"><%= it.label %></span>
+        </a>
+      <% }) %>
+    </div>
+  </div>
+</div>
+<script>
+  function abrirMasMenu() { var m = document.getElementById('mas-menu'); if (m) m.classList.remove('hidden'); }
+</script>
