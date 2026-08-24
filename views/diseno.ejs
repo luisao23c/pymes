@@ -356,31 +356,9 @@
     .pv-row .col{min-width:0;}
     .pv-row .col-empty{border:1.5px dashed #e3d5c2;border-radius:10px;padding:22px 10px;text-align:center;color:#b39c82;font-size:12px;}
     .pv-row .col-empty button{margin-top:8px;border:none;background:var(--pc-accent);color:#fff;border-radius:14px;padding:5px 12px;font-size:11px;cursor:pointer;font-weight:600;}
-    .pv-mascara{position:relative;overflow:hidden;min-height:80px;}
-    .pv-mascara .mascara-inner{position:relative;width:100%;height:100%;padding:0;}
-    .pv-mascara .mascara-inner .blk{width:100%;height:100%;min-width:0;box-sizing:border-box;margin:0;padding:0;}
-    .pv-mascara .mascara-child{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;overflow:hidden;}
-    .pv-mascara .mascara-child *{box-sizing:border-box;}
-    .pv-mascara .mascara-child>div:not(.resize-handle){width:100%;height:100%;box-sizing:border-box;}
-    .pv-mascara .mascara-child .blk>div{width:100%;height:100%;box-sizing:border-box;}
-    .pv-mascara .mascara-child img{width:100%!important;height:100%!important;object-fit:cover!important;margin:0!important;padding:0!important;display:block;}
-    .pv-mascara .mascara-child a,.pv-mascara .mascara-child button{width:100%!important;height:100%!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:0!important;margin:0!important;border-radius:0!important;text-decoration:none;}
-    .pv-mascara .mascara-child p,.pv-mascara .mascara-child h2,.pv-mascara .mascara-child h3{margin:0!important;padding:0!important;width:100%;height:100%;text-align:center!important;display:flex!important;align-items:center!important;justify-content:center!important;}
-    .pv-mascara .mascara-child input,.pv-mascara .mascara-child textarea{width:100%!important;height:100%!important;margin:0!important;padding:0 8px!important;border:none!important;background:transparent!important;box-sizing:border-box;}
-    .pv-mascara .mascara-preview{position:absolute;inset:0;pointer-events:none;}
-    .pv-mascara .mascara-child .resize-handle{position:absolute;background:#ea580c;border:2px solid #fff;border-radius:50%;width:14px;height:14px;cursor:se-resize;opacity:0;transition:opacity .15s;z-index:5;}
-    .pv-mascara .mascara-child:hover .resize-handle{opacity:1;}
-    .pv-mascara .mascara-child .resize-handle.br{right:-7px;bottom:-7px;}
-    .pv-mascara .mascara-child .resize-handle.tr{right:-7px;top:-7px;cursor:ne-resize;}
-    .pv-mascara .mascara-child .resize-handle.bl{left:-7px;bottom:-7px;cursor:ne-resize;}
-    .pv-mascara .mascara-child .resize-handle.tl{left:-7px;top:-7px;cursor:nw-resize;}
-    .pv-mascara .mascara-child .resize-handle.move{position:absolute;left:50%;top:-11px;transform:translateX(-50%);background:#ea580c;border:2px solid #fff;border-radius:6px;width:26px;height:14px;cursor:move;opacity:0;transition:opacity .15s;z-index:5;}
-    .pv-mascara .mascara-child:hover .resize-handle.move{opacity:1;}
-    .pv-mascara .mascara-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:22px 10px;text-align:center;color:#b39c82;font-size:12px;}
-    .pv-mascara .mascara-empty button{margin-top:8px;border:none;background:var(--pc-accent);color:#fff;border-radius:14px;padding:5px 12px;font-size:11px;cursor:pointer;font-weight:600;}
-    .pv-mascara .mascara-zone{min-height:40px;}
-    .pv-mascara .mascara-zone .zone-add{display:inline-block;margin:4px 0;border:1.5px dashed #e3d5c2;background:rgba(255,255,255,.7);color:#b39c82;border-radius:10px;padding:8px 14px;font-size:12px;cursor:pointer;font-weight:600;width:100%;text-align:center;}
-    .pv-mascara .mascara-zone .zone-add:hover{border-color:var(--pc-accent);color:var(--pc-accent);}
+    /* Máscara — CSS canónica desde lib/mascara.js */
+    <%- mascaraConfig.MASCARA_CSS %>
+    /* Editor-only: shape picker UI */
     .shape-editor{position:relative;width:100%;margin:8px 0;}
     .shape-editor svg{width:100%;height:auto;border:1.5px solid #e3d5c2;border-radius:12px;background:#fafaf7;cursor:crosshair;display:block;}
     .shape-editor svg .shape-fill{fill:var(--pc-accent,#ea580c);fill-opacity:.15;stroke:var(--pc-accent,#ea580c);stroke-width:2;}
@@ -817,27 +795,13 @@
   var CAPTIONPOSOPTS = [['none','Debajo de la imagen'],['top-left','Encima · arriba izquierda'],['top','Encima · arriba centro'],['top-right','Encima · arriba derecha'],['left','Encima · centro izquierda'],['center','Encima · centro'],['right','Encima · centro derecha'],['bottom-left','Encima · abajo izquierda'],['bottom','Encima · abajo centro'],['bottom-right','Encima · abajo derecha']];
   var OVERLAYOPTS = [['none','Sin capa'],['soft','Capa suave'],['strong','Capa intensa']];
   var MASCARA_SIZEOPTS = [['xs','Extra pequeño'],['s','Pequeño'],['m','Mediano'],['l','Grande'],['xl','Extra grande'],['2xl','Doble XL']];
-  var MASCARA_SIZES = {xs:120,s:180,m:260,l:340,xl:420,'2xl':520};
-var SHAPE_DEFS = {
-    circle:   {label:'Círculo',     cp:function(){ return 'circle(50% at 50% 50%)'; }, pts:function(){ return []; }, svg:'M2,20 A18,18 0 1,1 38,20 A18,18 0 1,1 2,20 Z'},
-    square:   {label:'Cuadrado',    cp:function(){ return 'inset(0)'; }, pts:function(){ return []; }, svg:'M2,2 L38,2 L38,38 L2,38 Z'},
-    roundrect:{label:'Rect. redondeado', cp:function(){ return 'inset(0 round 12px)'; }, pts:function(){ return []; }, svg:'M8,2 L32,2 Q38,2 38,8 L38,32 Q38,38 32,38 L8,38 Q2,38 2,32 L2,8 Q2,2 8,2 Z'},
-    pill:     {label:'Óvalo',       cp:function(){ return 'ellipse(50% 38% at 50% 50%)'; }, pts:function(){ return []; }, svg:'M4,20 A16,14 0 1,1 36,20 A16,14 0 1,1 4,20 Z'},
-    triangle: {label:'Triángulo',   cp:function(){ return 'polygon(50% 0%, 100% 100%, 0% 100%)'; }, pts:function(){ return []; }, svg:'M20,2 L38,38 L2,38 Z'},
-    diamond:  {label:'Rombo',       cp:function(){ return 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)'; }, pts:function(){ return []; }, svg:'M20,2 L38,20 L20,38 L2,20 Z'},
-    star4:    {label:'Estrella 4',  cp:function(){ return 'polygon(50% 0%, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0% 50%, 38% 38%)'; }, pts:function(){ return []; }, svg:'M20,2 L25,15 L38,20 L25,25 L20,38 L15,25 L2,20 L15,15 Z'},
-    star5:    {label:'Estrella 5',  cp:function(){ var o=[]; for(var i=0;i<10;i++){var a=Math.PI/2+i*Math.PI/5;var r=i%2===0?48:20;o.push([Math.round(50+r*Math.cos(a)*100/96),Math.round(50-r*Math.sin(a)*100/96)]);} return 'polygon('+o.map(function(v){return v[0]+'% '+v[1]+'%';}).join(',')+')'; },
-      pts:function(){ var o=[]; for(var i=0;i<10;i++){var a=Math.PI/2+i*Math.PI/5;var r=i%2===0?48:20;o.push([Math.round(50+r*Math.cos(a)*100/96),Math.round(50-r*Math.sin(a)*100/96)]);} return o; },
-      svg:'M20,2 L24,14 L37,14 L27,22 L30,35 L20,27 L10,35 L13,22 L3,14 L16,14 Z'},
-    star6:    {label:'Estrella 6',  cp:function(){ var o=[]; for(var i=0;i<12;i++){var a=Math.PI/2+i*Math.PI/6;var r=i%2===0?48:22;o.push([Math.round(50+r*Math.cos(a)*100/96),Math.round(50-r*Math.sin(a)*100/96)]);} return 'polygon('+o.map(function(v){return v[0]+'% '+v[1]+'%';}).join(',')+')'; },
-      pts:function(){ var o=[]; for(var i=0;i<12;i++){var a=Math.PI/2+i*Math.PI/6;var r=i%2===0?48:22;o.push([Math.round(50+r*Math.cos(a)*100/96),Math.round(50-r*Math.sin(a)*100/96)]);} return o; },
-      svg:'M20,2 L24,12 L33,8 L28,18 L37,22 L27,24 L30,34 L20,28 L10,34 L13,24 L3,22 L12,18 L7,8 L16,12 Z'},
-    custom:   {label:'Personalizar',cp:function(p){ return 'polygon('+p.map(function(v){return v[0]+'% '+v[1]+'%';}).join(',')+')'; },
-      pts:function(){ return [[50,2],[97,50],[50,98],[3,50]]; },
-      svg:'M20,2 L38,20 L20,38 L2,20 Z'}
-  };
-  function getShapeClip(variant, points){
-    if (points && variant==='custom') return SHAPE_DEFS.custom.cp(points);
+  var MASCARA_SIZES = <%- JSON.stringify(mascaraConfig.MASCARA_SIZES) %>;
+  var SHAPE_DEFS = {};
+  <% Object.keys(mascaraConfig.SHAPE_DEFS).forEach(function(k) { var d = mascaraConfig.SHAPE_DEFS[k]; var pts = d.pts(); var clipStr = JSON.stringify(d.clip(pts)); var ptsStr = JSON.stringify(pts); %>
+  SHAPE_DEFS[<%- JSON.stringify(k) %>] = {label:<%- JSON.stringify(d.label) %>, cp:function(){ return <%- clipStr %>; }, pts:function(){ return <%- ptsStr %>; }, svg:<%- JSON.stringify(d.svg) %>};
+  <% }); %>
+  function getShapeClip(variant, points) {
+    if (points && variant === 'custom') return SHAPE_DEFS.custom.cp(points);
     var def = SHAPE_DEFS[variant] || SHAPE_DEFS.circle;
     return def.cp(def.pts());
   }
@@ -1649,7 +1613,7 @@ var SHAPE_DEFS = {
         var mlay = b.layout||'stack';
         var mpts = b.points ? b.points.split(';').map(function(s){ var p=s.split(','); return [parseFloat(p[0])||0,parseFloat(p[1])||0]; }) : [];
         var mclip = getShapeClip(sh, mpts);
-        var mchildren = (b.children||[]).length ? b.children.map(function(bb){ return '<div class="mascara-child" data-child-id="'+bb.id+'"'+(bb.style?' style="'+esc(bb.style)+'"':'')+'>'+renderBlockHTML(bb)+'<div class="resize-handle move" title="Mover"></div><div class="resize-handle br"></div><div class="resize-handle tr"></div><div class="resize-handle bl"></div><div class="resize-handle tl"></div></div>'; }).join('') : '';
+        var mchildren = (b.children||[]).length ? b.children.map(function(bb){ return '<div class="mascara-child" data-child-id="'+bb.id+'">'+renderBlockHTML(bb)+'<div class="resize-handle br"></div><div class="resize-handle tr"></div><div class="resize-handle bl"></div><div class="resize-handle tl"></div></div>'; }).join('') : '';
         var innerStyle = mlay==='grid' ? 'flex-direction:row;flex-wrap:wrap;justify-content:center;' : 'flex-direction:column;';
         var mheight = b.width==='fill' ? '100%' : (MASCARA_SIZES[b.size]||260)+'px';
         var mstyle = 'width:'+msz+';height:'+mheight+';clip-path:'+mclip+';-webkit-clip-path:'+mclip+';'+bgStyle(b)+(b.border!=='none'?'border:'+b.border+'px solid #f0e6d8;':'')+(b.radius&&b.radius!=='0'?'border-radius:'+b.radius+'px;':'');
@@ -3150,13 +3114,11 @@ var SHAPE_DEFS = {
       var isTR = handle.classList.contains('tr');
       var isBL = handle.classList.contains('bl');
       var isTL = handle.classList.contains('tl');
-      var isMove = handle.classList.contains('move');
       function onMove(ev){
         var dx = ev.clientX - startX;
         var dy = ev.clientY - startY;
         var newW = startW, newH = startH, newL = startL, newT = startT;
-        if (isMove) { newL = startL + dx; newT = startT + dy; }
-        else if (isBR) { newW = Math.max(40, startW + dx); newH = Math.max(40, startH + dy); }
+        if (isBR) { newW = Math.max(40, startW + dx); newH = Math.max(40, startH + dy); }
         else if (isTR) { newW = Math.max(40, startW + dx); newH = Math.max(40, startH - dy); newT = startT + dy; }
         else if (isBL) { newW = Math.max(40, startW - dx); newH = Math.max(40, startH + dy); newL = startL + dx; }
         else if (isTL) { newW = Math.max(40, startW - dx); newH = Math.max(40, startH - dy); newL = startL + dx; newT = startT + dy; }

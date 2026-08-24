@@ -1,13 +1,13 @@
 const express = require('express');
 const db = require('./db');
 const path = require('path');
+const { MASCARA_SIZES, SHAPE_DEFS, getShapeClip, MASCARA_CSS, EDITOR_ONLY_CSS } = require('./lib/mascara');
 const crypto = require('crypto');
 const multer = require('multer');
 const XLSX = require('xlsx');
 const ExcelJS = require('exceljs');
 const QRCode = require('qrcode');
 const { TPL_THEMES, TPL_META, TPL_CASOS } = require('./templates-data');
-const ShapeLib = require('./public/js/shape-lib.js');
 const app = express();
 
 // Carga variables de entorno desde .env (si existe), sin dependencias externas
@@ -139,7 +139,6 @@ function storeBlock(biz) {
 }
 
 app.set('view engine', 'ejs');
-app.locals.shapeLib = ShapeLib;
 app.set('views', path.join(__dirname, 'views'));
 // Serializa JSON de forma segura para incrustarlo en <script> (evita XSS con "</script>")
 app.locals.safeJson = function (v) {
@@ -620,16 +619,7 @@ function paintCatalog(html, biz, pal, estilo) {
       '.product-card .absolute.top-2.left-2,.product-card .absolute.top-3.left-2,.offer-card .absolute.top-2.left-2,.product-ad-badge{font-size:.55rem!important;padding:.12rem .45rem!important;line-height:1.25!important;max-width:calc(50% - 8px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
       '.product-card .badge-offer{top:.4rem!important;right:.4rem!important}' +
     '}' +
-    '.pv-mascara{position:relative;overflow:hidden;min-height:80px;}' +
-    '.pv-mascara .mascara-inner{position:relative;width:100%;height:100%;padding:0;}' +
-    '.pv-mascara .mascara-inner .blk{width:100%;height:100%;min-width:0;box-sizing:border-box;margin:0;padding:0;}' +
-    '.pv-mascara .mascara-child{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;overflow:hidden;}' +
-    '.pv-mascara .mascara-child *{box-sizing:border-box;}' +
-    '.pv-mascara .mascara-child img{width:100%!important;height:100%!important;object-fit:cover!important;margin:0!important;padding:0!important;display:block;}' +
-    '.pv-mascara .mascara-child a,.pv-mascara .mascara-child button{width:100%!important;height:100%!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:0!important;margin:0!important;border-radius:0!important;text-decoration:none;}' +
-    '.pv-mascara .mascara-child p,.pv-mascara .mascara-child h2,.pv-mascara .mascara-child h3{margin:0!important;padding:0!important;width:100%;height:100%;text-align:center!important;display:flex!important;align-items:center!important;justify-content:center!important;}' +
-    '.pv-mascara .mascara-child input,.pv-mascara .mascara-child textarea{width:100%!important;height:100%!important;margin:0!important;padding:0 8px!important;border:none!important;background:transparent!important;box-sizing:border-box;}' +
-    '.pv-mascara .mascara-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:22px 10px;text-align:center;color:#b39c82;font-size:12px;}' +
+    MASCARA_CSS.replace(/\n\s*/g,'').replace(/<\/?style>/g,'') +
     '</style>';
   // Metadatos PWA + viewport nativo (instalable como app)
   html = html.replace(/<meta name="viewport"[^>]*>/, '<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />');
@@ -1386,7 +1376,7 @@ app.get('/:slug', (req, res) => {
   res.locals.money = moneyFor(biz);
   res.locals.currencySymbol = currencyInfo(biz.currency).symbol;
   res.locals.currencyCode = biz.currency;
-  app.render('catalog', { biz, categories, products: productsFinal, estilo, theme: getTemplateTheme(biz.template), components: getComponents(biz), pages, seoUrl: BASE_URL ? BASE_URL + '/' + biz.slug : '', money: moneyFor(biz), currencySymbol: currencyInfo(biz.currency).symbol, currencyCode: biz.currency }, (err, html) => {
+  app.render('catalog', { biz, categories, products: productsFinal, estilo, theme: getTemplateTheme(biz.template), components: getComponents(biz), pages, seoUrl: BASE_URL ? BASE_URL + '/' + biz.slug : '', money: moneyFor(biz), currencySymbol: currencyInfo(biz.currency).symbol, currencyCode: biz.currency, mascaraCss: MASCARA_CSS, mascaraConfig: { MASCARA_SIZES, SHAPE_DEFS, getShapeClip } }, (err, html) => {
     if (err) return res.status(500).send('Error al generar el catálogo.');
     res.send(finishCatalog(html, biz, pal, estilo));
   });
@@ -1413,7 +1403,7 @@ app.get('/:slug/p/:id', (req, res) => {
       res.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
       console.log('=== ROUTE HIT: Rendering catalog for:', bizOv.slug);
       console.log('bizOv.blocks:', bizOv.blocks ? 'present' : 'empty');
-      app.render('catalog', { biz: bizOv, categories, products, estilo, theme: getTemplateTheme(biz.template), components: getComponents(bizOv), pages, seoUrl: BASE_URL ? BASE_URL + '/' + biz.slug : '', money: moneyFor(biz), currencySymbol: currencyInfo(biz.currency).symbol, currencyCode: biz.currency }, (err, html) => {
+      app.render('catalog', { biz: bizOv, categories, products, estilo, theme: getTemplateTheme(biz.template), components: getComponents(bizOv), pages, seoUrl: BASE_URL ? BASE_URL + '/' + biz.slug : '', money: moneyFor(biz), currencySymbol: currencyInfo(biz.currency).symbol, currencyCode: biz.currency, mascaraCss: MASCARA_CSS, mascaraConfig: { MASCARA_SIZES, SHAPE_DEFS, getShapeClip } }, (err, html) => {
         if (err) { console.error('Template render error:', err.stack || err); return res.status(500).send('Error al generar la página: ' + err.message); }
         console.log('Template rendered, length:', html ? html.length : 0);
         console.log('Calling finishCatalog...');
@@ -1544,7 +1534,7 @@ function previewCatalog(biz, q, res) {
   }
   prods = prods.map(p => { p.imgs = productImgs(p); return p; });
   res.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
-  app.render('catalog', { biz: bizOv, categories: cats, products: prods, estilo, theme: getTemplateTheme(bizOv.template), components: q.edit === '1' ? parseComponents(bizOv) : getComponents(bizOv), pages, editMode: q.edit === '1', seoUrl: '', money: moneyFor(biz), currencySymbol: currencyInfo(biz.currency).symbol, currencyCode: biz.currency }, (err, html) => {
+  app.render('catalog', { biz: bizOv, categories: cats, products: prods, estilo, theme: getTemplateTheme(bizOv.template), components: q.edit === '1' ? parseComponents(bizOv) : getComponents(bizOv), pages, editMode: q.edit === '1', seoUrl: '', money: moneyFor(biz), currencySymbol: currencyInfo(biz.currency).symbol, currencyCode: biz.currency, mascaraCss: MASCARA_CSS, mascaraConfig: { MASCARA_SIZES, SHAPE_DEFS, getShapeClip } }, (err, html) => {
     if (err) return res.status(500).send('Error al generar la vista previa.');
     res.send(finishCatalog(html, bizOv, pal, estilo));
   });
@@ -2936,7 +2926,7 @@ app.post('/:slug/admin/config', requireAuth, (req, res) => {
 // ================= CONSTRUCTOR DE DISEÑO (apartado propio) =================
 app.get('/:slug/admin/diseno', requireAuth, can('diseno'), (req, res) => {
   res.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
-  res.render('diseno', { ...configLocals(req.biz, {}), active: 'diseno', money: moneyFor(req.biz), currencySymbol: currencyInfo(req.biz.currency).symbol });
+  res.render('diseno', { ...configLocals(req.biz, {}), active: 'diseno', money: moneyFor(req.biz), currencySymbol: currencyInfo(req.biz.currency).symbol, mascaraConfig: { MASCARA_SIZES, SHAPE_DEFS, getShapeClip: getShapeClip.toString(), MASCARA_CSS: MASCARA_CSS.replace(/\n\s*/g,'') } });
 });
 
 // ================= PLANES (el dueño ve y elige su plan) =================
@@ -3144,7 +3134,7 @@ app.get('/maestro/:id/diseno', maestroAuth, (req, res) => {
   const biz = db.prepare('SELECT * FROM businesses WHERE id = ?').get(req.params.id);
   if (!biz) return res.redirect('/maestro/panel');
   res.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
-  res.render('diseno', { ...configLocals(biz, { esMaestro: true }), money: moneyFor(biz), currencySymbol: currencyInfo(biz.currency).symbol });
+  res.render('diseno', { ...configLocals(biz, { esMaestro: true }), money: moneyFor(biz), currencySymbol: currencyInfo(biz.currency).symbol, mascaraConfig: { MASCARA_SIZES, SHAPE_DEFS, getShapeClip: getShapeClip.toString(), MASCARA_CSS: MASCARA_CSS.replace(/\n\s*/g,'') } });
 });
 
 // Cambiar PIN (con el actual)

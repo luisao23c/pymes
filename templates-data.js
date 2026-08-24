@@ -19,6 +19,7 @@
 // ---------------------------------------------------------------------------
 // 1) CSS COMPARTIDO — se genera una vez, todas las plantillas lo heredan.
 // ---------------------------------------------------------------------------
+const { MASCARA_CSS: _MASCARA_CSS_FROM_MODULE } = require('./lib/mascara');
 const SHARED_CSS = `
 .ct-hero{display:grid;grid-template-columns:1.08fr .92fr;gap:44px;align-items:center;padding:52px 8px 36px;}
 .ct-hero-single{grid-template-columns:1fr;text-align:center;max-width:780px;margin:0 auto;}
@@ -62,27 +63,10 @@ a:focus-visible,button:focus-visible,summary:focus-visible{outline:3px solid var
   .ct-fig,.ct-shapes{height:220px;}
   .grid4{grid-template-columns:repeat(2,1fr);}
 }
-.pv-mascara{position:relative;overflow:hidden;min-height:80px;display:flex;align-items:stretch;justify-content:center;}
-.pv-mascara .mascara-inner{position:relative;width:100%;height:100%;display:flex;gap:0;padding:0;align-items:stretch;min-height:0;}
-.pv-mascara .mascara-inner .blk{width:100%;height:100%;min-width:0;box-sizing:border-box;margin:0;padding:0;}
-.pv-mascara .mascara-child{flex:1 1 0;min-height:0;min-width:0;width:100%;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;}
-.pv-mascara .mascara-child *{box-sizing:border-box;}
-.pv-mascara .mascara-child [data-sec]{width:100%!important;height:100%!important;margin:0!important;padding:0!important;display:flex!important;align-items:center!important;justify-content:center!important;box-sizing:border-box;}
-.pv-mascara .mascara-child [data-sec]>*{width:100%!important;height:100%!important;display:flex!important;align-items:center!important;justify-content:center!important;margin:0!important;}
-.pv-mascara .mascara-child img{width:100%!important;height:100%!important;object-fit:cover!important;margin:0!important;padding:0!important;display:block;}
-.pv-mascara .mascara-child a,.pv-mascara .mascara-child button,.pv-mascara .mascara-child span{width:100%!important;height:100%!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:0!important;margin:0!important;border-radius:0!important;text-decoration:none;}
-.pv-mascara .mascara-child p,.pv-mascara .mascara-child h2,.pv-mascara .mascara-child h3{margin:0!important;padding:0!important;width:100%;height:100%;text-align:center!important;display:flex!important;align-items:center!important;justify-content:center!important;}
-.pv-mascara .mascara-child input,.pv-mascara .mascara-child textarea{width:100%!important;height:100%!important;margin:0!important;padding:0 8px!important;border:none!important;background:transparent!important;box-sizing:border-box;}
-.pv-mascara .mascara-empty{flex:1;display:flex;align-items:center;justify-content:center;padding:22px 10px;text-align:center;color:#b39c82;font-size:12px;width:100%;}
-.pv-mascara .mascara-empty button{margin-top:8px;border:none;background:var(--pc-accent);color:#fff;border-radius:14px;padding:5px 12px;font-size:11px;cursor:pointer;font-weight:600;}
-.pv-mascara .mascara-zone{min-height:40px;}
-.pv-mascara .mascara-zone .zone-add{display:inline-block;margin:4px 0;border:1.5px dashed #e3d5c2;background:rgba(255,255,255,.7);color:#b39c82;border-radius:10px;padding:8px 14px;font-size:12px;cursor:pointer;font-weight:600;width:100%;text-align:center;}
-.pv-mascara .mascara-zone .zone-add:hover{border-color:var(--pc-accent);color:var(--pc-accent);}
-
 @media(prefers-reduced-motion:reduce){
   .ct-btn,.pcard,.product-card,.offer-card{transition:none;}
 }
-`;
+` + _MASCARA_CSS_FROM_MODULE;
 
 // Figura compartida para el grupo de "3 formas flotando".
 const SHAPES_FIG_TPL = '<div class="ct-shapes"><div class="ct-shape s1">{0}</div><div class="ct-shape s2">{1}</div><div class="ct-shape s3">{2}</div></div>';

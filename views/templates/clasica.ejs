@@ -141,19 +141,7 @@
     .scrollbar-hide::-webkit-scrollbar { display: none; }
     .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 
-    /* Máscara geométrica */
-    .pv-mascara{position:relative;overflow:hidden;min-height:80px;display:flex;align-items:stretch;justify-content:center;}
-    .pv-mascara .mascara-inner{position:relative;width:100%;height:100%;display:flex;gap:0;padding:0;align-items:stretch;min-height:0;}
-    .pv-mascara .mascara-inner .blk{width:100%;height:100%;min-width:0;box-sizing:border-box;margin:0;padding:0;}
-    .pv-mascara .mascara-child{flex:1 1 0;min-height:0;min-width:0;width:100%;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;}
-    .pv-mascara .mascara-child *{box-sizing:border-box;}
-    .pv-mascara .mascara-child [data-sec]{width:100%!important;height:100%!important;margin:0!important;padding:0!important;display:flex!important;align-items:center!important;justify-content:center!important;box-sizing:border-box;}
-    .pv-mascara .mascara-child [data-sec]>*{width:100%!important;height:100%!important;display:flex!important;align-items:center!important;justify-content:center!important;margin:0!important;}
-    .pv-mascara .mascara-child img{width:100%!important;height:100%!important;object-fit:cover!important;margin:0!important;padding:0!important;display:block;}
-    .pv-mascara .mascara-child a,.pv-mascara .mascara-child button,.pv-mascara .mascara-child span{width:100%!important;height:100%!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:0!important;margin:0!important;border-radius:0!important;text-decoration:none;}
-    .pv-mascara .mascara-child p,.pv-mascara .mascara-child h2,.pv-mascara .mascara-child h3{margin:0!important;padding:0!important;width:100%;height:100%;text-align:center!important;display:flex!important;align-items:center!important;justify-content:center!important;}
-    .pv-mascara .mascara-child input,.pv-mascara .mascara-child textarea{width:100%!important;height:100%!important;margin:0!important;padding:0 8px!important;border:none!important;background:transparent!important;box-sizing:border-box;}
-    .pv-mascara .mascara-empty{flex:1;display:flex;align-items:center;justify-content:center;padding:22px 10px;text-align:center;color:#b39c82;font-size:12px;width:100%;}
+    /* Máscara geométrica — CSS viene de lib/mascara.js via SHARED_CSS */
   </style>
 </head>
 <body>
@@ -185,7 +173,7 @@
 
   <!-- MAIN -->
   <main data-sec="contenido" class="w-full px-4 py-8 pb-28">
-    <%- include('../partials/components', { biz, products, money, categories, components, pages, editMode }) %>
+    <%- include('../partials/components', { biz, products, money, categories, components, pages, editMode, mascaraCss: mascaraCss, mascaraConfig: mascaraConfig }) %>
   </main>
 
 
