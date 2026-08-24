@@ -1533,24 +1533,11 @@ function previewCatalog(biz, q, res) {
     prods = PREVIEW_PRODS;
   }
   prods = prods.map(p => { p.imgs = productImgs(p); return p; });
-  
-  // Si es una petición para iframe del diseñador, devolver solo el contenido esencial
-  const isFrame = q.frame === '1';
-  if (isFrame) {
-    // Para el iframe del diseñador: HTML minimalista con todos los CSS necesarios
-    const components = q.edit === '1' ? parseComponents(bizOv) : getComponents(bizOv);
-    app.render('catalog', { biz: bizOv, categories: cats, products: prods, estilo, theme: getTemplateTheme(bizOv.template), components, pages, editMode: q.edit === '1', seoUrl: '', money: moneyFor(biz), currencySymbol: currencyInfo(biz.currency).symbol, currencyCode: biz.currency, mascaraCss: MASCARA_CSS, mascaraConfig: { MASCARA_SIZES, SHAPE_DEFS, getShapeClip } }, (err, html) => {
-      if (err) return res.status(500).send('Error al generar la vista previa.');
-      res.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
-      res.send(finishCatalog(html, bizOv, pal, estilo));
-    });
-  } else {
-    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
-    app.render('catalog', { biz: bizOv, categories: cats, products: prods, estilo, theme: getTemplateTheme(bizOv.template), components: q.edit === '1' ? parseComponents(bizOv) : getComponents(bizOv), pages, editMode: q.edit === '1', seoUrl: '', money: moneyFor(biz), currencySymbol: currencyInfo(biz.currency).symbol, currencyCode: biz.currency, mascaraCss: MASCARA_CSS, mascaraConfig: { MASCARA_SIZES, SHAPE_DEFS, getShapeClip } }, (err, html) => {
-      if (err) return res.status(500).send('Error al generar la vista previa.');
-      res.send(finishCatalog(html, bizOv, pal, estilo));
-    });
-  }
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+  app.render('catalog', { biz: bizOv, categories: cats, products: prods, estilo, theme: getTemplateTheme(bizOv.template), components: q.edit === '1' ? parseComponents(bizOv) : getComponents(bizOv), pages, editMode: q.edit === '1', seoUrl: '', money: moneyFor(biz), currencySymbol: currencyInfo(biz.currency).symbol, currencyCode: biz.currency, mascaraCss: MASCARA_CSS, mascaraConfig: { MASCARA_SIZES, SHAPE_DEFS, getShapeClip } }, (err, html) => {
+    if (err) return res.status(500).send('Error al generar la vista previa.');
+    res.send(finishCatalog(html, bizOv, pal, estilo));
+  });
 }
 
 app.get('/:slug/admin/preview', requireAuth, (req, res) => {

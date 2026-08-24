@@ -564,7 +564,7 @@
         </div>
       </div>
       <div class="canvas-device-wrap" id="canvas-device-wrap">
-        <iframe id="canvas-content" class="prev" src="about:blank" frameborder="0" sandbox="allow-same-origin allow-scripts"></iframe>
+        <div id="canvas-content" class="prev"></div>
       </div>
     </div>
   </div>
@@ -1074,7 +1074,7 @@
       var btn = document.createElement('button');
       btn.className = 'page-tab' + (pg.id===paginaActiva?' active':'');
       btn.innerHTML = (pg.icon||'📄') + ' ' + esc(pg.title);
-      btn.onclick = function(){ paginaActiva = pg.id; renderTabs(); updateCanvasContent(); };
+      btn.onclick = function(){ paginaActiva = pg.id; renderTabs(); renderCanvas(); };
       var edit = document.createElement('button');
       edit.className='edit-title'; edit.textContent='✎'; edit.title='Renombrar página';
       edit.onclick = function(e){ e.stopPropagation(); var t = prompt('Nombre de la página', pg.title); if (t){ pg.title=t; marcarCambio(); renderTabs(); } };
@@ -1199,54 +1199,6 @@
   function renderCanvas(){
     var host = document.getElementById('canvas-content');
     if (!host) return;
-    
-    // Obtener la URL de vista previa con todos los parámetros necesarios
-    var previewUrl = window.location.pathname.replace(/\\/diseno$/, '/preview') + '?frame=1&edit=1';
-    
-    // Agregar todos los parámetros de diseño actuales
-    var params = new URLSearchParams();
-    params.set('frame', '1');
-    params.set('edit', '1');
-    params.set('template', biz.template || '<%= biz.template %>');
-    params.set('estilo', biz.estilo || 'clasico');
-    params.set('color', biz.color || 'azul');
-    params.set('color_hex', biz.color_hex || '#2563eb');
-    params.set('color_hex2', biz.color_hex2 || '#0ea5e9');
-    params.set('color_mode', biz.color_mode || 'degradado');
-    params.set('grid_cols', biz.grid_cols || 3);
-    params.set('accent', biz.accent || '#4f46e5');
-    params.set('accent2', biz.accent2 || '#818cf8');
-    params.set('header', biz.header || '');
-    params.set('header_text', biz.header_text || '');
-    params.set('page_bg', biz.page_bg || '#ffffff');
-    params.set('logo', biz.logo || '');
-    params.set('banner', biz.banner || '');
-    params.set('sections', JSON.stringify(PAGINAS));
-    params.set('blocks', JSON.stringify(getActiva().blocks));
-    params.set('font', (typeof getEffectiveEstilo === 'function' ? getEffectiveEstilo(biz).font : ''));
-    params.set('bg', (typeof getEffectiveEstilo === 'function' ? getEffectiveEstilo(biz).bg : ''));
-    params.set('card', (typeof getEffectiveEstilo === 'function' ? getEffectiveEstilo(biz).card : ''));
-    params.set('text', (typeof getEffectiveEstilo === 'function' ? getEffectiveEstilo(biz).text : ''));
-    params.set('muted', (typeof getEffectiveEstilo === 'function' ? getEffectiveEstilo(biz).muted : ''));
-    params.set('border', (typeof getEffectiveEstilo === 'function' ? getEffectiveEstilo(biz).border : ''));
-    params.set('radius', (typeof getEffectiveEstilo === 'function' ? getEffectiveEstilo(biz).radius : ''));
-    
-    // Construir URL completa
-    previewUrl = window.location.origin + window.location.pathname.replace(/\\/diseno$/, '/preview') + '?' + params.toString();
-    
-    // Actualizar el iframe con la URL de vista previa
-    host.src = previewUrl;
-    
-    var totalBlocks = countBlocks(getActiva().blocks);
-    var bc = document.getElementById('block-count');
-    if (bc) bc.innerHTML = '<span class="bc-num">' + totalBlocks + '</span> ' + (totalBlocks === 1 ? 'bloque' : 'bloques');
-  }
-  
-  // Función para actualizar solo el contenido del canvas sin recargar el iframe
-  function updateCanvasContent(){
-    var host = document.getElementById('canvas-content');
-    if (!host || !host.contentWindow) return;
-    
     var blocks = getActiva().blocks;
     var nav = renderNavHTML();
     var body = blocks.length
@@ -1254,31 +1206,14 @@
       : '<div class="empty-canvas">Esta página está vacía.<br><button onclick="abrirPickerRaiz()">➕ Agregar el primer bloque</button></div>';
     var navTop = nav && NAV_STYLE.posicion !== 'abajo';
     var designHtml = navTop ? (nav + body) : (body + nav);
-    
-    // Inyectar el nuevo contenido en el iframe
-    try {
-      var doc = host.contentWindow.document;
-      var pane = doc.querySelector('.design-pane');
-      if (pane) {
-        pane.innerHTML = designHtml;
-        // Re-bind events
-        bindSliders(pane);
-        bindReveals(pane);
-      }
-    } catch(e) {
-      // Si falla, recargar el iframe
-      renderCanvas();
-    }
-  }
-  
-  function setupCanvasEvents(){
-    var host = document.getElementById('canvas-content');
-    if (!host || !host.contentDocument) return;
-    
-    host.onload = function(){
-      var designPane = host.contentDocument.querySelector('.design-pane');
-      if (!designPane) return;
-      
+    host.innerHTML = '<div class="design-pane">' + designHtml + '</div>';
+
+    var totalBlocks = countBlocks(blocks);
+    var bc = document.getElementById('block-count');
+    if (bc) bc.innerHTML = '<span class="bc-num">' + totalBlocks + '</span> ' + (totalBlocks === 1 ? 'bloque' : 'bloques');
+
+    var designPane = host.querySelector('.design-pane');
+    if (designPane) {
       if (designPane.querySelector('[data-nav-root]')) {
         designPane.querySelector('[data-nav-root]').addEventListener('click', function(e){
           if (e.target && e.target.closest && e.target.closest('button[data-prev-tab]')) return;
@@ -3395,7 +3330,6 @@
   bindMascaraResize();
   applyPalette();
   renderTabs();
-  setupCanvasEvents();
   renderCanvas();
   if (!HAS_BLOCKS && !TPL_SEL && !(defaultStack && defaultStack.length)) abrirPlantillas();
 
