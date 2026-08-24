@@ -39,5 +39,14 @@
         </div>
       </div>
     <% } %>
+  <% } else if (b.type === 'overlay') { %>
+    <% var _obg = b.bg || 'rgba(0,0,0,.55)'; %>
+    <% var _obg2 = b.bg2 || ''; %>
+    <% var _obs = _obg && _obg2 ? 'background:linear-gradient(135deg,' + _obg + ',' + _obg2 + ');' : 'background:' + _obg + ';'; %>
+    <div style="position:relative;margin:0 0 16px;">
+      <div style="position:absolute;left:<%= parseInt(b.posX) || 50 %>%;top:<%= parseInt(b.posY) || 50 %>%;transform:translate(-50%,-50%) rotate(<%= parseInt(b.rotation) || 0 %>deg);z-index:<%= parseInt(b.zIndex) || 10 %>;opacity:<%= b.opacity ? (parseInt(b.opacity) / 100) : 1 %>;<%= _obs %>border-radius:<%= parseInt(b.radius) || 6 %>px;padding:10px 16px;min-width:60px;text-align:center;">
+        <span style="font-size:<%= b.fontSize ? (parseInt(b.fontSize) || 17) : 17 %>px;<%= b.bold === 'si' ? 'font-weight:700;' : '' %><%= b.uppercase === 'si' ? 'text-transform:uppercase;' : '' %><%= b.textShadow === 'si' ? 'text-shadow:0 2px 12px rgba(0,0,0,.5);' : '' %><%= b.font ? 'font-family:' + b.font + ',sans-serif;' : '' %><%= b.color ? 'color:' + b.color + ';' : 'color:#fff;' %>"><%= b.text || 'Texto flotante' %></span>
+      </div>
+    </div>
   <% } %>
 <% }) %>

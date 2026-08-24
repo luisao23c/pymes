@@ -350,6 +350,25 @@
         <% } %>
       <% } %>
     </div>
+  <% } else if (c.type === 'overlay') { %>
+    <% var _ofs = ({none:0,suave:6,normal:10,amplio:24})[c.padding] || 10; %>
+    <% var _obg = c.bg || 'rgba(0,0,0,.55)'; %>
+    <% var _obg2 = c.bg2 || ''; %>
+    <% var _obs = _obg && _obg2 ? 'background:linear-gradient(135deg,' + _obg + ',' + _obg2 + ');' : 'background:' + _obg + ';'; %>
+    <% var _oop = c.opacity ? (parseInt(c.opacity) / 100) : 1; %>
+    <% var _orot = parseInt(c.rotation) || 0; %>
+    <% var _ozi = parseInt(c.zIndex) || 10; %>
+    <% var _ofw = c.bold === 'si' ? 'font-weight:700;' : ''; %>
+    <% var _oup = c.uppercase === 'si' ? 'text-transform:uppercase;' : ''; %>
+    <% var _ots = c.textShadow === 'si' ? 'text-shadow:0 2px 12px rgba(0,0,0,.5);' : ''; %>
+    <% var _ofm = c.font ? 'font-family:' + c.font + ',sans-serif;' : ''; %>
+    <% var _obs2 = c.shadow === 'none' ? '' : (_shadowStyle(c.shadow) ? 'box-shadow:' + _shadowStyle(c.shadow) + ';' : ''); %>
+    <% var _obr = c.border === 'none' ? 'border:none;' : 'border:' + (c.border || 1) + 'px solid rgba(255,255,255,.25);'; %>
+    <div data-sec="overlay" class="<%= _animCls(c) %>" style="position:relative;margin:0 0 18px;">
+      <div style="position:absolute;left:<%= parseInt(c.posX) || 50 %>%;top:<%= parseInt(c.posY) || 50 %>%;transform:translate(-50%,-50%) rotate(<%= _orot %>deg);z-index:<%= _ozi %>;opacity:<%= _oop %>;<%= _obs %>border-radius:<%= parseInt(c.radius) || 6 %>px;<%= _obr %><%= _obs2 %>padding:<%= _ofs %>px 16px;min-width:60px;text-align:center;pointer-events:auto;">
+        <span style="font-size:<%= c.fontSize ? (parseInt(c.fontSize) || 17) : 17 %>px;<%= _ofm %><%= _ofw %><%= _oup %><%= _ots %><%= c.color ? 'color:' + c.color + ';' : 'color:#fff;' %>"><%= c.text || 'Texto flotante' %></span>
+      </div>
+    </div>
   <% } else if (c.type === 'espacio') { %>
     <div data-sec="espacio" style="height:<%= parseInt(c.alto) || 40 %>px;"></div>
   <% } else if (c.type === 'whatsapp') { %>
@@ -366,10 +385,10 @@
     </div>
   <% } else if (c.type === 'redes') { %>
     <div data-sec="redes" style="margin:0 0 18px;display:flex;gap:16px;flex-wrap:wrap;<%= c.align === 'center' ? 'justify-content:center;' : '' %>">
-      <% if (c.facebook) { %><a href="<%= c.facebook %>" target="_blank" rel="noopener" title="Facebook" style="text-decoration:none;display:inline-flex;filter:drop-shadow(0 1px 2px rgba(0,0,0,.15));"><%= _redIcono('facebook') %></a><% } %>
-      <% if (c.instagram) { %><a href="<%= c.instagram %>" target="_blank" rel="noopener" title="Instagram" style="text-decoration:none;display:inline-flex;filter:drop-shadow(0 1px 2px rgba(0,0,0,.15));"><%= _redIcono('instagram') %></a><% } %>
-      <% if (c.tiktok) { %><a href="<%= c.tiktok %>" target="_blank" rel="noopener" title="TikTok" style="text-decoration:none;display:inline-flex;filter:drop-shadow(0 1px 2px rgba(0,0,0,.15));"><%= _redIcono('tiktok') %></a><% } %>
-      <% if (c.whatsapp) { %><a href="https://wa.me/<%= (c.whatsapp || '').replace(/[^0-9]/g, '') %>" target="_blank" rel="noopener" title="WhatsApp" style="text-decoration:none;display:inline-flex;filter:drop-shadow(0 1px 2px rgba(0,0,0,.15));"><%= _redIcono('whatsapp') %></a><% } %>
+      <% if (c.facebook) { %><a href="<%= c.facebook %>" target="_blank" rel="noopener" title="Facebook" style="text-decoration:none;display:inline-flex;filter:drop-shadow(0 1px 2px rgba(0,0,0,.15));"><%- _redIcono('facebook') %></a><% } %>
+      <% if (c.instagram) { %><a href="<%= c.instagram %>" target="_blank" rel="noopener" title="Instagram" style="text-decoration:none;display:inline-flex;filter:drop-shadow(0 1px 2px rgba(0,0,0,.15));"><%- _redIcono('instagram') %></a><% } %>
+      <% if (c.tiktok) { %><a href="<%= c.tiktok %>" target="_blank" rel="noopener" title="TikTok" style="text-decoration:none;display:inline-flex;filter:drop-shadow(0 1px 2px rgba(0,0,0,.15));"><%- _redIcono('tiktok') %></a><% } %>
+      <% if (c.whatsapp) { %><a href="https://wa.me/<%= (c.whatsapp || '').replace(/[^0-9]/g, '') %>" target="_blank" rel="noopener" title="WhatsApp" style="text-decoration:none;display:inline-flex;filter:drop-shadow(0 1px 2px rgba(0,0,0,.15));"><%- _redIcono('whatsapp') %></a><% } %>
     </div>
   <% } else if (c.type === 'galeria') { %>
     <% var _gurls = String(c.images || '').split('\n').map(function (s) { return s.trim(); }).filter(Boolean); %>
@@ -459,7 +478,7 @@
     <% var _bicon = c.icono ? '<i class="bi ' + c.icono + '" style="font-size:' + (c.iconoTam || 18) + 'px;color:' + (c.iconoColor || _bfg) + ';line-height:1;flex:none;"></i>' : ''; %>
     <% var _bcontent = (c.iconoPos === 'left' ? _bicon : '') + (c.text || 'Botón') + (c.iconoPos === 'right' ? _bicon : ''); %>
     <div data-sec="boton" class="<%= _animCls(c) %>" style="margin:0 0 18px;text-align:<%= c.align === 'center' ? 'center' : 'left' %>;">
-      <% if (c.descarga === 'si') { %><a href="<%= c.url || '#' %>" download class="<%= _bhover %>" style="display:inline-flex;align-items:center;justify-content:center;gap:8px;<%= _bws %>background:<%= _bbg %>;color:<%= _bfg %>;padding:<%= _bpad %>;border-radius:<%= parseInt(c.radius) || 8 %>px;font-size:<%= _bsz %>;font-weight:700;text-decoration:none;<%= _bbd %><%= _bup %><%= _bsh ? 'box-shadow:' + _bsh + ';' : '' %>"><%= _bcontent %></a><% } else if (c.link) { %><a href="<%= c.link %>" target="_blank" rel="noopener" class="<%= _bhover %>" style="display:inline-flex;align-items:center;justify-content:center;gap:8px;<%= _bws %>background:<%= _bbg %>;color:<%= _bfg %>;padding:<%= _bpad %>;border-radius:<%= parseInt(c.radius) || 8 %>px;font-size:<%= _bsz %>;font-weight:700;text-decoration:none;<%= _bbd %><%= _bup %><%= _bsh ? 'box-shadow:' + _bsh + ';' : '' %>"><%= _bcontent %></a><% } else { %><span class="<%= _bhover %>" style="display:inline-flex;align-items:center;justify-content:center;gap:8px;<%= _bws %>background:<%= _bbg %>;color:<%= _bfg %>;padding:<%= _bpad %>;border-radius:<%= parseInt(c.radius) || 8 %>px;font-size:<%= _bsz %>;font-weight:700;<%= _bbd %><%= _bup %><%= _bsh ? 'box-shadow:' + _bsh + ';' : '' %>"><%= _bcontent %></span><% } %>
+      <% if (c.descarga === 'si') { %><a href="<%= c.url || '#' %>" download class="<%= _bhover %>" style="display:inline-flex;align-items:center;justify-content:center;gap:8px;<%= _bws %>background:<%= _bbg %>;color:<%= _bfg %>;padding:<%= _bpad %>;border-radius:<%= parseInt(c.radius) || 8 %>px;font-size:<%= _bsz %>;font-weight:700;text-decoration:none;<%= _bbd %><%= _bup %><%= _bsh ? 'box-shadow:' + _bsh + ';' : '' %>"><%- _bcontent %></a><% } else if (c.link) { %><a href="<%= c.link %>" target="_blank" rel="noopener" class="<%= _bhover %>" style="display:inline-flex;align-items:center;justify-content:center;gap:8px;<%= _bws %>background:<%= _bbg %>;color:<%= _bfg %>;padding:<%= _bpad %>;border-radius:<%= parseInt(c.radius) || 8 %>px;font-size:<%= _bsz %>;font-weight:700;text-decoration:none;<%= _bbd %><%= _bup %><%= _bsh ? 'box-shadow:' + _bsh + ';' : '' %>"><%- _bcontent %></a><% } else { %><span class="<%= _bhover %>" style="display:inline-flex;align-items:center;justify-content:center;gap:8px;<%= _bws %>background:<%= _bbg %>;color:<%= _bfg %>;padding:<%= _bpad %>;border-radius:<%= parseInt(c.radius) || 8 %>px;font-size:<%= _bsz %>;font-weight:700;<%= _bbd %><%= _bup %><%= _bsh ? 'box-shadow:' + _bsh + ';' : '' %>"><%- _bcontent %></span><% } %>
     </div>
   <% } else if (c.type === 'titulo') { %>
     <% var _tsz = ({ pequeno: '20px', normal: '26px', grande: '34px' })[c.size] || '26px'; %>
@@ -520,23 +539,28 @@
     <% } %>
   <% } else if (c.type === 'destacados') { %>
     <% var _destSource = c.source || 'featured'; %>
-    <% var _dest = _prods.filter(function (p) { return p && !p.isAd && (_destSource === 'offers' ? p.old_price : _destSource === 'recent' ? true : p.featured); }).slice(0, c.count ? c.count : 6); %>
+    <% var _dest = _prods.filter(function (p) { return p && !p.isAd && (_destSource === 'offers' ? p.old_price : _destSource === 'recent' ? true : p.featured); }); %>
+    <% var _destCols = c.cols || 3; %>
     <% if (_dest.length) { %>
       <div data-sec="destacados" style="margin:0 0 18px;<%= _fullWidthStyle(c) %>">
-        <h2 style="font-size:18px;font-weight:800;margin:0 0 10px;"><%= _destSource === 'offers' ? '🔥 ' : '⭐ ' %><%= c.title || (_destSource === 'offers' ? 'Ofertas' : 'Destacados') %></h2>
-        <div class="flex gap-3 overflow-x-auto scrollbar-hide pb-2">
+        <% if (c.title || _destSource) { %><div class="pv-section-title"><%= _destSource === 'offers' ? '🔥 ' : '⭐ ' %><%= c.title || (_destSource === 'offers' ? 'Ofertas' : 'Destacados') %></div><% } %>
+        <div class="prod-grid grid grid-cols-2 md:grid-cols-<%= _destCols %> gap-4 md:gap-5 items-start">
           <% _dest.forEach(function (p) { %>
-            <div class="shrink-0 w-36" style="background:var(--card,#fff);border:1px solid var(--border,#e2e8f0);border-radius:var(--radius,14px);overflow:hidden;">
-              <a href="/<%= biz.slug %>/p/<%= p.id %>" style="display:block;text-decoration:none;color:inherit;">
-                <img src="<%= p.image || '/img/sin-imagen.svg' %>" alt="<%= p.name %>" style="width:100%;aspect-ratio:1;object-fit:cover;display:block;" />
-              </a>
-              <div style="padding:8px 10px 10px;">
-                <a href="/<%= biz.slug %>/p/<%= p.id %>" style="text-decoration:none;color:inherit;">
-                  <div style="font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><%= p.name %></div>
-                </a>
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px;">
-                  <span style="font-size:14px;font-weight:800;"><%= _money(p.price) %></span>
-                  <button onclick="addToCart(<%= p.id %>)" class="btn-primary text-[10px] px-2 py-1 rounded-lg">Agregar</button>
+            <% var _pct = 0; var _raw = parseFloat(String(p.price||'').replace(/[^0-9.]/g,'')); if (p.old_price && _raw) _pct = Math.round((1 - _raw / p.old_price) * 100); %>
+            <div class="product-card" style="background:var(--card,#fff);border:1px solid var(--border,#e2e8f0);border-radius:var(--radius,16px);overflow:hidden;cursor:pointer;">
+              <div class="relative">
+                <img src="<%= p.image || '/img/sin-imagen.svg' %>" class="w-full aspect-square object-cover" alt="<%= p.name %>">
+                <% if (p.featured) { %><span class="absolute top-2 left-2 bg-amber-400 text-amber-900 text-[10px] font-black px-2 py-0.5 rounded-full">⭐ Destacado</span><% } %>
+                <% if (p.old_price && _pct > 0) { %><span class="absolute top-2 right-2 badge-offer">-<%= _pct %>%</span><% } %>
+              </div>
+              <div class="p-3.5">
+                <span class="text-[10px] font-bold uppercase tracking-wider" style="color:var(--muted,#64748b);"><%= p.category_name || 'General' %></span>
+                <h3 class="font-bold text-sm mt-0.5"><%= p.name %></h3>
+                <div class="flex flex-col gap-2 mt-2">
+                  <div>
+                    <% if (p.old_price) { %><span class="block text-xs line-through" style="color:var(--muted,#64748b);"><%= money(p.old_price) %></span><% } %>
+                    <span class="font-extrabold text-base"><%= money(p.price) %></span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -545,30 +569,31 @@
       </div>
     <% } %>
   <% } else if (c.type === 'ofertas') { %>
-    <% var _ofe = _prods.filter(function (p) { return p && !p.isAd && p.old_price; }).slice(0, c.count ? c.count : 4); %>
-    <% var _ofeMode = (c.layout || c.modo || 'carrusel'); %>
-    <% if (_ofe.length) { %>
-      <div data-sec="ofertas" id="ofertas" style="margin:0 0 18px;">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-          <span style="font-size:18px;font-weight:800;"><%= c.title || '🔥 Ofertas' %></span>
-          <span style="font-size:10px;font-weight:800;background:#fecaca;color:#dc2626;padding:2px 8px;border-radius:999px;">¡Aprovecha!</span>
-        </div>
-        <div class="<%= _ofeMode === 'carrusel' ? 'ct-carousel' : 'flex gap-3 overflow-x-auto pb-2' %>" style="<%= _ofeMode === 'carrusel' ? '' : 'scrollbar-width:none;-ms-overflow-style:none;' %>">
-          <% _ofe.forEach(function (p) { %>
-            <div class="offer-card <%= _ofeMode === 'carrusel' ? 'ct-slide' : 'shrink-0 w-40' %>" style="background:var(--card,#fff);border:1px solid var(--border,#e2e8f0);border-radius:var(--radius,14px);overflow:hidden;<%= _ofeMode === 'carrusel' ? 'min-width:220px;width:220px;' : '' %>">
+    <% c.type = 'destacados'; c.source = 'offers'; %>
+    <% var _destSource = c.source; %>
+    <% var _dest = _prods.filter(function (p) { return p && !p.isAd && p.old_price; }); %>
+    <% var _destCols = c.cols || 3; %>
+    <% if (_dest.length) { %>
+      <div data-sec="ofertas" style="margin:0 0 18px;<%= _fullWidthStyle(c) %>">
+        <% if (c.title) { %><div class="pv-section-title"><%= c.title %></div><% } %>
+        <div class="prod-grid grid grid-cols-2 md:grid-cols-<%= _destCols %> gap-4 md:gap-5 items-start">
+          <% _dest.forEach(function (p) { %>
+            <% var _pct = 0; var _raw = parseFloat(String(p.price||'').replace(/[^0-9.]/g,'')); if (p.old_price && _raw) _pct = Math.round((1 - _raw / p.old_price) * 100); %>
+            <div class="product-card" style="background:var(--card,#fff);border:1px solid var(--border,#e2e8f0);border-radius:var(--radius,16px);overflow:hidden;cursor:pointer;">
               <div class="relative">
-                <a href="/<%= biz.slug %>/p/<%= p.id %>" style="display:block;text-decoration:none;color:inherit;">
-                  <img src="<%= p.image || '/img/sin-imagen.svg' %>" alt="<%= p.name %>" style="width:100%;aspect-ratio:1;object-fit:cover;display:block;" />
-                </a>
-                <span style="position:absolute;top:6px;left:6px;background:#ef4444;color:#fff;font-size:10px;font-weight:800;padding:2px 8px;border-radius:999px;">-<%= Math.round((1 - p.price / p.old_price) * 100) %>%</span>
+                <img src="<%= p.image || '/img/sin-imagen.svg' %>" class="w-full aspect-square object-cover" alt="<%= p.name %>">
+                <% if (p.featured) { %><span class="absolute top-2 left-2 bg-amber-400 text-amber-900 text-[10px] font-black px-2 py-0.5 rounded-full">⭐ Destacado</span><% } %>
+                <% if (p.old_price && _pct > 0) { %><span class="absolute top-2 right-2 badge-offer">-<%= _pct %>%</span><% } %>
               </div>
-              <div style="padding:8px 10px 10px;">
-                <div style="font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><%= p.name %></div>
-                <div style="display:flex;align-items:baseline;gap:6px;margin-top:4px;">
-                  <span style="font-size:14px;font-weight:800;color:#dc2626;"><%= _money(p.price) %></span>
-                  <span style="font-size:11px;color:var(--muted,#64748b);text-decoration:line-through;"><%= _money(p.old_price) %></span>
+              <div class="p-3.5">
+                <span class="text-[10px] font-bold uppercase tracking-wider" style="color:var(--muted,#64748b);"><%= p.category_name || 'General' %></span>
+                <h3 class="font-bold text-sm mt-0.5"><%= p.name %></h3>
+                <div class="flex flex-col gap-2 mt-2">
+                  <div>
+                    <% if (p.old_price) { %><span class="block text-xs line-through" style="color:var(--muted,#64748b);"><%= money(p.old_price) %></span><% } %>
+                    <span class="font-extrabold text-base"><%= money(p.price) %></span>
+                  </div>
                 </div>
-                <button onclick="addToCart(<%= p.id %>)" class="btn-primary text-[10px] px-2 py-1 rounded-lg mt-2 w-full">Agregar</button>
               </div>
             </div>
           <% }) %>
@@ -622,7 +647,7 @@
     <% var _cmClip = (_mCfg && _mCfg.getShapeClip) ? _mCfg.getShapeClip(_cmSh, _cmPts) : 'circle(50% at 50% 50%)'; %>
     <% var _cmLay = c.layout || 'stack'; %>
     <% var _cmInnerStyle = _cmLay==='grid' ? 'display:flex;flex-direction:row;flex-wrap:wrap;justify-content:center;align-items:stretch;gap:6px;width:100%;height:100%;' : 'display:flex;flex-direction:column;align-items:stretch;width:100%;height:100%;'; %>
-    <% var _cmMstyle = 'width:'+_cmSz+';height:'+_cmH+';clip-path:'+_cmClip+';-webkit-clip-path:'+_cmClip+';'+_bgStyle(c)+(c.border && c.border!=='none'?'border:'+c.border+'px solid #f0e6d8;':'')+(c.radius && c.radius!=='0'?'border-radius:'+c.radius+'px;':'')+'overflow:hidden;position:relative;display:flex;align-items:stretch;'; %>
+    <% var _cmMstyle = 'width:'+_cmSz+';height:'+_cmH+';clip-path:'+_cmClip+';-webkit-clip-path:'+_cmClip+';'+_bgStyle(c)+(c.border && c.border!=='none'?'border:'+c.border+'px solid var(--border,#e2e8f0);':'')+(c.radius && c.radius!=='0'?'border-radius:'+c.radius+'px;':'')+'overflow:hidden;position:relative;display:flex;align-items:stretch;'; %>
     <div data-sec="mascara" class="pv-mascara <%= _animCls(c) %>" style="<%= _cmMstyle %>">
       <div class="mascara-inner" style="<%= _cmInnerStyle %>">
         <% var _cmChildCount = (c.children||[]).length; %>
@@ -707,11 +732,11 @@
         <div style="<%= _ts.length > 1 ? 'display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;' : 'max-width:620px;margin:0 auto;' %>">
           <% _ts.forEach(function (l) { var p = _parts(l); var _n = Math.max(1, Math.min(5, parseFloat(p.d) || 5)); %>
             <div style="display:flex;flex-direction:column;align-items:center;text-align:center;padding:34px 26px;background:var(--card,#fff);border:1px solid var(--border,#e2e8f0);border-radius:22px;box-shadow:0 16px 38px rgba(15,15,15,.09);position:relative;overflow:hidden;">
-              <div style="position:absolute;top:-30px;left:50%;transform:translateX(-50%);font-size:120px;font-family:Georgia,'Times New Roman',serif;color:var(--accent,#ea580c);opacity:.12;line-height:1;pointer-events:none;">&ldquo;</div>
+              <div style="position:absolute;top:-30px;left:50%;transform:translateX(-50%);font-size:120px;font-family:Georgia,'Times New Roman',serif;color:var(--accent,#2563eb);opacity:.12;line-height:1;pointer-events:none;">&ldquo;</div>
               <div style="position:relative;display:inline-block;font-size:15px;line-height:1;letter-spacing:3px;color:#e2e8f0;margin:0 0 12px;">★★★★★<div style="position:absolute;top:0;left:0;overflow:hidden;white-space:nowrap;width:<%= (_n / 5 * 100) %>%;color:#f59e0b;">★★★★★</div></div>
               <p style="font-size:15px;line-height:1.7;color:var(--text,#1f2937);font-style:italic;margin:0 0 20px;"><%= p.b %></p>
               <div style="display:flex;align-items:center;gap:11px;">
-                <% if (p.c) { %><img src="<%= p.c %>" style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid var(--accent,#ea580c);flex:none;"><% } else { %><div style="width:52px;height:52px;border-radius:50%;background:var(--accent,#ea580c);color:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;flex:none;">👤</div><% } %>
+                <% if (p.c) { %><img src="<%= p.c %>" style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid var(--accent,#2563eb);flex:none;"><% } else { %><div style="width:52px;height:52px;border-radius:50%;background:var(--accent,#2563eb);color:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;flex:none;">👤</div><% } %>
                 <div style="text-align:left;">
                   <div style="font-weight:800;font-size:15px;color:var(--text,#1f2937);"><%= p.a %></div>
                   <div style="font-size:12px;color:var(--muted,#64748b);font-weight:600;letter-spacing:.03em;">Cliente</div>
@@ -960,16 +985,6 @@
       <div style="font-size:13px;color:<%= _tc %>;opacity:.8;margin-bottom:12px;"><%= c.text || 'Aparta tu lugar o producto' %></div>
       <a href="https://wa.me/<%= (biz.whatsapp || '').replace(/[^0-9]/g, '') %>?text=<%= encodeURIComponent('Hola, quiero reservar') %>" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:8px;background:<%= _ac %>;color:#fff;padding:12px 24px;border-radius:12px;font-weight:800;text-decoration:none;font-size:14px;">📅 <%= c.boton || 'Reservar ahora' %></a>
     </div>
-  <% } else if (c.type === 'valoracion') { %>
-    <% var _ac = c.accent || '#f59e0b'; var _n = parseInt(c.puntaje) || 5; var _stars = ''; for (var _si = 0; _si < _n; _si++) _stars += '★'; for (var _si2 = _n; _si2 < 5; _si2++) _stars += '<span style="opacity:.25;">★</span>'; %>
-    <div data-sec="valoracion" class="<%= _animCls(c) %>" style="margin:0 0 18px;text-align:<%= c.align === 'center' ? 'center' : 'left' %>;">
-      <div style="background:var(--card,#fff);border:1px solid var(--border,#e2e8f0);border-radius:14px;padding:20px;<%= _boxStyle(c) %>">
-        <div style="font-size:22px;color:<%= _ac %>;letter-spacing:2px;"><%- _stars %></div>
-        <% if (c.title) { %><div style="font-weight:800;font-size:15px;margin-top:8px;"><%= c.title %></div><% } %>
-        <% if (c.text) { %><div style="font-size:13px;color:var(--muted,#64748b);margin-top:4px;font-style:italic;"><%= c.text %></div><% } %>
-        <% if (c.autor) { %><div style="font-size:12px;color:var(--muted,#64748b);margin-top:8px;font-weight:600;">— <%= c.autor %></div><% } %>
-      </div>
-    </div>
   <% } else if (c.type === 'servicios') { %>
     <% var _ac = c.accent || 'var(--accent,#2563eb)'; %>
     <div data-sec="servicios" class="<%= _animCls(c) %>" style="margin:0 0 18px;<%= _boxStyle(c) %>">
@@ -1035,7 +1050,7 @@
     })() %>">
       <% if (_showProductFilters) { %><%- include('catalog-sidebar', { filters: c, fi: _blkIdx }) %><% } %>
       <div class="flex-1 min-w-0">
-        <div class="prod-grid <%= _layout === 'lista' ? 'space-y-3' : 'grid grid-cols-2 md:grid-cols-' + _cols + ' gap-4 md:gap-5' %>" <%- _paginas ? 'data-pag="paginas" data-per="8"' : '' %>>
+        <div class="prod-grid <%= _layout === 'lista' ? 'space-y-3' : 'grid grid-cols-2 md:grid-cols-' + _cols + ' gap-4 md:gap-5 items-start' %>" <%- _paginas ? 'data-pag="paginas" data-per="8"' : '' %>>
           <% _staticPool.forEach(function (p, pi) { %>
             <% if (_layout === 'lista') { %>
               <div class="product-row flex items-center gap-4" data-id="<%= p.id %>" data-cat="<%= p.category_id || 0 %>" data-search="<%= (p.name + ' ' + (p.category_name || '') + ' ' + (p.tags || '')).toLowerCase() %>" style="background:var(--card,#fff);border:1px solid var(--border,#e2e8f0);border-radius:var(--radius,16px);padding:10px;cursor:pointer;">

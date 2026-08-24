@@ -599,7 +599,7 @@ function paintCatalog(html, biz, pal, estilo) {
     // ===== Sistema de diseño moderno (consistente entre plantillas) =====
     '.product-card,.glass-card,.menu-item,.offer-card,.product-row,.product-hero{border-radius:16px!important;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.06)!important;transition:transform .2s ease,box-shadow .2s ease!important}' +
     '.product-card:hover,.glass-card:hover,.menu-item:hover,.offer-card:hover,.product-row:hover{transform:translateY(-4px)!important;box-shadow:0 14px 34px rgba(0,0,0,.12)!important}' +
-    '.product-card,.glass-card,.offer-card,.product-hero{display:flex!important;flex-direction:column!important;height:100%!important}' +
+    '.product-card,.glass-card,.offer-card,.product-hero{display:flex!important;flex-direction:column!important}' +
     '.product-card h3,.glass-card h3,.offer-card h3,.product-hero h3{font-weight:700!important;line-height:1.3!important;display:-webkit-box!important;-webkit-line-clamp:2!important;-webkit-box-orient:vertical!important;overflow:hidden!important;min-height:2.6em}' +
     '.btn-primary,.btn-add,.btn-order,.btn-wa{border-radius:11px!important;font-weight:600!important}' +
     '.badge-offer{border-radius:999px!important;padding:.22rem .6rem!important;font-weight:800!important}' +
@@ -2733,7 +2733,7 @@ function applyConfig(biz, body) {
     try {
       const arr = JSON.parse(body.blocks || '[]');
       if (!Array.isArray(arr)) return '[]';
-      const ALLOWED = ['row', 'banner', 'texto', 'imagen', 'categorias', 'destacados', 'productos', 'ofertas', 'video', 'card', 'mascara', 'info', 'filtros', 'boton', 'titulo', 'separador', 'espacio', 'whatsapp', 'mapa', 'redes', 'galeria', 'carrusel', 'faq', 'testimonios', 'contacto', 'horario', 'stats', 'precios', 'html', 'cupon', 'equipo', 'marcas', 'pasos', 'caracteristicas', 'promo', 'comparativa', 'timeline', 'noticias', 'newsletter', 'countdown', 'llamar', 'audio', 'descarga', 'qr', 'sucursales', 'premios', 'antesdespues', 'reserva', 'valoracion', 'servicios', 'cta', 'ubicacion'];
+      const ALLOWED = ['row', 'banner', 'texto', 'imagen', 'overlay', 'categorias', 'destacados', 'productos', 'ofertas', 'video', 'card', 'mascara', 'info', 'filtros', 'boton', 'titulo', 'separador', 'espacio', 'whatsapp', 'mapa', 'redes', 'galeria', 'carrusel', 'faq', 'testimonios', 'contacto', 'horario', 'stats', 'precios', 'html', 'cupon', 'equipo', 'marcas', 'pasos', 'caracteristicas', 'promo', 'comparativa', 'timeline', 'noticias', 'newsletter', 'countdown', 'llamar', 'audio', 'descarga', 'qr', 'sucursales', 'premios', 'antesdespues', 'reserva', 'valoracion', 'servicios', 'cta', 'ubicacion'];
       const cleanBlock = (b, idx) => {
         const type = ALLOWED.includes(b.type) ? b.type : 'texto';
         const base = { id: String(b.id || ('c' + idx)), type };

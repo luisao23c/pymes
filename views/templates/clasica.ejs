@@ -9,155 +9,110 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800;14..32,900&display=swap" rel="stylesheet" />
   <style>
-    * { margin:0; padding:0; box-sizing:border-box; }
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    :root {
+      --accent:#4f46e5; --accent2:#818cf8;
+      --bg:#f6f5f0; --text:#1a1816; --muted:#6b7280;
+      --card:#ffffff; --border:rgba(0,0,0,0.06);
+      --radius:20px;
+      --head-font:'Inter',system-ui,sans-serif;
+      --body-font:'Inter',system-ui,sans-serif;
+    }
     body {
-      font-family: 'Inter', system-ui, -apple-system, sans-serif;
-      background: #f6f5f0;
-      color: #1a1816;
+      font-family: var(--body-font);
+      background: var(--bg);
+      color: var(--text);
       min-height: 100vh;
     }
+    h1,h2,h3,h4,h5,h6 { font-family: var(--head-font); }
 
-    /* Glassmorphism */
-    .glass {
-      backdrop-filter: blur(16px) saturate(1.8);
-      background: rgba(255, 255, 245, 0.55);
-      border: 1px solid rgba(255, 255, 245, 0.35);
-    }
-    .glass-card {
-      background: rgba(255, 255, 245, 0.7);
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 245, 0.3);
-      border-radius: 24px;
-      transition: all 0.25s ease;
-    }
-    .glass-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.06);
-    }
-
-    /* Header moderno con gradiente sutil */
-    .header-modern {
-      background: linear-gradient(145deg, #f0ede7 0%, #faf8f3 100%);
-      border-bottom: 1px solid rgba(255, 255, 245, 0.5);
-    }
-
-    /* Botones */
-    .btn-primary {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.6rem 1.6rem;
-      border-radius: 60px;
-      font-weight: 700;
-      font-size: 0.8rem;
-      background: #4f46e5;
-      color: #fff;
-      border: none;
-      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-      cursor: pointer;
-      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
-    }
-    .btn-primary:hover {
-      background: #4338ca;
-      transform: scale(1.03);
-      box-shadow: 0 8px 24px rgba(79, 70, 229, 0.3);
-    }
-    .btn-wa {
-      background: #22c55e;
-      box-shadow: 0 4px 12px rgba(34, 197, 94, 0.2);
-    }
-    .btn-wa:hover {
-      background: #16a34a;
-      box-shadow: 0 8px 24px rgba(34, 197, 94, 0.3);
-    }
-
-    /* Chips de categoría */
-    .chip-active {
-      background: #1a1a1a;
-      color: #fff;
-      border-color: #1a1a1a;
-    }
-    .chip-idle {
-      background: rgba(255, 255, 245, 0.6);
-      border: 1px solid rgba(0, 0, 0, 0.06);
-      color: #3a3a3a;
-    }
-    .chip-idle:hover {
-      background: #fff;
-      border-color: #c0bdb6;
-    }
-
-    /* Input de búsqueda */
-    .search-input {
-      background: rgba(255, 255, 245, 0.7);
-      backdrop-filter: blur(8px);
-      border: 1px solid rgba(255, 255, 245, 0.5);
-      transition: all 0.2s;
-    }
-    .search-input:focus {
-      outline: none;
-      border-color: #4f46e5;
-      box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
-      background: rgba(255, 255, 245, 0.9);
-    }
-
-    /* Tarjeta de producto */
+    /* ═══ Shared components overrides ═══ */
     .product-card {
-      background: #ffffff;
-      border-radius: 20px;
-      border: 1px solid rgba(0, 0, 0, 0.04);
-      transition: all 0.25s ease;
+      background: var(--card) !important;
+      border: 1px solid var(--border) !important;
+      border-radius: var(--radius) !important;
+      transition: all .25s ease !important;
       overflow: hidden;
     }
     .product-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.06);
+      transform: translateY(-4px) !important;
+      box-shadow: 0 12px 32px rgba(0,0,0,.06) !important;
     }
-
-    /* Badge de oferta */
+    .offer-card {
+      background: var(--card) !important;
+      border: 1px solid var(--border) !important;
+      border-radius: var(--radius) !important;
+    }
     .badge-offer {
-      background: #ef4444;
-      color: #fff;
-      font-size: 0.6rem;
-      font-weight: 800;
-      padding: 0.15rem 0.6rem;
-      border-radius: 60px;
+      background: #ef4444 !important; color: #fff !important;
+      font-size:.6rem; font-weight:800; padding:.15rem .6rem; border-radius:60px;
     }
+    .chip-active {
+      background: var(--accent) !important; color: #fff !important;
+      border-color: var(--accent) !important; border-radius: 999px !important;
+    }
+    .chip-idle {
+      background: var(--card) !important; color: var(--text) !important;
+      border: 1px solid var(--border) !important; border-radius: 999px !important;
+    }
+    .chip-idle:hover {
+      background: var(--accent) !important; color: #fff !important;
+      border-color: var(--accent) !important;
+    }
+    .search-input {
+      background: var(--card) !important; color: var(--text) !important;
+      border: 1px solid var(--border) !important; border-radius: 12px !important;
+    }
+    .search-input:focus {
+      border-color: var(--accent) !important;
+      box-shadow: 0 0 0 3px rgba(79,70,229,.12) !important;
+    }
+    .cat-chip { border-radius: 999px !important; }
 
-    /* Barra de carrito fija */
+    /* ═══ Template-specific ═══ */
+    .tpl-header {
+      background: linear-gradient(145deg, #f0ede7 0%, var(--bg) 100%);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 50;
+      backdrop-filter: blur(16px) saturate(1.8);
+    }
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: .5rem;
+      padding: .6rem 1.6rem; border-radius: 60px;
+      font-weight: 700; font-size: .8rem;
+      background: var(--accent); color: #fff; border: none;
+      transition: all .2s cubic-bezier(.16,1,.3,1);
+      cursor: pointer; box-shadow: 0 4px 12px rgba(79,70,229,.2);
+    }
+    .btn-primary:hover { background: #4338ca; transform: scale(1.03); box-shadow: 0 8px 24px rgba(79,70,229,.3); }
+    .btn-wa { background: #22c55e !important; box-shadow: 0 4px 12px rgba(34,197,94,.2) !important; }
+    .btn-wa:hover { background: #16a34a !important; box-shadow: 0 8px 24px rgba(34,197,94,.3) !important; }
     .cart-bar {
       backdrop-filter: blur(20px) saturate(1.8);
-      background: rgba(26, 24, 22, 0.8);
-      border: 1px solid rgba(255, 255, 245, 0.1);
+      background: rgba(26,24,22,.85) !important;
+      border: 1px solid rgba(255,255,245,.1);
     }
-
-    /* Footer */
-    .footer-muted {
-      color: #9ca3af;
-      border-top: 1px solid rgba(0, 0, 0, 0.04);
+    .footer-muted { color: var(--muted); border-top: 1px solid var(--border); }
+    .verify-badge {
+      position:absolute;bottom:-2px;right:-2px;width:18px;height:18px;
+      background:#22c55e;border-radius:50%;border:2px solid #fff;
+      display:flex;align-items:center;justify-content:center;
+      font-size:9px;color:#fff;font-weight:900;
     }
-
-    /* Scroll suave para categorías */
-    .scrollbar-hide::-webkit-scrollbar { display: none; }
-    .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-
-    /* Máscara geométrica — CSS viene de lib/mascara.js via SHARED_CSS */
+    .scrollbar-hide::-webkit-scrollbar{display:none}
+    .scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}
   </style>
 </head>
 <body>
-
-  <!-- HEADER moderno -->
-  <header data-sec="hero" class="header-modern sticky top-0 z-50 header-gradient">
+  <header data-sec="hero" class="tpl-header">
     <div class="w-full px-4 py-6">
       <div class="flex items-center gap-4 flex-wrap">
-        <!-- Logo con badge de verificación -->
         <div class="relative">
           <img src="<%= biz.logo || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(biz.name) + '&background=4f46e5&color=fff&size=64' %>"
                class="w-16 h-16 rounded-2xl object-cover shadow-lg ring-4 ring-white/60"
                alt="<%= biz.name %>" />
-          <div class="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full border-2 border-white shadow-md flex items-center justify-center text-white text-[8px] font-black">✓</div>
+          <span class="verify-badge">✓</span>
         </div>
-
         <div class="flex-1 min-w-0">
           <h1 class="text-3xl font-extrabold tracking-tight cat-title"><%= biz.name %></h1>
           <p class="text-sm text-neutral-600/80 mt-0.5"><%= biz.description %></p>
@@ -170,15 +125,9 @@
       </div>
     </div>
   </header>
-
-  <!-- MAIN -->
-  <main data-sec="contenido" class="w-full px-4 py-8 pb-28">
+  <main data-sec="contenido" class="w-full px-4 py-8 pb-28" style="max-width:1100px;margin:0 auto;">
     <%- include('../partials/components', { biz, products, money, categories, components, pages, editMode, mascaraCss: mascaraCss, mascaraConfig: mascaraConfig }) %>
   </main>
-
-
-
-  <!-- Scripts (incluye lógica de carrito y filtros) -->
   <%- include('../partials/cart-js', { biz, products }) %>
 </body>
 </html>
