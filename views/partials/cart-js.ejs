@@ -70,11 +70,11 @@
     if (!el) {
       el = document.createElement('div');
       el.id = 'status-badge';
-      el.style.cssText = 'position:fixed;top:12px;right:12px;z-index:950;padding:5px 12px;border-radius:999px;font-size:12px;font-weight:800;box-shadow:0 4px 16px rgba(0,0,0,.18);';
+      el.style.cssText = 'position:fixed;top:14px;right:14px;z-index:950;padding:5px 13px;border-radius:999px;font-size:12px;font-weight:800;box-shadow:0 2px 10px rgba(0,0,0,.12);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);';
       document.body.appendChild(el);
     }
     el.textContent = abierto ? '🟢 Abierto' : '🔴 Cerrado';
-    el.style.background = abierto ? '#dcfce7' : '#fee2e2';
+    el.style.background = abierto ? 'rgba(220,252,231,.88)' : 'rgba(254,226,226,.88)';
     el.style.color = abierto ? '#166534' : '#991b1b';
     el.style.border = '1px solid ' + (abierto ? '#bbf7d0' : '#fecaca');
   }

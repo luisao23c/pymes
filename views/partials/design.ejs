@@ -35,6 +35,12 @@
     --header-text: <%= estilo.headerText %>;
     --badge: <%= accent %>;
     --grid-cols: <%= biz.grid_cols || 3 %>;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.06);
+    --shadow-md: 0 4px 6px rgba(0,0,0,0.04), 0 2px 4px rgba(0,0,0,0.06);
+    --shadow-lg: 0 10px 25px rgba(0,0,0,0.06), 0 4px 10px rgba(0,0,0,0.04);
+    --shadow-xl: 0 20px 50px rgba(0,0,0,0.08), 0 8px 20px rgba(0,0,0,0.06);
+    --ease: cubic-bezier(0.4, 0, 0.2, 1);
+    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   }
   @media (min-width: 768px) {
     .grid-cols-sel { grid-template-columns: repeat(var(--grid-cols), minmax(0, 1fr)) !important; }
@@ -43,23 +49,80 @@
     font-family: var(--font);
     background: var(--bg);
     color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
   .header-gradient { background: var(--header) !important; color: var(--header-text) !important; }
   .header-gradient * { border-color: transparent; }
   .cat-title { color: var(--header-text) !important; }
   <% if (estilo.headerSet) { %>.header-gradient.hero-banner::after,.header-gradient.hero-restaurant::after{background:var(--header)!important}<% } %>
-  .chip-active { background: linear-gradient(135deg, var(--accent), var(--accent2)) !important; color: #fff !important; border-color: transparent !important; }
-  .chip-idle { background: var(--card) !important; color: var(--text) !important; border-color: var(--border) !important; }
-  .btn-accent { background: linear-gradient(135deg, var(--accent), var(--accent2)) !important; color: #fff !important; border: none !important; }
-  .btn-accent:hover { filter: brightness(1.1); }
+  .chip-active {
+    background: linear-gradient(135deg, var(--accent), var(--accent2)) !important;
+    color: #fff !important;
+    border-color: transparent !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12), 0 0 0 1px rgba(255,255,255,0.1) inset;
+    transform: translateY(-1px);
+  }
+  .chip-idle {
+    background: var(--card) !important;
+    color: var(--text) !important;
+    border-color: var(--border) !important;
+    box-shadow: var(--shadow-sm);
+  }
+  .chip-idle:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+  }
+  .btn-accent {
+    background: linear-gradient(135deg, var(--accent), var(--accent2)) !important;
+    color: #fff !important;
+    border: none !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    transition: all 0.2s var(--ease);
+  }
+  .btn-accent:hover {
+    filter: brightness(1.08);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.16);
+    transform: translateY(-1px);
+  }
+  .btn-accent:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+  }
   .text-accent { color: var(--accent) !important; }
   .text-accent2 { color: var(--accent2) !important; }
-  .card-surface { background: var(--card) !important; border-color: var(--border) !important; border-radius: var(--radius) !important; }
+  .card-surface {
+    background: var(--card) !important;
+    border-color: var(--border) !important;
+    border-radius: var(--radius) !important;
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow 0.25s var(--ease), transform 0.25s var(--ease);
+  }
+  .card-surface:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-2px);
+  }
   .text-muted { color: var(--muted) !important; }
-  .search-input { background: <%= estilo.dark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.95)' %> !important; color: var(--text) !important; border: 1px solid <%= estilo.border %> !important; }
+  .search-input {
+    background: <%= estilo.dark ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.92)' %> !important;
+    color: var(--text) !important;
+    border: 1.5px solid <%= estilo.border %> !important;
+    border-radius: 14px !important;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s var(--ease);
+  }
+  .search-input:focus {
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 0 3px rgba(0,0,0,0.04), var(--shadow-md);
+    outline: none;
+  }
   .search-input::placeholder { color: var(--muted) !important; }
   .footer-muted { color: <%= estilo.dark ? 'rgba(226,232,240,0.45)' : 'var(--muted)' %> !important; }
-  .badge-accent { background: linear-gradient(135deg, var(--accent), var(--accent2)) !important; color: #fff !important; }
-  .price-accent { color: var(--accent) !important; }
-  .price-sale { color: var(--accent2) !important; }
+  .badge-accent {
+    background: linear-gradient(135deg, var(--accent), var(--accent2)) !important;
+    color: #fff !important;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+  }
+  .price-accent { color: var(--accent) !important; font-weight: 700; }
+  .price-sale { color: var(--accent2) !important; font-weight: 700; }
 </style>

@@ -18,6 +18,16 @@
   function _money(n) { return money(n); }
   function _items(s) { return String(s == null ? '' : s).split('\n').map(function (x) { return x.trim(); }).filter(Boolean); }
   function _parts(line) { var p = String(line || '').split('|'); return { a: (p[0] || '').trim(), b: (p[1] || '').trim(), c: (p[2] || '').trim(), d: (p[3] || '').trim() }; }
+  function _to12(h, m) {
+    if (!h) return '';
+    var parts = String(h).split(':');
+    var hr = parseInt(parts[0], 10);
+    var mn = parseInt(parts[1], 10) || 0;
+    if (isNaN(hr)) return h;
+    var ampm = hr >= 12 ? 'PM' : 'AM';
+    var h12 = hr % 12 || 12;
+    return h12 + ':' + String(mn).padStart(2, '0') + ' ' + ampm;
+  }
   function _boxStyle(c) { var s = _bgCss(c); if (c.color) s += 'color:' + c.color + ';'; if (c.padding && c.padding !== 'none') s += 'padding:' + ({suave:'10px 14px',normal:'18px 22px',amplio:'28px 32px'}[c.padding] || '') + ';'; if (c.border && c.border !== 'none') s += 'border:' + c.border + 'px solid var(--border,#e2e8f0);'; if (c.radius && c.radius !== '0') s += 'border-radius:' + c.radius + 'px;'; if (c.shadow && c.shadow !== 'none') s += 'box-shadow:' + ({suave:'0 2px 8px rgba(0,0,0,.08)',media:'0 6px 18px rgba(0,0,0,.14)',fuerte:'0 12px 32px rgba(0,0,0,.22)'}[c.shadow] || '') + ';'; return s; }
   function _spanOf(col, def) { var s = parseInt(col && col.span) || 0; return s >= 1 && s <= 12 ? s : def; }
   function _animCls(c) { return (c && (c.animation === 'fade' || c.animation === 'up' || c.animation === 'down' || c.animation === 'left' || c.animation === 'right' || c.animation === 'zoom')) ? 'ct-anim-' + c.animation + ' ct-dur-' + (c.dur || 'normal') : ''; }
@@ -234,12 +244,12 @@
       <% if (_edit) { %>
         <div class="row-hint"><%= c.title || 'Fila' %> · <%= _colsArr.length %> columnas · grilla 12</div>
       <% } %>
-      <div style="display:grid;grid-template-columns:repeat(12,1fr);gap:<%= _gap %>px;">
+      <div class="ct-row-grid" style="display:grid;grid-template-columns:<%= _colsArr.map(function (col) { return _spanOf(col, Math.floor(12 / _colsArr.length)) || 1; }).join('fr ') %>fr;gap:<%= _gap %>px;">
         <% _colsArr.forEach(function (col, _j) { %>
           <% var _span = _spanOf(col, Math.floor(12 / _colsArr.length)); %>
           <% var _colPath = _path.concat([String(c.id), _j]); %>
           <% var _colPathStr = _colPath.join(':'); %>
-          <div class="row-col" style="grid-column:span <%= _span %>;min-width:0;">
+          <div class="row-col<%= _edit ? ' row-col-guide' : '' %>" style="min-width:0;">
             <% if (_edit) { %>
               <div class="col-label"><%= _span %>/12</div>
               <div class="c-add c-col-empty" data-pos="0" data-path="<%= _colPathStr %>"><span class="c-add-plus">＋</span><span class="c-add-label">Bloque en columna <%= _j + 1 %></span></div>
@@ -291,7 +301,7 @@
           <% } %>
         </div>
       <% } else { %>
-        <div style="background:linear-gradient(135deg, var(--accent,#2563eb), var(--accent2,#0ea5e9));color:#fff;padding:<%= _bpad %>;border-radius:var(--radius,16px);">
+        <div style="background:linear-gradient(135deg, var(--accent,#2563eb), var(--accent2,#0ea5e9));color:#fff;padding:<%= _bpad %>;border-radius:var(--radius,18px);box-shadow:0 8px 24px rgba(0,0,0,0.12);">
           <% if (_edit) { %>
             <span class="ce-text ce-on-dark" data-ce="title" data-placeholder="Título del banner…" style="display:block;font-size:<%= _bts %>px;font-weight:800;"><%= c.title || '' %></span>
             <span class="ce-text ce-on-dark" data-ce="text" data-placeholder="Escribe un subtítulo…" style="display:block;font-size:14px;margin-top:6px;opacity:.95;"><%= c.text || '' %></span>
@@ -325,7 +335,8 @@
     <% var _cpos = (c.captionPos && c.captionPos !== 'none') ? c.captionPos : ''; %>
     <% var _cc = /^#[0-9a-fA-F]{6}$/.test(c.captionColor || '') ? c.captionColor : (_cpos ? '#ffffff' : ''); %>
     <% var _cs = (parseInt(c.captionSize) || 14) + 'px'; %>
-    <div data-sec="imagen" class="<%= _animCls(c) %>" style="margin:<%= _iw !== '100%' ? '0 auto 18px' : '0 0 18px' %>;width:<%= _iw %>;max-width:100%;text-align:center;<%= _shadowStyle(c.shadow) ? 'box-shadow:' + _shadowStyle(c.shadow) + ';' : '' %>">
+    <% if (c.image || _edit) { %>
+    <div data-sec="imagen" class="<%= _animCls(c) %>" style="margin:<%= _iw !== '100%' ? '0 auto 18px' : '0 0 18px' %>;width:<%= _iw %>;max-width:100%;text-align:center;overflow:hidden;border-radius:var(--radius,16px);<%= _shadowStyle(c.shadow) ? 'box-shadow:' + _shadowStyle(c.shadow) + ';' : '' %>">
       <% if (c.image) { %>
         <div style="position:relative;">
           <img src="<%= c.image %>" alt="<%= c.title || '' %>" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='/img/sin-imagen.svg'" style="width:100%;max-height:<%= _ih %>px;object-fit:cover;object-position:<%= c.object_position || 'center' %>;border-radius:var(--radius,16px);display:block;" />
@@ -350,6 +361,7 @@
         <% } %>
       <% } %>
     </div>
+    <% } %>
   <% } else if (c.type === 'overlay') { %>
     <% var _ofs = ({none:0,suave:6,normal:10,amplio:24})[c.padding] || 10; %>
     <% var _obg = c.bg || 'rgba(0,0,0,.55)'; %>
@@ -375,58 +387,67 @@
     <% var _wnum = (c.whatsapp || biz.whatsapp || '').replace(/[^0-9]/g, ''); %>
     <% var _wmsg = c.mensaje ? '?text=' + encodeURIComponent(c.mensaje) : ''; %>
     <% var _wc = /^#[0-9a-fA-F]{6}$/.test(c.color || '') ? c.color : '#25D366'; %>
-    <div data-sec="whatsapp" class="<%= _animCls(c) %>" style="margin:0 0 18px;text-align:<%= c.align === 'center' ? 'center' : 'left' %>;">
-      <a href="https://wa.me/<%= _wnum %><%= _wmsg %>" target="_blank" rel="noopener" style="display:inline-block;background:<%= _wc %>;color:#fff;padding:11px 22px;border-radius:<%= parseInt(c.radius) || 8 %>px;font-size:15px;font-weight:700;text-decoration:none;">🟢 <%= c.text || 'Pedir por WhatsApp' %></a>
+    <div data-sec="whatsapp" class="<%= _animCls(c) %>" style="margin:0 0 20px;text-align:<%= c.align === 'center' ? 'center' : 'left' %>;">
+      <a href="https://wa.me/<%= _wnum %><%= _wmsg %>" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:8px;background:<%= _wc %>;color:#fff;padding:14px 28px;border-radius:<%= parseInt(c.radius) || 14 %>px;font-size:15px;font-weight:700;text-decoration:none;box-shadow:0 4px 14px rgba(0,0,0,0.12);transition:all 0.25s cubic-bezier(0.4,0,0.2,1);">🟢 <%= c.text || 'Pedir por WhatsApp' %></a>
     </div>
-  <% } else if (c.type === 'mapa') { %>
+    <% } else if (c.type === 'mapa') { %>
     <% var _murl = c.url || ('https://www.google.com/maps?q=' + encodeURIComponent(biz.name || '') + '&output=embed'); %>
-    <div data-sec="mapa" class="<%= _animCls(c) %>" style="margin:0 0 18px;">
-      <iframe src="<%= _murl %>" style="width:100%;height:<%= parseInt(c.alto) || 300 %>px;border:0;border-radius:12px;" loading="lazy"></iframe>
+    <div data-sec="mapa" class="<%= _animCls(c) %>" style="margin:0 0 20px;">
+      <iframe src="<%= _murl %>" style="width:100%;height:<%= parseInt(c.alto) || 300 %>px;border:0;border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,0.06);" loading="lazy"></iframe>
     </div>
   <% } else if (c.type === 'redes') { %>
-    <div data-sec="redes" style="margin:0 0 18px;display:flex;gap:16px;flex-wrap:wrap;<%= c.align === 'center' ? 'justify-content:center;' : '' %>">
-      <% if (c.facebook) { %><a href="<%= c.facebook %>" target="_blank" rel="noopener" title="Facebook" style="text-decoration:none;display:inline-flex;filter:drop-shadow(0 1px 2px rgba(0,0,0,.15));"><%- _redIcono('facebook') %></a><% } %>
-      <% if (c.instagram) { %><a href="<%= c.instagram %>" target="_blank" rel="noopener" title="Instagram" style="text-decoration:none;display:inline-flex;filter:drop-shadow(0 1px 2px rgba(0,0,0,.15));"><%- _redIcono('instagram') %></a><% } %>
-      <% if (c.tiktok) { %><a href="<%= c.tiktok %>" target="_blank" rel="noopener" title="TikTok" style="text-decoration:none;display:inline-flex;filter:drop-shadow(0 1px 2px rgba(0,0,0,.15));"><%- _redIcono('tiktok') %></a><% } %>
-      <% if (c.whatsapp) { %><a href="https://wa.me/<%= (c.whatsapp || '').replace(/[^0-9]/g, '') %>" target="_blank" rel="noopener" title="WhatsApp" style="text-decoration:none;display:inline-flex;filter:drop-shadow(0 1px 2px rgba(0,0,0,.15));"><%- _redIcono('whatsapp') %></a><% } %>
+    <div data-sec="redes" style="margin:0 0 20px;display:flex;gap:18px;flex-wrap:wrap;<%= c.align === 'center' ? 'justify-content:center;' : '' %>">
+      <% if (c.facebook) { %><a href="<%= c.facebook %>" target="_blank" rel="noopener" title="Facebook" style="text-decoration:none;display:inline-flex;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.15));transition:transform 0.2s;"><%- _redIcono('facebook') %></a><% } %>
+      <% if (c.instagram) { %><a href="<%= c.instagram %>" target="_blank" rel="noopener" title="Instagram" style="text-decoration:none;display:inline-flex;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.15));transition:transform 0.2s;"><%- _redIcono('instagram') %></a><% } %>
+      <% if (c.tiktok) { %><a href="<%= c.tiktok %>" target="_blank" rel="noopener" title="TikTok" style="text-decoration:none;display:inline-flex;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.15));transition:transform 0.2s;"><%- _redIcono('tiktok') %></a><% } %>
+      <% if (c.whatsapp) { %><a href="https://wa.me/<%= (c.whatsapp || '').replace(/[^0-9]/g, '') %>" target="_blank" rel="noopener" title="WhatsApp" style="text-decoration:none;display:inline-flex;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.15));transition:transform 0.2s;"><%- _redIcono('whatsapp') %></a><% } %>
     </div>
   <% } else if (c.type === 'galeria') { %>
     <% var _gurls = String(c.images || '').split('\n').map(function (s) { return s.trim(); }).filter(Boolean); %>
    <% var _gMode = (c.layout || c.modo || 'grid'); %>
    <% var _gCols = Math.max(1, parseInt(c.cols) || 3); %>
    <% var _gHeight = parseInt(c.alto) || 260; %>
-   <div data-sec="galeria" class="<%= _animCls(c) %>" style="margin:0 0 18px;">
-     <% if (c.title) { %><h2 style="font-size:18px;font-weight:800;margin:0 0 10px;"><%= c.title %></h2><% } %>
-     <% if (_gMode === 'slider' || _gMode === 'carrusel') { %>
-       <div style="display:flex;overflow-x:auto;gap:12px;padding:8px 2px 14px;scroll-snap-type:x proximity;scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;mask-image:linear-gradient(90deg,#000 0,#000 92%,transparent);">
-         <% _gurls.forEach(function (u) { %>
-           <img src="<%= u %>" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='/img/sin-imagen.svg'" style="flex:0 0 calc((100% - 24px) / 1.35);min-width:180px;max-width:300px;scroll-snap-align:start;height:<%= _gHeight %>px;object-fit:cover;border-radius:16px;border:1px solid rgba(15,23,42,.08);background:#eee;box-shadow:0 12px 26px rgba(15,23,42,.08);">
+    <div data-sec="galeria" class="<%= _animCls(c) %>" style="margin:0 0 20px;">
+      <% if (c.title) { %><h2 style="font-size:22px;font-weight:800;margin:0 0 14px;letter-spacing:-0.02em;"><%= c.title %></h2><% } %>
+      <% if (_gMode === 'slider' || _gMode === 'carrusel') { %>
+        <% if (_gurls.length > 1) { %>
+        <div class="ct-sld" style="padding:6px 2px 4px;box-shadow:none;">
+          <div class="ct-sld-track" style="padding:4px 0 8px;">
+            <% _gurls.forEach(function (u) { %>
+              <div class="ct-sld-card" style="flex:0 0 62%;max-width:62%;min-width:220px;"><img src="<%= u %>" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='/img/sin-imagen.svg'" style="width:100%;height:<%= _gHeight %>px;object-fit:cover;border-radius:18px;border:1px solid rgba(15,23,42,.06);background:#eee;box-shadow:0 8px 20px rgba(15,23,42,.08);display:block;"></div>
+            <% }) %>
+          </div>
+          <button type="button" class="ct-sld-arrow ct-sld-prev" data-sld-nav="-1" aria-label="Anterior">‹</button>
+          <button type="button" class="ct-sld-arrow ct-sld-next" data-sld-nav="1" aria-label="Siguiente">›</button>
+          <div class="ct-sld-dots"><% _gurls.forEach(function (u, _gk) { %><button type="button" class="ct-sld-dot<%= _gk === 0 ? ' active' : '' %>" data-sld-dot="<%= _gk %>" aria-label="Imagen <%= _gk + 1 %>"></button><% }) %></div>
+        </div>
+        <% } else if (_gurls.length === 1) { %>
+          <img src="<%= _gurls[0] %>" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='/img/sin-imagen.svg'" style="width:100%;height:<%= _gHeight %>px;object-fit:cover;border-radius:18px;border:1px solid rgba(15,23,42,.06);background:#eee;box-shadow:0 8px 20px rgba(15,23,42,.08);display:block;">
+        <% } %>
+      <% } else if (_gMode === 'masonry') { %>
+        <div style="column-count:<%= Math.min(_gCols, 4) %>;column-gap:14px;">
+          <% _gurls.forEach(function (u) { %>
+            <img src="<%= u %>" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='/img/sin-imagen.svg'" style="display:block;width:100%;margin:0 0 14px;border-radius:16px;border:1px solid rgba(15,23,42,.06);background:#eee;object-fit:cover;break-inside:avoid;box-shadow:0 4px 12px rgba(0,0,0,0.04);">
+          <% }) %>
+        </div>
+      <% } else if (_gMode === 'split') { %>
+        <div style="display:grid;grid-template-columns:1.35fr 1fr;gap:12px;">
+          <% _gurls.slice(0, 4).forEach(function (u, idx) { %>
+            <img src="<%= u %>" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='/img/sin-imagen.svg'" style="width:100%;display:block;border-radius:16px;border:1px solid rgba(15,23,42,.06);background:#eee;object-fit:cover;box-shadow:0 4px 12px rgba(0,0,0,0.04);<%= idx === 0 ? 'height:320px;' : 'height:155px;' %>">
          <% }) %>
        </div>
-     <% } else if (_gMode === 'masonry') { %>
-       <div style="column-count:<%= Math.min(_gCols, 4) %>;column-gap:12px;">
-         <% _gurls.forEach(function (u) { %>
-           <img src="<%= u %>" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='/img/sin-imagen.svg'" style="display:block;width:100%;margin:0 0 12px;border-radius:14px;border:1px solid rgba(15,23,42,.08);background:#eee;object-fit:cover;break-inside:avoid;">
-         <% }) %>
-       </div>
-     <% } else if (_gMode === 'split') { %>
-       <div style="display:grid;grid-template-columns:1.35fr 1fr;gap:10px;">
-         <% _gurls.slice(0, 4).forEach(function (u, idx) { %>
-           <img src="<%= u %>" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='/img/sin-imagen.svg'" style="width:100%;display:block;border-radius:14px;border:1px solid rgba(15,23,42,.08);background:#eee;object-fit:cover;<%= idx === 0 ? 'height:320px;' : 'height:155px;' %>">
-         <% }) %>
-       </div>
-     <% } else { %>
-       <div style="display:grid;grid-template-columns:repeat(<%= _gCols %>,1fr);gap:10px;">
-         <% _gurls.forEach(function (u) { %><img src="<%= u %>" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='/img/sin-imagen.svg'" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;border:1px solid rgba(15,23,42,.08);background:#eee;box-shadow:0 6px 16px rgba(15,23,42,.04);"><% }) %>
-       </div>
-     <% } %>
-   </div>
-  <% } else if (c.type === 'carrusel') { %>
+      <% } else { %>
+        <div style="display:grid;grid-template-columns:repeat(<%= _gCols %>,1fr);gap:12px;">
+          <% _gurls.forEach(function (u) { %><img src="<%= u %>" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='/img/sin-imagen.svg'" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:16px;border:1px solid rgba(15,23,42,.06);background:#eee;box-shadow:0 4px 12px rgba(0,0,0,0.04);transition:transform 0.3s cubic-bezier(0.4,0,0.2,1);"><% }) %>
+        </div>
+      <% } %>
+    </div>
+    <% } else if (c.type === 'carrusel') { %>
     <% var _curls = String(c.images || '').split('\n').map(function (s) { return s.trim(); }).filter(Boolean); %>
     <% var _cstyle = (c.layout || c.modo || 'slider'); %>
     <% var _ch = parseInt(c.alto) || 300; %>
-    <div data-sec="carrusel" class="<%= _animCls(c) %>" style="margin:0 0 18px;">
-      <% if (c.title) { %><h2 style="font-size:18px;font-weight:800;margin:0 0 10px;"><%= c.title %></h2><% } %>
+    <div data-sec="carrusel" class="<%= _animCls(c) %>" style="margin:0 0 20px;">
+      <% if (c.title) { %><h2 style="font-size:22px;font-weight:800;margin:0 0 14px;letter-spacing:-0.02em;"><%= c.title %></h2><% } %>
       <% if (_curls.length) { %>
         <% if (_cstyle === 'cards') { %>
           <div class="ct-sld" style="padding:6px 2px 4px;box-shadow:none;">
@@ -467,9 +488,9 @@
     <% var _bv = c.variant || 'solid'; %>
     <% var _bbg = (_bv === 'outline' || _bv === 'ghost') ? 'transparent' : _bc; %>
     <% var _bfg = (_bv === 'outline' || _bv === 'ghost') ? _bc : '#fff'; %>
-    <% var _bbd = _bv === 'outline' ? 'border:2px solid ' + _bc + ';' : (_bv === 'ghost' ? 'border:none;' : (c.border === 'none' ? 'border:none;' : 'border:' + (parseInt(c.border) || 1) + 'px solid rgba(0,0,0,.2);')); %>
-    <% var _bsz = ({ pequeno: '12px', normal: '15px', grande: '18px' })[c.size] || '15px'; %>
-    <% var _bpad = ({ pequeno: '8px 16px', normal: '11px 22px', grande: '14px 28px' })[c.size] || '11px 22px'; %>
+    <% var _bbd = _bv === 'outline' ? 'border:2px solid ' + _bc + ';' : (_bv === 'ghost' ? 'border:none;' : (c.border === 'none' ? 'border:none;' : 'border:' + (parseInt(c.border) || 1) + 'px solid rgba(0,0,0,.15);')); %>
+    <% var _bsz = ({ pequeno: '12px', normal: '15px', grande: '18px', muygrande: '22px', enorme: '26px', gigante: '32px' })[c.size] || '15px'; %>
+    <% var _bpad = ({ pequeno: '9px 18px', normal: '12px 24px', grande: '15px 30px', muygrande: '18px 36px', enorme: '22px 42px', gigante: '26px 50px' })[c.size] || '12px 24px'; %>
     <% var _bsh = _shadowStyle(c.shadow); %>
     <% var _bhover = _hoverCls(c.hover); %>
     <% var _bup = _upStyle(c); %>
@@ -477,29 +498,31 @@
     <% var _bws = _bw ? 'width:' + _bw + ';box-sizing:border-box;' : ''; %>
     <% var _bicon = c.icono ? '<i class="bi ' + c.icono + '" style="font-size:' + (c.iconoTam || 18) + 'px;color:' + (c.iconoColor || _bfg) + ';line-height:1;flex:none;"></i>' : ''; %>
     <% var _bcontent = (c.iconoPos === 'left' ? _bicon : '') + (c.text || 'Botón') + (c.iconoPos === 'right' ? _bicon : ''); %>
-    <div data-sec="boton" class="<%= _animCls(c) %>" style="margin:0 0 18px;text-align:<%= c.align === 'center' ? 'center' : 'left' %>;">
-      <% if (c.descarga === 'si') { %><a href="<%= c.url || '#' %>" download class="<%= _bhover %>" style="display:inline-flex;align-items:center;justify-content:center;gap:8px;<%= _bws %>background:<%= _bbg %>;color:<%= _bfg %>;padding:<%= _bpad %>;border-radius:<%= parseInt(c.radius) || 8 %>px;font-size:<%= _bsz %>;font-weight:700;text-decoration:none;<%= _bbd %><%= _bup %><%= _bsh ? 'box-shadow:' + _bsh + ';' : '' %>"><%- _bcontent %></a><% } else if (c.link) { %><a href="<%= c.link %>" target="_blank" rel="noopener" class="<%= _bhover %>" style="display:inline-flex;align-items:center;justify-content:center;gap:8px;<%= _bws %>background:<%= _bbg %>;color:<%= _bfg %>;padding:<%= _bpad %>;border-radius:<%= parseInt(c.radius) || 8 %>px;font-size:<%= _bsz %>;font-weight:700;text-decoration:none;<%= _bbd %><%= _bup %><%= _bsh ? 'box-shadow:' + _bsh + ';' : '' %>"><%- _bcontent %></a><% } else { %><span class="<%= _bhover %>" style="display:inline-flex;align-items:center;justify-content:center;gap:8px;<%= _bws %>background:<%= _bbg %>;color:<%= _bfg %>;padding:<%= _bpad %>;border-radius:<%= parseInt(c.radius) || 8 %>px;font-size:<%= _bsz %>;font-weight:700;<%= _bbd %><%= _bup %><%= _bsh ? 'box-shadow:' + _bsh + ';' : '' %>"><%- _bcontent %></span><% } %>
+    <% var _btransition = 'transition:all 0.25s cubic-bezier(0.4,0,0.2,1);'; %>
+    <% var _bshadow = _bv !== 'ghost' ? 'box-shadow:0 4px 12px rgba(0,0,0,0.1);' : ''; %>
+    <div data-sec="boton" class="<%= _animCls(c) %>" style="margin:0 0 20px;text-align:<%= c.align === 'center' ? 'center' : 'left' %>;">
+      <% if (c.descarga === 'si') { %><a href="<%= c.url || '#' %>" download class="<%= _bhover %>" style="display:inline-flex;align-items:center;justify-content:center;gap:8px;<%= _bws %>background:<%= _bbg %>;color:<%= _bfg %>;padding:<%= _bpad %>;border-radius:<%= parseInt(c.radius) || 12 %>px;font-size:<%= _bsz %>;font-weight:700;text-decoration:none;<%= _bbd %><%= _bup %><%= _bshadow %><%= _bsh ? 'box-shadow:' + _bsh + ';' : '' %><%= _btransition %>"><%- _bcontent %></a><% } else if (c.link) { %><a href="<%= c.link %>" target="_blank" rel="noopener" class="<%= _bhover %>" style="display:inline-flex;align-items:center;justify-content:center;gap:8px;<%= _bws %>background:<%= _bbg %>;color:<%= _bfg %>;padding:<%= _bpad %>;border-radius:<%= parseInt(c.radius) || 12 %>px;font-size:<%= _bsz %>;font-weight:700;text-decoration:none;<%= _bbd %><%= _bup %><%= _bshadow %><%= _bsh ? 'box-shadow:' + _bsh + ';' : '' %><%= _btransition %>"><%- _bcontent %></a><% } else { %><span class="<%= _bhover %>" style="display:inline-flex;align-items:center;justify-content:center;gap:8px;<%= _bws %>background:<%= _bbg %>;color:<%= _bfg %>;padding:<%= _bpad %>;border-radius:<%= parseInt(c.radius) || 12 %>px;font-size:<%= _bsz %>;font-weight:700;<%= _bbd %><%= _bup %><%= _bshadow %><%= _bsh ? 'box-shadow:' + _bsh + ';' : '' %><%= _btransition %>"><%- _bcontent %></span><% } %>
     </div>
   <% } else if (c.type === 'titulo') { %>
     <% var _tsz = ({ pequeno: '20px', normal: '26px', grande: '34px' })[c.size] || '26px'; %>
     <% var _tpad = _padStyle(c.padding) || '18px 28px 8px'; %>
-    <div data-sec="titulo" class="<%= _animCls(c) %>" style="margin:0 0 12px;text-align:<%= c.align === 'center' ? 'center' : 'left' %>;padding:<%= _tpad %>;<%= _bgStyle(c) %>">
-      <h2 style="font-size:<%= _tsz %>;font-weight:800;margin:0;<%= _txtStyle(c) %><%= _upStyle(c) %>"><%= c.text || 'Título' %></h2>
+    <div data-sec="titulo" class="<%= _animCls(c) %>" style="margin:0 0 14px;text-align:<%= c.align === 'center' ? 'center' : 'left' %>;padding:<%= _tpad %>;<%= _bgStyle(c) %>">
+      <h2 style="font-size:<%= _tsz %>;font-weight:800;margin:0;letter-spacing:-0.02em;<%= _txtStyle(c) %><%= _upStyle(c) %>"><%= c.text || 'Título' %></h2>
     </div>
   <% } else if (c.type === 'separador') { %>
     <% var _sc = /^#[0-9a-fA-F]{6}$/.test(c.color || '') ? c.color : 'var(--border,#e2e8f0)'; %>
-    <div data-sec="separador" class="<%= _animCls(c) %>" style="margin:0 0 18px;"><div style="height:<%= parseInt(c.grosor) || 1 %>px;background:<%= _sc %>;border-radius:2px;opacity:.7;"></div></div>
+    <div data-sec="separador" class="<%= _animCls(c) %>" style="margin:0 0 20px;"><div style="height:<%= parseInt(c.grosor) || 1 %>px;background:<%= _sc %>;border-radius:2px;opacity:.6;"></div></div>
   <% } else if (c.type === 'filtros') { %>
-    <div data-sec="filtros" style="margin:0 0 18px;">
-      <% if (c.title) { %><h2 style="font-size:18px;font-weight:800;margin:0 0 10px;"><%= c.title %></h2><% } %>
-      <div class="relative" style="position:relative;margin-bottom:12px;">
-        <input id="search-input" oninput="applySearch()" placeholder="Buscar productos…" style="width:100%;padding:10px 14px 10px 40px;border:1px solid var(--border,#e2e8f0);border-radius:12px;font-size:14px;background:var(--card,#fff);color:inherit;outline:none;" />
-        <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted,#94a3b8);">🔍</span>
+    <div data-sec="filtros" style="margin:0 0 20px;">
+      <% if (c.title) { %><h2 style="font-size:20px;font-weight:800;margin:0 0 12px;letter-spacing:-0.01em;"><%= c.title %></h2><% } %>
+      <div class="relative" style="position:relative;margin-bottom:14px;">
+        <input id="search-input" oninput="applySearch()" placeholder="Buscar productos…" style="width:100%;padding:12px 16px 12px 44px;border:1.5px solid var(--border,#e2e8f0);border-radius:14px;font-size:14px;background:var(--card,#fff);color:inherit;outline:none;box-shadow:0 1px 3px rgba(0,0,0,0.04);transition:border-color 0.2s,box-shadow 0.2s;" />
+        <span style="position:absolute;left:16px;top:50%;transform:translateY(-50%);color:var(--muted,#94a3b8);">🔍</span>
       </div>
       <div style="display:flex;flex-wrap:wrap;gap:8px;">
-        <button onclick="filterCat(0)" class="cat-chip chip-active" style="border:1px solid var(--border,#e2e8f0);background:var(--card,#fff);border-radius:999px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;">✨ Todos</button>
+        <button onclick="filterCat(0)" class="cat-chip chip-active" style="border:1px solid var(--border,#e2e8f0);background:var(--card,#fff);border-radius:999px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;transition:all 0.2s cubic-bezier(0.4,0,0.2,1);box-shadow:0 1px 3px rgba(0,0,0,0.06);">✨ Todos</button>
         <% _cats.forEach(function (cc) { %>
-          <button onclick="filterCat(<%= cc.id %>)" data-cat="<%= cc.id %>" class="cat-chip chip-idle" style="border:1px solid var(--border,#e2e8f0);background:var(--card,#fff);border-radius:999px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;"><%= cc.name %></button>
+          <button onclick="filterCat(<%= cc.id %>)" data-cat="<%= cc.id %>" class="cat-chip chip-idle" style="border:1px solid var(--border,#e2e8f0);background:var(--card,#fff);border-radius:999px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;transition:all 0.2s cubic-bezier(0.4,0,0.2,1);box-shadow:0 1px 3px rgba(0,0,0,0.04);"><%= cc.name %></button>
         <% }) %>
       </div>
     </div>
@@ -620,23 +643,29 @@
     <% var _cb = _path.concat([String(c.id), 1]); var _cbStr = _cb.join(':'); %>
     <% var _cf = _path.concat([String(c.id), 2]); var _cfStr = _cf.join(':'); %>
     <% var _body = (Array.isArray(c.body) ? c.body : (c.blocks || [])); %>
-    <div data-sec="card" class="<%= _animCls(c) %>" style="margin:0 0 18px;">
-      <div class="<%= _hoverCls(c.hover) %>" style="<%= _bgStyle(c) %>border:1px solid var(--border,#e2e8f0);border-radius:<%= parseInt(c.radius) || 16 %>px;overflow:hidden;<%= _shadowStyle(c.shadow) ? 'box-shadow:' + _shadowStyle(c.shadow) + ';' : '' %>">
-        <div style="padding:14px 16px;border-bottom:1px solid var(--border,#e2e8f0);">
+    <% var _hasFooter = (c.footer || []).length > 0; %>
+    <% var _hasTitle = !!c.title; %>
+    <div data-sec="card" class="<%= _animCls(c) %>" style="margin:0 0 20px;">
+      <div class="<%= _hoverCls(c.hover) %>" style="background:var(--card,#fff);<%= _bgStyle(c) %>border:1px solid var(--border,#e2e8f0);border-radius:<%= parseInt(c.radius) || 18 %>px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,0.04),0 1px 3px rgba(0,0,0,0.06);<%= _shadowStyle(c.shadow) ? 'box-shadow:' + _shadowStyle(c.shadow) + ';' : '' %>transition:box-shadow 0.3s cubic-bezier(0.4,0,0.2,1),transform 0.3s cubic-bezier(0.4,0,0.2,1);">
+        <% if (_hasTitle || _edit) { %>
+        <div style="padding:14px 16px;<%= (_hasTitle || _edit) ? 'border-bottom:1px solid var(--border,#e2e8f0);' : '' %>">
           <% if (_edit) { %>
             <h2 class="ce-text" data-ce="title" data-placeholder="Título de la tarjeta…" style="font-size:17px;font-weight:800;margin:0;"><%= c.title || '' %></h2>
           <% } else if (c.title) { %>
             <h2 style="font-size:17px;font-weight:800;margin:0;"><%= c.title %></h2>
           <% } %>
         </div>
-        <div style="padding:14px 16px;">
+        <% } %>
+        <div style="padding:<%= (_hasTitle || _edit) ? '14px 16px' : '18px' %>;">
           <%- include('./components', { components: _body, pathArr: _cb, nested: true }) %>
           <% if (_edit) { %><div class="c-add" data-pos="<%= _body.length %>" data-path="<%= _cbStr %>"><span class="c-add-plus">＋</span></div><% } %>
         </div>
+        <% if (_hasFooter || _edit) { %>
         <div style="padding:12px 16px;border-top:1px solid var(--border,#e2e8f0);">
           <%- include('./components', { components: c.footer || [], pathArr: _cf, nested: true }) %>
           <% if (_edit) { %><div class="c-add" data-pos="<%= (c.footer || []).length %>" data-path="<%= _cfStr %>"><span class="c-add-plus">＋</span></div><% } %>
         </div>
+        <% } %>
       </div>
     </div>
 <% } else if (c.type === 'mascara') { %>
@@ -705,7 +734,7 @@
         <div style="font-size:13px;color:var(--muted,#64748b);">
           <% _hr.forEach(function (x) { %>
             <% if (x && x.d && x.o) { %>
-              <div style="display:flex;justify-content:space-between;gap:10px;padding:3px 0;"><span style="font-weight:700;color:inherit;"><%= _dias[(x.d - 1)] || '' %></span><span><%= x.o %> – <%= x.c %></span></div>
+              <div style="display:flex;justify-content:space-between;gap:10px;padding:3px 0;"><span style="font-weight:700;color:inherit;"><%= _dias[(x.d - 1)] || '' %></span><span><%= _to12(x.o) %> – <%= _to12(x.c) %></span></div>
             <% } %>
           <% }) %>
         </div>
@@ -716,80 +745,132 @@
       </a>
     </div>
   <% } else if (c.type === 'faq') { %>
-    <div data-sec="faq" class="<%= _animCls(c) %>" style="margin:0 0 18px;<%= _boxStyle(c) %>">
-      <% if (c.title) { %><h2 style="font-size:20px;font-weight:800;margin:0 0 12px;"><%= c.title %></h2><% } %>
+    <div data-sec="faq" class="<%= _animCls(c) %>" style="margin:0 0 20px;<%= _boxStyle(c) %>">
+      <% if (c.title) { %><h2 style="font-size:22px;font-weight:800;margin:0 0 14px;letter-spacing:-0.02em;"><%= c.title %></h2><% } %>
       <% _items(c.items).forEach(function (l) { var p = _parts(l); %>
-        <details style="background:var(--card,#fff);border:1px solid var(--border,#e2e8f0);border-radius:10px;margin-bottom:8px;overflow:hidden;">
-          <summary style="padding:12px 14px;font-weight:700;cursor:pointer;"><%= p.a %></summary>
-          <% if (p.b) { %><div style="padding:0 14px 12px;color:var(--muted,#64748b);font-size:13px;line-height:1.5;"><%= p.b %></div><% } %>
+        <details style="background:var(--card,#fff);border:1px solid var(--border,#e2e8f0);border-radius:14px;margin-bottom:10px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04);transition:box-shadow 0.2s;">
+          <summary style="padding:14px 18px;font-weight:700;cursor:pointer;font-size:15px;list-style:none;display:flex;justify-content:space-between;align-items:center;"><span><%= p.a %></span><span style="color:var(--muted);font-size:18px;transition:transform 0.2s;">+</span></summary>
+          <% if (p.b) { %><div style="padding:0 18px 16px;color:var(--muted,#64748b);font-size:14px;line-height:1.6;"><%= p.b %></div><% } %>
         </details>
       <% }) %>
     </div>
   <% } else if (c.type === 'testimonios') { %>
-    <% var _ts = _items(c.items); if (_ts.length) { %>
-    <div data-sec="testimonios" class="<%= _animCls(c) %>" style="margin:0 0 18px;<%= _boxStyle(c) %>">
-      <% if (c.title) { %><h2 style="font-size:20px;font-weight:800;margin:0 0 16px;text-align:center;"><%= c.title %></h2><% } %>
-        <div style="<%= _ts.length > 1 ? 'display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;' : 'max-width:620px;margin:0 auto;' %>">
-          <% _ts.forEach(function (l) { var p = _parts(l); var _n = Math.max(1, Math.min(5, parseFloat(p.d) || 5)); %>
-            <div style="display:flex;flex-direction:column;align-items:center;text-align:center;padding:34px 26px;background:var(--card,#fff);border:1px solid var(--border,#e2e8f0);border-radius:22px;box-shadow:0 16px 38px rgba(15,15,15,.09);position:relative;overflow:hidden;">
-              <div style="position:absolute;top:-30px;left:50%;transform:translateX(-50%);font-size:120px;font-family:Georgia,'Times New Roman',serif;color:var(--accent,#2563eb);opacity:.12;line-height:1;pointer-events:none;">&ldquo;</div>
-              <div style="position:relative;display:inline-block;font-size:15px;line-height:1;letter-spacing:3px;color:#e2e8f0;margin:0 0 12px;">★★★★★<div style="position:absolute;top:0;left:0;overflow:hidden;white-space:nowrap;width:<%= (_n / 5 * 100) %>%;color:#f59e0b;">★★★★★</div></div>
-              <p style="font-size:15px;line-height:1.7;color:var(--text,#1f2937);font-style:italic;margin:0 0 20px;"><%= p.b %></p>
-              <div style="display:flex;align-items:center;gap:11px;">
-                <% if (p.c) { %><img src="<%= p.c %>" style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid var(--accent,#2563eb);flex:none;"><% } else { %><div style="width:52px;height:52px;border-radius:50%;background:var(--accent,#2563eb);color:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;flex:none;">👤</div><% } %>
-                <div style="text-align:left;">
-                  <div style="font-weight:800;font-size:15px;color:var(--text,#1f2937);"><%= p.a %></div>
-                  <div style="font-size:12px;color:var(--muted,#64748b);font-weight:600;letter-spacing:.03em;">Cliente</div>
-                </div>
-              </div>
+    <% var _tss = _items(c.items); var _layout = c.layout || 'centro'; %>
+    <% if (_tss.length) { %>
+    <% var _tc2 = c.color || ''; %>
+    <% var _padMap = {suave:'20px 16px',normal:'32px 20px',amplio:'44px 28px'}; %>
+    <% var _multi = _tss.length > 1; %>
+    <div data-sec="testimonios" class="<%= _animCls(c) %>" style="margin:0 0 20px;">
+      <div style="display:<%= _multi ? 'grid' : 'block' %>;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;">
+      <% _tss.forEach(function (_t) { var _p = _parts(_t); var _n = Math.max(1, Math.min(5, parseFloat(_p.d) || 5));
+        var _cardSty = (c.bg ? 'background:' + c.bg + ';' : 'background:var(--card,#fff);') + 'padding:' + (_padMap[c.padding] || '32px 20px') + ';position:relative;overflow:hidden;width:100%;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;';
+        if (c.radius && c.radius !== '0') _cardSty += 'border-radius:' + c.radius + 'px;'; else _cardSty += 'border-radius:20px;';
+        if (c.border && c.border !== 'none') _cardSty += 'border:' + c.border + 'px solid var(--border,#e2e8f0);'; else _cardSty += 'border:1px solid var(--border,#e2e8f0);';
+        if (c.shadow && c.shadow !== 'none') _cardSty += 'box-shadow:' + ({suave:'0 2px 8px rgba(0,0,0,.08)',media:'0 6px 18px rgba(0,0,0,.14)',fuerte:'0 12px 32px rgba(0,0,0,.22)'}[c.shadow] || '') + ';';
+        var _tc = _p.c ? '<img src="' + _p.c + '" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.style.display=\'none\';" style="width:60px;height:60px;border-radius:50%;object-fit:cover;border:2px solid var(--accent,#2563eb);flex:none;">' : '<div style="width:60px;height:60px;border-radius:50%;background:var(--accent,#2563eb);color:#fff;display:flex;align-items:center;justify-content:center;font-size:26px;flex:none;">👤</div>';
+        var _stars = '<div style="position:relative;display:inline-block;font-size:15px;line-height:1;letter-spacing:3px;color:#e2e8f0;margin:0 0 14px;">★★★★★<div style="position:absolute;top:0;left:0;overflow:hidden;white-space:nowrap;width:' + (_n / 5 * 100) + '%;color:#f59e0b;">★★★★★</div></div>';
+      %>
+      <div style="<%= _cardSty %>">
+      <% if (_layout === 'izq') { %>
+        <div style="display:flex;align-items:flex-start;gap:16px;text-align:left;">
+          <%- _tc %>
+          <div style="flex:1;">
+            <%- _stars %>
+            <p style="font-size:15px;line-height:1.7;font-style:italic;margin:0;<%= _tc2 ? 'color:' + _tc2 + ';' : '' %>"><%= _p.b %></p>
+            <div style="margin-top:12px;">
+              <span style="font-weight:800;font-size:15px;<%= _tc2 ? 'color:' + _tc2 + ';' : '' %>"><%= _p.a %></span>
+              <span style="font-size:12px;color:var(--muted,#64748b);font-weight:600;">· Cliente</span>
             </div>
-          <% }) %>
+          </div>
         </div>
+      <% } else if (_layout === 'abajo') { %>
+        <div style="display:flex;flex-direction:column;align-items:center;text-align:center;">
+          <%- _stars %>
+          <p style="font-size:15px;line-height:1.7;font-style:italic;margin:0;<%= _tc2 ? 'color:' + _tc2 + ';' : '' %>"><%= _p.b %></p>
+          <div style="margin-top:16px;display:flex;flex-direction:column;align-items:center;gap:8px;">
+            <%- _tc %>
+            <div>
+              <span style="font-weight:800;font-size:15px;<%= _tc2 ? 'color:' + _tc2 + ';' : '' %>"><%= _p.a %></span>
+              <div style="font-size:12px;color:var(--muted,#64748b);font-weight:600;">Cliente</div>
+            </div>
+          </div>
+        </div>
+      <% } else { %>
+        <div style="display:flex;flex-direction:column;align-items:center;text-align:center;position:relative;">
+          <div style="position:absolute;top:-30px;left:50%;transform:translateX(-50%);font-size:120px;font-family:Georgia,'Times New Roman',serif;color:var(--accent,#2563eb);opacity:.12;line-height:1;pointer-events:none;">&ldquo;</div>
+          <%- _stars %>
+          <p style="font-size:15px;line-height:1.7;font-style:italic;margin:0;<%= _tc2 ? 'color:' + _tc2 + ';' : '' %>"><%= _p.b %></p>
+          <div style="margin-top:12px;display:flex;align-items:center;gap:11px;">
+            <%- _tc %>
+            <div style="text-align:left;">
+              <span style="font-weight:800;font-size:15px;<%= _tc2 ? 'color:' + _tc2 + ';' : '' %>"><%= _p.a %></span>
+              <div style="font-size:12px;color:var(--muted,#64748b);font-weight:600;">Cliente</div>
+            </div>
+          </div>
+        </div>
+      <% } %>
+      </div>
+      <% }) %>
+      </div>
     </div>
     <% } %>
   <% } else if (c.type === 'contacto') { %>
     <% var _cnum = (biz.whatsapp || '').replace(/[^0-9]/g, ''); %>
-    <div data-sec="contacto" class="<%= _animCls(c) %>" style="margin:0 0 18px;text-align:<%= c.align === 'center' ? 'center' : 'left' %>;<%= _boxStyle(c) %>">
-      <% if (c.title) { %><h2 style="font-size:20px;font-weight:800;margin:0 0 8px;"><%= c.title %></h2><% } %>
-      <div style="background:var(--card,#fff);border:1px solid var(--border,#e2e8f0);border-radius:14px;padding:20px;">
-        <% if (c.text) { %><p style="font-size:13px;color:var(--muted,#64748b);margin:0 0 12px;"><%= c.text %></p><% } %>
-        <form class="ct-contact-form" data-wa="<%= _cnum %>" data-boton="<%= c.boton || 'Enviar consulta' %>" onsubmit="ctEnviarContacto(this); return false;" style="display:grid;gap:8px;margin:0;text-align:left;">
-          <input name="nombre" type="text" required placeholder="Nombre" style="padding:11px 14px;border:1px solid var(--border,#e2e8f0);border-radius:8px;background:#fff;font-size:13px;">
-          <input name="telefono" type="tel" placeholder="Teléfono / WhatsApp" style="padding:11px 14px;border:1px solid var(--border,#e2e8f0);border-radius:8px;background:#fff;font-size:13px;">
-          <textarea name="mensaje" required rows="3" placeholder="Mensaje" style="padding:11px 14px;border:1px solid var(--border,#e2e8f0);border-radius:8px;background:#fff;font-size:13px;resize:none;"></textarea>
-          <button type="submit" style="display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 22px;border-radius:var(--radius,12px);font-weight:800;font-size:14px;background:var(--accent,#2563eb);color:#fff;border:0;cursor:pointer;">💬 <%= c.boton || 'Enviar consulta' %></button>
+    <div data-sec="contacto" class="<%= _animCls(c) %>" style="margin:0 0 20px;text-align:<%= c.align === 'center' ? 'center' : 'left' %>;<%= _boxStyle(c) %>">
+      <% if (c.title) { %><h2 style="font-size:22px;font-weight:800;margin:0 0 10px;letter-spacing:-0.02em;"><%= c.title %></h2><% } %>
+      <div style="background:var(--card,#fff);border:1px solid var(--border,#e2e8f0);border-radius:18px;padding:24px;box-shadow:0 4px 12px rgba(0,0,0,0.04),0 1px 3px rgba(0,0,0,0.06);">
+        <% if (c.text) { %><p style="font-size:14px;color:var(--muted,#64748b);margin:0 0 16px;line-height:1.6;"><%= c.text %></p><% } %>
+        <form class="ct-contact-form" data-wa="<%= _cnum %>" data-boton="<%= c.boton || 'Enviar consulta' %>" onsubmit="ctEnviarContacto(this); return false;" style="display:grid;gap:10px;margin:0;text-align:left;">
+          <input name="nombre" type="text" required placeholder="Nombre" style="padding:12px 16px;border:1.5px solid var(--border,#e2e8f0);border-radius:12px;background:#fff;font-size:14px;transition:border-color 0.2s cubic-bezier(0.4,0,0.2,1),box-shadow 0.2s;outline:none;">
+          <input name="telefono" type="tel" placeholder="Teléfono / WhatsApp" style="padding:12px 16px;border:1.5px solid var(--border,#e2e8f0);border-radius:12px;background:#fff;font-size:14px;transition:border-color 0.2s cubic-bezier(0.4,0,0.2,1),box-shadow 0.2s;outline:none;">
+          <textarea name="mensaje" required rows="3" placeholder="Mensaje" style="padding:12px 16px;border:1.5px solid var(--border,#e2e8f0);border-radius:12px;background:#fff;font-size:14px;resize:none;transition:border-color 0.2s cubic-bezier(0.4,0,0.2,1),box-shadow 0.2s;outline:none;"></textarea>
+          <button type="submit" style="display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:13px 24px;border-radius:14px;font-weight:800;font-size:14px;background:var(--accent,#2563eb);color:#fff;border:0;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.1);transition:all 0.25s cubic-bezier(0.4,0,0.2,1);">💬 <%= c.boton || 'Enviar consulta' %></button>
         </form>
       </div>
     </div>
   <% } else if (c.type === 'horario') { %>
-    <div data-sec="horario" class="<%= _animCls(c) %>" style="margin:0 0 18px;<%= _boxStyle(c) %>">
-      <% if (c.title) { %><h2 style="font-size:20px;font-weight:800;margin:0 0 12px;"><%= c.title %></h2><% } %>
-      <div style="background:var(--card,#fff);border:1px solid var(--border,#e2e8f0);border-radius:12px;padding:16px;">
-        <% _items(c.items).forEach(function (l) { var p = _parts(l); %>
-          <div style="display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid rgba(0,0,0,.06);"><span style="font-weight:700;"><%= p.a %></span><span style="color:var(--muted,#64748b);"><%= p.b %></span></div>
+    <%
+      var _DIAS_HR = {1:'Lunes',2:'Martes',3:'Miércoles',4:'Jueves',5:'Viernes',6:'Sábado',7:'Domingo'};
+      var _hrLines = _items(c.items);
+      if (!_hrLines.length && biz && biz.horario) {
+        try {
+          var _hrArr = JSON.parse(biz.horario);
+          if (Array.isArray(_hrArr)) {
+            _hrLines = _hrArr.filter(function(x){ return x && x.d && x.o && x.c; }).map(function(x){
+              return (_DIAS_HR[x.d]||('Día '+x.d)) + '|' + _to12(x.o) + ' – ' + _to12(x.c);
+            });
+          }
+        } catch(e){}
+      }
+    %>
+    <div data-sec="horario" class="<%= _animCls(c) %>" style="margin:0 0 20px;<%= _boxStyle(c) %>">
+      <% if (c.title) { %><h2 style="font-size:22px;font-weight:800;margin:0 0 14px;letter-spacing:-0.02em;"><%= c.title %></h2><% } %>
+      <div style="background:var(--card,#fff);border:1px solid var(--border,#e2e8f0);border-radius:16px;padding:20px;box-shadow:0 4px 12px rgba(0,0,0,0.04),0 1px 3px rgba(0,0,0,0.06);">
+        <% _hrLines.forEach(function (l) { var p = _parts(l); %>
+          <div style="display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid rgba(0,0,0,0.05);"><span style="font-weight:700;font-size:15px;"><%= p.a %></span><span style="color:var(--muted,#64748b);font-size:14px;"><%= p.b %></span></div>
         <% }) %>
       </div>
     </div>
   <% } else if (c.type === 'stats') { %>
     <% var _ac = c.accent || 'var(--accent,#2563eb)'; %>
-    <div data-sec="stats" class="<%= _animCls(c) %>" style="margin:0 0 18px;<%= _boxStyle(c) %>">
-      <% if (c.title) { %><h2 style="font-size:20px;font-weight:800;margin:0 0 12px;"><%= c.title %></h2><% } %>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+    <div data-sec="stats" class="<%= _animCls(c) %>" style="margin:0 0 20px;<%= _boxStyle(c) %>">
+      <% if (c.title) { %><h2 style="font-size:22px;font-weight:800;margin:0 0 14px;letter-spacing:-0.02em;"><%= c.title %></h2><% } %>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
         <% _items(c.items).forEach(function (l) { var p = _parts(l); %>
-          <div style="text-align:center;padding:16px 8px;background:var(--card,#fff);border:1px solid var(--border,#e2e8f0);border-radius:12px;">
-            <div style="font-size:32px;font-weight:900;color:<%= _ac %>;"><%= p.a %></div>
-            <div style="font-size:12px;color:var(--muted,#64748b);margin-top:6px;text-transform:uppercase;letter-spacing:.05em;"><%= p.b %></div>
+          <div style="text-align:center;padding:20px 10px;background:var(--card,#fff);border:1px solid var(--border,#e2e8f0);border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,0.04);transition:box-shadow 0.3s,transform 0.3s;">
+            <div style="font-size:36px;font-weight:900;color:<%= _ac %>;"><%= p.a %></div>
+            <div style="font-size:12px;color:var(--muted,#64748b);margin-top:8px;text-transform:uppercase;letter-spacing:.06em;font-weight:600;"><%= p.b %></div>
           </div>
         <% }) %>
       </div>
     </div>
   <% } else if (c.type === 'precios') { %>
     <% var _ac = c.accent || 'var(--accent,#2563eb)'; %>
-    <div data-sec="precios" class="<%= _animCls(c) %>" style="margin:0 0 18px;<%= _boxStyle(c) %>">
-      <% if (c.title) { %><h2 style="font-size:20px;font-weight:800;margin:0 0 12px;"><%= c.title %></h2><% } %>
-      <div style="background:var(--card,#fff);border:1px solid var(--border,#e2e8f0);border-radius:12px;padding:16px;">
+    <div data-sec="precios" class="<%= _animCls(c) %>" style="margin:0 0 20px;<%= _boxStyle(c) %>">
+      <% if (c.title) { %><h2 style="font-size:22px;font-weight:800;margin:0 0 14px;letter-spacing:-0.02em;"><%= c.title %></h2><% } %>
+      <div style="background:var(--card,#fff);border:1px solid var(--border,#e2e8f0);border-radius:16px;padding:20px;box-shadow:0 4px 12px rgba(0,0,0,0.04),0 1px 3px rgba(0,0,0,0.06);">
         <% _items(c.items).forEach(function (l) { var p = _parts(l); %>
-          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:11px 0;border-bottom:1px solid rgba(0,0,0,.06);"><span style="font-weight:600;"><%= p.a %></span><span style="font-weight:900;color:<%= _ac %>;font-size:16px;"><%= p.b %></span></div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:12px 0;border-bottom:1px solid rgba(0,0,0,0.05);"><span style="font-weight:600;font-size:15px;"><%= p.a %></span><span style="font-weight:900;color:<%= _ac %>;font-size:17px;"><%= p.b %></span></div>
         <% }) %>
       </div>
     </div>
@@ -800,11 +881,11 @@
     </div>
   <% } else if (c.type === 'cupon') { %>
     <% var _ac = c.accent || 'var(--accent,#2563eb)'; %>
-    <div data-sec="cupon" class="<%= _animCls(c) %>" style="margin:0 0 18px;text-align:center;<%= _boxStyle(c) %>">
-      <div style="border:2px dashed <%= _ac %>;border-radius:14px;padding:20px;">
-        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted,#64748b);margin-bottom:6px;"><%= c.title || 'Cupón de descuento' %></div>
-        <% if (c.text) { %><p style="font-size:13px;color:var(--muted,#64748b);margin:0 0 10px;"><%= c.text %></p><% } %>
-        <div style="font-size:28px;font-weight:900;letter-spacing:.15em;color:<%= _ac %>;padding:8px 0;"><%= c.codigo || 'CÓDIGO10' %></div>
+    <div data-sec="cupon" class="<%= _animCls(c) %>" style="margin:0 0 20px;text-align:center;<%= _boxStyle(c) %>">
+      <div style="border:2px dashed <%= _ac %>;border-radius:18px;padding:28px;background:linear-gradient(135deg,rgba(0,0,0,0.01),rgba(0,0,0,0.03));">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.14em;color:var(--muted,#64748b);margin-bottom:8px;font-weight:700;"><%= c.title || 'Cupón de descuento' %></div>
+        <% if (c.text) { %><p style="font-size:14px;color:var(--muted,#64748b);margin:0 0 14px;line-height:1.5;"><%= c.text %></p><% } %>
+        <div style="font-size:32px;font-weight:900;letter-spacing:.15em;color:<%= _ac %>;padding:10px 0;font-family:monospace;"><%= c.codigo || 'CÓDIGO10' %></div>
         <a href="https://wa.me/<%= (biz.whatsapp || '').replace(/[^0-9]/g, '') %>?text=<%= encodeURIComponent('Quiero usar mi cupón ' + (c.codigo || '')) %>" target="_blank" rel="noopener" class="btn-primary" style="display:inline-flex;align-items:center;gap:8px;margin-top:10px;padding:12px 24px;border-radius:999px;font-weight:800;text-decoration:none;font-size:14px;"><%= c.boton || 'Usar cupón' %></a>
       </div>
     </div>
@@ -907,62 +988,62 @@
     </div>
   <% } else if (c.type === 'newsletter') { %>
     <% var _bg = c.bg || 'var(--card,#fff)'; var _tc = c.color || 'var(--text,#0f172a)'; var _ac = c.accent || 'var(--accent,#2563eb)'; var _m = _bgMerge(c, _bg); %>
-    <div data-sec="newsletter" class="<%= _animCls(c) %>" style="margin:0 0 18px;<%= _boxStyle(_m) %>border-radius:16px;padding:24px;text-align:<%= c.align === 'center' ? 'center' : 'left' %>;">
-      <% if (c.title) { %><h2 style="font-size:18px;font-weight:800;margin:0 0 6px;"><%= c.title %></h2><% } %>
-      <div style="font-size:13px;color:<%= _tc %>;opacity:.8;margin-bottom:12px;"><%= c.text || 'Suscríbete para recibir ofertas exclusivas' %></div>
-      <div style="display:flex;gap:8px;max-width:420px;<%= c.align === 'center' ? 'margin:0 auto;' : '' %>">
-        <input placeholder="<%= c.placeholder || 'Tu correo electrónico' %>" disabled style="flex:1;padding:12px 16px;border:1px solid var(--border,#e2e8f0);border-radius:10px;background:#fff;font-size:14px;">
-        <a href="https://wa.me/<%= (biz.whatsapp || '').replace(/[^0-9]/g, '') %>" target="_blank" rel="noopener" class="btn-primary" style="background:<%= _ac %>;color:#fff;padding:12px 20px;border-radius:10px;font-weight:800;text-decoration:none;font-size:14px;white-space:nowrap;"><%= c.boton || 'Suscribirme' %></a>
+    <div data-sec="newsletter" class="<%= _animCls(c) %>" style="margin:0 0 20px;<%= _boxStyle(_m) %>border-radius:18px;padding:28px;text-align:<%= c.align === 'center' ? 'center' : 'left' %>;box-shadow:0 4px 12px rgba(0,0,0,0.04),0 1px 3px rgba(0,0,0,0.06);">
+      <% if (c.title) { %><h2 style="font-size:20px;font-weight:800;margin:0 0 8px;letter-spacing:-0.01em;"><%= c.title %></h2><% } %>
+      <div style="font-size:14px;color:<%= _tc %>;opacity:.8;margin-bottom:16px;line-height:1.5;"><%= c.text || 'Suscríbete para recibir ofertas exclusivas' %></div>
+      <div style="display:flex;gap:10px;max-width:440px;<%= c.align === 'center' ? 'margin:0 auto;' : '' %>">
+        <input placeholder="<%= c.placeholder || 'Tu correo electrónico' %>" disabled style="flex:1;padding:13px 18px;border:1.5px solid var(--border,#e2e8f0);border-radius:14px;background:#fff;font-size:14px;transition:border-color 0.2s;outline:none;">
+        <a href="https://wa.me/<%= (biz.whatsapp || '').replace(/[^0-9]/g, '') %>" target="_blank" rel="noopener" class="btn-primary" style="background:<%= _ac %>;color:#fff;padding:13px 24px;border-radius:14px;font-weight:800;text-decoration:none;font-size:14px;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,0.1);transition:all 0.25s cubic-bezier(0.4,0,0.2,1);"><%= c.boton || 'Suscribirme' %></a>
       </div>
     </div>
   <% } else if (c.type === 'countdown') { %>
     <% var _bg = c.bg || 'var(--card,#fff)'; var _tc = c.color || 'var(--text,#0f172a)'; var _ac = c.accent || 'var(--accent,#2563eb)'; var _m = _bgMerge(c, _bg); %>
-    <div data-sec="countdown" class="<%= _animCls(c) %>" style="margin:0 0 18px;text-align:center;<%= _boxStyle(_m) %>padding:24px;border-radius:14px;">
-      <% if (c.title) { %><h2 style="font-size:18px;font-weight:800;margin:0 0 8px;"><%= c.title %></h2><% } %>
-      <div style="font-size:32px;font-weight:900;color:<%= _ac %>;letter-spacing:.05em;"><%= c.fecha || '' %></div>
-      <% if (c.text) { %><div style="font-size:13px;color:<%= _tc %>;opacity:.7;margin-top:8px;"><%= c.text %></div><% } %>
+    <div data-sec="countdown" class="<%= _animCls(c) %>" style="margin:0 0 20px;text-align:center;<%= _boxStyle(_m) %>padding:28px;border-radius:18px;box-shadow:0 4px 12px rgba(0,0,0,0.04),0 1px 3px rgba(0,0,0,0.06);">
+      <% if (c.title) { %><h2 style="font-size:20px;font-weight:800;margin:0 0 10px;letter-spacing:-0.01em;"><%= c.title %></h2><% } %>
+      <div style="font-size:36px;font-weight:900;color:<%= _ac %>;letter-spacing:.06em;font-family:monospace;"><%= c.fecha || '' %></div>
+      <% if (c.text) { %><div style="font-size:14px;color:<%= _tc %>;opacity:.7;margin-top:10px;line-height:1.5;"><%= c.text %></div><% } %>
     </div>
-  <% } else if (c.type === 'llamar') { %>
+    <% } else if (c.type === 'llamar') { %>
     <% var _ac = c.color || '#16a34a'; %>
-    <div data-sec="llamar" class="<%= _animCls(c) %>" style="margin:0 0 18px;text-align:<%= c.align === 'center' ? 'center' : 'left' %>;">
-      <a href="tel:<%= (c.telefono || biz.whatsapp || '').replace(/[^0-9+]/g, '') %>" style="display:inline-flex;align-items:center;gap:8px;background:<%= _ac %>;color:#fff;padding:14px 28px;border-radius:999px;font-weight:800;text-decoration:none;font-size:15px;">📞 <%= c.text || 'Llámanos' %><% if (c.telefono) { %> <span style="opacity:.85;"><%= c.telefono %></span><% } %></a>
+    <div data-sec="llamar" class="<%= _animCls(c) %>" style="margin:0 0 20px;text-align:<%= c.align === 'center' ? 'center' : 'left' %>;">
+      <a href="tel:<%= (c.telefono || biz.whatsapp || '').replace(/[^0-9+]/g, '') %>" style="display:inline-flex;align-items:center;gap:10px;background:<%= _ac %>;color:#fff;padding:15px 30px;border-radius:999px;font-weight:800;text-decoration:none;font-size:15px;box-shadow:0 4px 14px rgba(0,0,0,0.12);transition:all 0.25s cubic-bezier(0.4,0,0.2,1);">📞 <%= c.text || 'Llámanos' %><% if (c.telefono) { %> <span style="opacity:.85;"><%= c.telefono %></span><% } %></a>
     </div>
   <% } else if (c.type === 'audio') { %>
     <div data-sec="audio" class="<%= _animCls(c) %>" style="margin:0 0 18px;<%= _boxStyle(c) %>">
-      <% if (c.title) { %><h2 style="font-size:18px;font-weight:800;margin:0 0 10px;"><%= c.title %></h2><% } %>
-      <% if (c.url) { %><audio controls src="<%= c.url %>" style="width:100%;border-radius:12px;"></audio><% } %>
+      <% if (c.title) { %><h2 style="font-size:20px;font-weight:800;margin:0 0 12px;"><%= c.title %></h2><% } %>
+      <% if (c.url) { %><audio controls src="<%= c.url %>" style="width:100%;border-radius:14px;"></audio><% } %>
     </div>
-  <% } else if (c.type === 'descarga') { %>
+    <% } else if (c.type === 'descarga') { %>
     <% var _ac = c.accent || 'var(--accent,#2563eb)'; %>
-    <div data-sec="descarga" class="<%= _animCls(c) %>" style="margin:0 0 18px;text-align:<%= c.align === 'center' ? 'center' : 'left' %>;<%= _boxStyle(c) %>">
-      <% if (c.title) { %><h2 style="font-size:18px;font-weight:800;margin:0 0 10px;"><%= c.title %></h2><% } %>
-      <% if (c.url) { %><a href="<%= c.url %>" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:8px;background:<%= _ac %>;color:#fff;padding:12px 24px;border-radius:12px;font-weight:800;text-decoration:none;font-size:14px;">📥 <%= c.boton || 'Descargar archivo' %></a><% if (c.url) { %><div style="font-size:11px;color:var(--muted,#64748b);margin-top:6px;word-break:break-all;"><%= c.url %></div><% } %><% } %>
+    <div data-sec="descarga" class="<%= _animCls(c) %>" style="margin:0 0 20px;text-align:<%= c.align === 'center' ? 'center' : 'left' %>;<%= _boxStyle(c) %>">
+      <% if (c.title) { %><h2 style="font-size:20px;font-weight:800;margin:0 0 12px;"><%= c.title %></h2><% } %>
+      <% if (c.url) { %><a href="<%= c.url %>" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:10px;background:<%= _ac %>;color:#fff;padding:14px 28px;border-radius:14px;font-weight:800;text-decoration:none;font-size:14px;box-shadow:0 4px 12px rgba(0,0,0,0.1);transition:all 0.25s cubic-bezier(0.4,0,0.2,1);">📥 <%= c.boton || 'Descargar archivo' %></a><% if (c.url) { %><div style="font-size:11px;color:var(--muted,#64748b);margin-top:8px;word-break:break-all;"><%= c.url %></div><% } %><% } %>
     </div>
-  <% } else if (c.type === 'qr') { %>
-    <div data-sec="qr" class="<%= _animCls(c) %>" style="margin:0 0 18px;text-align:center;<%= _boxStyle(c) %>">
-      <% if (c.title) { %><h2 style="font-size:18px;font-weight:800;margin:0 0 10px;"><%= c.title %></h2><% } %>
-      <div style="background:var(--card,#fff);border:1px solid var(--border,#e2e8f0);border-radius:14px;padding:20px;display:inline-block;">
-        <% if (c.contenido) { %><img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=<%= encodeURIComponent(c.contenido) %>" alt="QR" style="width:160px;height:160px;border-radius:8px;"><% } else { %><div style="width:160px;height:160px;border:2px dashed var(--border,#cbd5e1);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted,#94a3b8);font-size:13px;">🔳 Sin contenido</div><% } %>
-        <% if (c.text) { %><div style="font-size:13px;color:var(--muted,#64748b);margin-top:10px;"><%= c.text %></div><% } %>
+    <% } else if (c.type === 'qr') { %>
+    <div data-sec="qr" class="<%= _animCls(c) %>" style="margin:0 0 20px;text-align:center;<%= _boxStyle(c) %>">
+      <% if (c.title) { %><h2 style="font-size:20px;font-weight:800;margin:0 0 12px;"><%= c.title %></h2><% } %>
+      <div style="background:var(--card,#fff);border:1px solid var(--border,#e2e8f0);border-radius:18px;padding:24px;display:inline-block;box-shadow:0 4px 12px rgba(0,0,0,0.04),0 1px 3px rgba(0,0,0,0.06);">
+        <% if (c.contenido) { %><img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=<%= encodeURIComponent(c.contenido) %>" alt="QR" style="width:160px;height:160px;border-radius:12px;"><% } else { %><div style="width:160px;height:160px;border:2px dashed var(--border,#cbd5e1);border-radius:12px;display:flex;align-items:center;justify-content:center;color:var(--muted,#94a3b8);font-size:13px;">🔳 Sin contenido</div><% } %>
+        <% if (c.text) { %><div style="font-size:14px;color:var(--muted,#64748b);margin-top:12px;line-height:1.5;"><%= c.text %></div><% } %>
       </div>
     </div>
   <% } else if (c.type === 'sucursales') { %>
     <div data-sec="sucursales" class="<%= _animCls(c) %>" style="margin:0 0 18px;<%= _boxStyle(c) %>">
-      <% if (c.title) { %><h2 style="font-size:20px;font-weight:800;margin:0 0 12px;"><%= c.title %></h2><% } %>
+      <% if (c.title) { %><h2 style="font-size:22px;font-weight:800;margin:0 0 14px;letter-spacing:-0.02em;"><%= c.title %></h2><% } %>
       <% _items(c.items).forEach(function (l) { var p = _parts(l); %>
-        <div style="background:var(--card,#fff);border:1px solid var(--border,#e2e8f0);border-radius:12px;padding:14px;margin-bottom:10px;display:flex;gap:12px;">
-          <div style="width:36px;height:36px;border-radius:50%;background:var(--accent,#2563eb);color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;flex:none;">📍</div>
-          <div><div style="font-weight:800;font-size:14px;"><%= p.a %></div><% if (p.b) { %><div style="font-size:13px;color:var(--muted,#64748b);margin-top:2px;"><%= p.b %></div><% } %><% if (p.c) { %><div style="font-size:13px;color:var(--muted,#64748b);"><%= p.c %></div><% } %></div>
+        <div style="background:var(--card,#fff);border:1px solid var(--border,#e2e8f0);border-radius:16px;padding:16px;margin-bottom:12px;display:flex;gap:14px;box-shadow:0 2px 8px rgba(0,0,0,0.04);transition:box-shadow 0.3s;">
+          <div style="width:42px;height:42px;border-radius:50%;background:var(--accent,#2563eb);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;flex:none;">📍</div>
+          <div><div style="font-weight:800;font-size:15px;"><%= p.a %></div><% if (p.b) { %><div style="font-size:13px;color:var(--muted,#64748b);margin-top:3px;line-height:1.5;"><%= p.b %></div><% } %><% if (p.c) { %><div style="font-size:13px;color:var(--muted,#64748b);margin-top:2px;"><%= p.c %></div><% } %></div>
         </div>
       <% }) %>
     </div>
   <% } else if (c.type === 'premios') { %>
     <% var _ac = c.accent || 'var(--accent,#f59e0b)'; %>
-    <div data-sec="premios" class="<%= _animCls(c) %>" style="margin:0 0 18px;<%= _boxStyle(c) %>">
-      <% if (c.title) { %><h2 style="font-size:20px;font-weight:800;margin:0 0 12px;"><%= c.title %></h2><% } %>
-      <div style="background:var(--card,#fff);border:1px solid var(--border,#e2e8f0);border-radius:12px;padding:16px;">
+    <div data-sec="premios" class="<%= _animCls(c) %>" style="margin:0 0 20px;<%= _boxStyle(c) %>">
+      <% if (c.title) { %><h2 style="font-size:22px;font-weight:800;margin:0 0 14px;letter-spacing:-0.02em;"><%= c.title %></h2><% } %>
+      <div style="background:var(--card,#fff);border:1px solid var(--border,#e2e8f0);border-radius:16px;padding:20px;box-shadow:0 4px 12px rgba(0,0,0,0.04),0 1px 3px rgba(0,0,0,0.06);">
         <% _items(c.items).forEach(function (l) { var p = _parts(l); %>
-          <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(0,0,0,.05);">
+          <div style="display:flex;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid rgba(0,0,0,0.05);">
             <div style="width:36px;height:36px;border-radius:8px;background:<%= _ac %>20;color:<%= _ac %>;display:flex;align-items:center;justify-content:center;font-size:18px;">🏆</div>
             <div style="flex:1;"><div style="font-weight:700;font-size:14px;"><%= p.a %></div></div>
             <% if (p.b) { %><div style="font-size:12px;color:var(--muted,#64748b);"><%= p.b %></div><% } %>
@@ -980,32 +1061,32 @@
     </div>
   <% } else if (c.type === 'reserva') { %>
     <% var _bg = c.bg || 'var(--card,#fff)'; var _tc = c.color || 'var(--text,#0f172a)'; var _ac = c.accent || 'var(--accent,#2563eb)'; var _m = _bgMerge(c, _bg); %>
-    <div data-sec="reserva" class="<%= _animCls(c) %>" style="margin:0 0 18px;<%= _boxStyle(_m) %>border-radius:14px;padding:24px;text-align:center;">
-      <% if (c.title) { %><h2 style="font-size:18px;font-weight:800;margin:0 0 6px;"><%= c.title %></h2><% } %>
-      <div style="font-size:13px;color:<%= _tc %>;opacity:.8;margin-bottom:12px;"><%= c.text || 'Aparta tu lugar o producto' %></div>
-      <a href="https://wa.me/<%= (biz.whatsapp || '').replace(/[^0-9]/g, '') %>?text=<%= encodeURIComponent('Hola, quiero reservar') %>" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:8px;background:<%= _ac %>;color:#fff;padding:12px 24px;border-radius:12px;font-weight:800;text-decoration:none;font-size:14px;">📅 <%= c.boton || 'Reservar ahora' %></a>
+    <div data-sec="reserva" class="<%= _animCls(c) %>" style="margin:0 0 20px;<%= _boxStyle(_m) %>border-radius:18px;padding:28px;text-align:center;box-shadow:0 4px 12px rgba(0,0,0,0.04),0 1px 3px rgba(0,0,0,0.06);">
+      <% if (c.title) { %><h2 style="font-size:20px;font-weight:800;margin:0 0 8px;letter-spacing:-0.01em;"><%= c.title %></h2><% } %>
+      <div style="font-size:14px;color:<%= _tc %>;opacity:.8;margin-bottom:16px;line-height:1.5;"><%= c.text || 'Aparta tu lugar o producto' %></div>
+      <a href="https://wa.me/<%= (biz.whatsapp || '').replace(/[^0-9]/g, '') %>?text=<%= encodeURIComponent('Hola, quiero reservar') %>" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:8px;background:<%= _ac %>;color:#fff;padding:14px 28px;border-radius:14px;font-weight:800;text-decoration:none;font-size:14px;box-shadow:0 4px 12px rgba(0,0,0,0.1);transition:all 0.25s cubic-bezier(0.4,0,0.2,1);">📅 <%= c.boton || 'Reservar ahora' %></a>
     </div>
-  <% } else if (c.type === 'servicios') { %>
+    <% } else if (c.type === 'servicios') { %>
     <% var _ac = c.accent || 'var(--accent,#2563eb)'; %>
-    <div data-sec="servicios" class="<%= _animCls(c) %>" style="margin:0 0 18px;<%= _boxStyle(c) %>">
-      <% if (c.title) { %><h2 style="font-size:20px;font-weight:800;margin:0 0 12px;"><%= c.title %></h2><% } %>
-      <div style="background:var(--card,#fff);border:1px solid var(--border,#e2e8f0);border-radius:12px;padding:16px;">
+    <div data-sec="servicios" class="<%= _animCls(c) %>" style="margin:0 0 20px;<%= _boxStyle(c) %>">
+      <% if (c.title) { %><h2 style="font-size:22px;font-weight:800;margin:0 0 14px;letter-spacing:-0.02em;"><%= c.title %></h2><% } %>
+      <div style="background:var(--card,#fff);border:1px solid var(--border,#e2e8f0);border-radius:16px;padding:20px;box-shadow:0 4px 12px rgba(0,0,0,0.04),0 1px 3px rgba(0,0,0,0.06);">
         <% _items(c.items).forEach(function (l) { var p = _parts(l); %>
-          <div style="display:flex;gap:12px;padding:12px 0;border-bottom:1px solid rgba(0,0,0,.05);">
-            <div style="width:36px;height:36px;border-radius:8px;background:<%= _ac %>20;color:<%= _ac %>;display:flex;align-items:center;justify-content:center;font-size:16px;flex:none;">🛠️</div>
-            <div><div style="font-weight:700;font-size:14px;"><%= p.a %></div><% if (p.b) { %><div style="font-size:13px;color:var(--muted,#64748b);margin-top:2px;"><%= p.b %></div><% } %></div>
+          <div style="display:flex;gap:14px;padding:14px 0;border-bottom:1px solid rgba(0,0,0,0.05);">
+            <div style="width:40px;height:40px;border-radius:12px;background:<%= _ac %>15;color:<%= _ac %>;display:flex;align-items:center;justify-content:center;font-size:18px;flex:none;">🛠️</div>
+            <div><div style="font-weight:700;font-size:15px;"><%= p.a %></div><% if (p.b) { %><div style="font-size:13px;color:var(--muted,#64748b);margin-top:3px;line-height:1.5;"><%= p.b %></div><% } %></div>
           </div>
         <% }) %>
       </div>
     </div>
   <% } else if (c.type === 'cta') { %>
     <% var _bg = c.bg || 'var(--card,#fff)'; var _tc = c.color || 'var(--text,#0f172a)'; var _ac = c.accent || 'var(--accent,#2563eb)'; var _m = _bgMerge(c, _bg); %>
-    <div data-sec="cta" class="<%= _animCls(c) %>" style="margin:0 0 18px;<%= _boxStyle(_m) %>text-align:center;padding:24px;border-radius:14px;">
-      <% if (c.title) { %><h2 style="font-size:20px;font-weight:800;margin:0 0 6px;"><%= c.title %></h2><% } %>
-      <div style="font-size:13px;color:<%= _tc %>;opacity:.8;margin-bottom:14px;"><%= c.text || '' %></div>
-      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
-        <% if (c.btn1) { %><a href="<%= c.link1 || '#' %>" target="_blank" rel="noopener" style="background:<%= _ac %>;color:#fff;padding:12px 28px;border-radius:999px;font-weight:800;text-decoration:none;font-size:14px;"><%= c.btn1 %></a><% } %>
-        <% if (c.btn2) { %><a href="<%= c.link2 || '#' %>" target="_blank" rel="noopener" style="border:2px solid <%= _ac %>;color:<%= _ac %>;padding:10px 28px;border-radius:999px;font-weight:800;text-decoration:none;font-size:14px;"><%= c.btn2 %></a><% } %>
+    <div data-sec="cta" class="<%= _animCls(c) %>" style="margin:0 0 20px;<%= _boxStyle(_m) %>text-align:center;padding:28px;border-radius:18px;box-shadow:0 4px 12px rgba(0,0,0,0.04),0 1px 3px rgba(0,0,0,0.06);">
+      <% if (c.title) { %><h2 style="font-size:22px;font-weight:800;margin:0 0 8px;letter-spacing:-0.02em;"><%= c.title %></h2><% } %>
+      <div style="font-size:14px;color:<%= _tc %>;opacity:.8;margin-bottom:18px;line-height:1.5;"><%= c.text || '' %></div>
+      <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;">
+        <% if (c.btn1) { %><a href="<%= c.link1 || '#' %>" target="_blank" rel="noopener" style="background:<%= _ac %>;color:#fff;padding:13px 30px;border-radius:999px;font-weight:800;text-decoration:none;font-size:14px;box-shadow:0 4px 12px rgba(0,0,0,0.1);transition:all 0.25s cubic-bezier(0.4,0,0.2,1);"><%= c.btn1 %></a><% } %>
+        <% if (c.btn2) { %><a href="<%= c.link2 || '#' %>" target="_blank" rel="noopener" style="border:2px solid <%= _ac %>;color:<%= _ac %>;padding:11px 30px;border-radius:999px;font-weight:800;text-decoration:none;font-size:14px;transition:all 0.25s cubic-bezier(0.4,0,0.2,1);"><%= c.btn2 %></a><% } %>
       </div>
     </div>
   <% } else if (c.type === 'ubicacion') { %>
@@ -1137,8 +1218,9 @@
     .c-wrap:hover .ce-text.ce-on-dark:empty:before,.c-wrap.c-selected .ce-text.ce-on-dark:empty:before,.ce-text.ce-on-dark[contenteditable="true"]:empty:before{color:rgba(255,255,255,.6);}
     .c-img-empty:hover{border-color:#2563eb;color:#1d4ed8;background:rgba(37,99,235,.06);}
     .row-hint{font-size:10px;font-weight:900;color:#2563eb;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;}
-    .row-col{position:relative;border-radius:12px;outline:1px dashed rgba(37,99,235,.35);outline-offset:3px;min-width:0;background:rgba(37,99,235,.025);}
-    .row-col .row-col{background:rgba(124,58,237,.04);outline-color:rgba(124,58,237,.35);}
+    .row-col{position:relative;min-width:0;}
+    .row-col-guide{border-radius:12px;outline:1px dashed rgba(37,99,235,.35);outline-offset:3px;background:rgba(37,99,235,.025);}
+    .row-col-guide .row-col-guide{background:rgba(124,58,237,.04);outline-color:rgba(124,58,237,.35);}
     .col-label{display:inline-block;font-size:9px;font-weight:900;color:#2563eb;background:rgba(37,99,235,.08);border:1px dashed rgba(37,99,235,.4);border-radius:7px;padding:2px 7px;margin-bottom:6px;}
     .c-col-empty{height:56px;flex-direction:column;gap:4px;font-size:11px;}
     .ct-carousel{display:flex;gap:14px;overflow-x:auto;padding:4px 2px 12px;scrollbar-width:none;-ms-overflow-style:none;scroll-snap-type:x proximity;}
@@ -1186,7 +1268,7 @@
     .c-pop-actions button:hover{background:#e2e8f0;}
     .c-pop-actions button.del:hover{background:#fee2e2;color:#dc2626;}
     [data-sec="hero"]{display:none!important;}
-    html.guides-off .row-col{outline:none!important;background:transparent!important;}
+    html.guides-off .row-col-guide{outline:none!important;background:transparent!important;}
     html.guides-off .col-label,html.guides-off .row-hint{display:none!important;}
     @keyframes ct-fade{from{opacity:0}to{opacity:1}}
     @keyframes ct-up{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
@@ -1199,6 +1281,10 @@
     .ct-anim-down{opacity:0;transform:translateY(-12px)}
     .ct-anim-left{opacity:0;transform:translateX(-16px)}
     .ct-anim-right{opacity:0;transform:translateX(16px)}
+    @media(max-width:640px){.ct-row-grid{grid-template-columns:1fr !important;gap:12px !important;}.ct-contact-form input,.ct-contact-form textarea{font-size:16px;}}
+    .ct-contact-form input:focus,.ct-contact-form textarea:focus{border-color:var(--accent,#2563eb) !important;box-shadow:0 0 0 3px rgba(37,99,235,.12);}
+    .ct-contact-form button:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(0,0,0,.14);}
+    .ct-contact-form button:active{transform:translateY(0);box-shadow:0 2px 8px rgba(0,0,0,.1);}
     .ct-anim-zoom{opacity:0;transform:scale(.98)}
     .ct-anim-on{opacity:1;transform:none;transition:opacity 1.2s cubic-bezier(.22,1,.36,1),transform 1.2s cubic-bezier(.22,1,.36,1);}
     .ct-anim-on.ct-dur-flash{transition:opacity .5s cubic-bezier(.22,1,.36,1),transform .5s cubic-bezier(.22,1,.36,1);}

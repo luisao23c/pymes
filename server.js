@@ -341,7 +341,7 @@ app.post('/maestro/:id/uploadfile', maestroAuth, uploadFile.single('archivo'), v
   res.json({ url: '/uploads/' + req.file.filename });
 });
 
-const TEMPLATES = ['clasica', 'premium', 'juvenil', 'minimal', 'restaurante', 'portada', 'revista', 'barrio', 'galeria', 'ofertas', 'abarrotes', 'frutas', 'carniceria', 'panaderia', 'braza', 'cafeteria', 'fotografo', 'viaje', 'peluqueria', 'spa', 'dentista', 'veterinaria', 'eventos', 'limpieza', 'construccion', 'libre'];
+const TEMPLATES = ['fotografia'];
 
 function getTemplateTheme(tpl) {
   return TPL_THEMES[tpl] || null;
@@ -751,7 +751,7 @@ const GIROS = [
 const GIRO_TEMPLATE = {
   cafeteria: 'restaurante', restaurante: 'restaurante', taqueria: 'restaurante', panaderia: 'restaurante', tortilleria: 'restaurante',
   ropa: 'galeria', calzado: 'galeria', belleza: 'galeria', floreria: 'galeria', mascotas: 'galeria',
-  electronica: 'premium', electrodomesticos: 'premium', muebles: 'premium', deportes: 'premium', viajes: 'viaje', fotografia: 'fotografo',
+  electronica: 'premium', electrodomesticos: 'premium', muebles: 'premium', deportes: 'premium', viajes: 'viaje', fotografia: 'fotografia',
   abarrotes: 'minimal', 'frutas y verduras': 'minimal', carniceria: 'minimal', farmacia: 'minimal',
   papeleria: 'clasica', ferreteria: 'clasica', jugueteria: 'juvenil'
 };
@@ -882,7 +882,7 @@ const GIRO_PRESETS = [
   { id: 'electrodomesticos', nombre: 'Electrodomésticos', emoji: '🧊', descripcion: 'Línea blanca', template: 'premium', estilo: 'tech', color: 'noche', color_mode: 'degradado', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_BASE },
   { id: 'muebles', nombre: 'Muebles', emoji: '🛋️', descripcion: 'Hogar y decoración', template: 'premium', estilo: 'elegancia', color: 'oro', color_mode: 'degradado', grid_cols: 2, font: '', radius: '12px', paginas_sugeridas: PAG_BASE },
   { id: 'viajes', nombre: 'Viajes', emoji: '✈️', descripcion: 'Agencia y tours', template: 'viaje', estilo: 'viaje', color: 'mar', color_mode: 'degradado', grid_cols: 2, font: '', radius: '18px', paginas_sugeridas: PAG_SERVICIOS },
-  { id: 'fotografia', nombre: 'Fotografía', emoji: '📷', descripcion: 'Sesiones y portafolio', template: 'fotografo', estilo: 'lujo', color: 'noche', color_mode: 'solido', grid_cols: 2, font: '', radius: '8px', paginas_sugeridas: PAG_SERVICIOS },
+  { id: 'fotografia', nombre: 'Fotografía', emoji: '📷', descripcion: 'Sesiones y portafolio', template: 'fotografia', estilo: 'lujo', color: 'noche', color_mode: 'solido', grid_cols: 2, font: '', radius: '8px', paginas_sugeridas: PAG_SERVICIOS },
   { id: 'eventos', nombre: 'Eventos', emoji: '🎉', descripcion: 'Fiestas y banquetes', template: 'portada', estilo: 'lujo', color: 'vino', color_mode: 'degradado', grid_cols: 2, font: '', radius: '12px', paginas_sugeridas: PAG_SERVICIOS },
   { id: 'taller', nombre: 'Taller / Mecánica', emoji: '🔩', descripcion: 'Reparaciones y refacciones', template: 'clasica', estilo: 'tech', color: 'noche', color_mode: 'solido', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_SERVICIOS },
   { id: 'joyeria', nombre: 'Joyería', emoji: '💍', descripcion: 'Joyas y relojes', template: 'premium', estilo: 'vintage', color: 'oro', color_mode: 'degradado', grid_cols: 2, font: '', radius: '8px', paginas_sugeridas: PAG_BASE },
@@ -943,7 +943,7 @@ function currencyInfo(code) {
 // Secciones del catálogo: qué se muestra, en qué orden, modo de categorías, densidad, sombra y animación
 const DEFAULT_SECTIONS = { hero_mode: 'destacado', catmode: 'left', density: 'normal', shadow: 'media', hover: 'lift', orden: ['hero', 'contenido'] };
 function sectionsOf(biz) {
-  const def = { hero_mode: 'destacado', hero: true, categorias: true, catmode: 'left', density: 'normal', shadow: 'media', hover: 'lift', orden: ['hero', 'contenido'] };
+  const def = { hero_mode: 'destacado', hero: true, categorias: true, catmode: 'left', density: 'normal', shadow: 'media', hover: 'lift', orden: ['hero', 'contenido'], showHeader: true, showFooter: true };
   try {
     const s = JSON.parse(biz.sections || '');
     const hero_mode = ['destacado', 'compacto', 'oculto'].includes(s.hero_mode) ? s.hero_mode : 'destacado';
@@ -955,7 +955,9 @@ function sectionsOf(biz) {
       density: ['compacta', 'normal', 'espaciosa'].includes(s.density) ? s.density : 'normal',
       shadow: ['none', 'suave', 'media', 'fuerte'].includes(s.shadow) ? s.shadow : 'media',
       hover: ['none', 'scale', 'lift', 'zoom', 'glow'].includes(s.hover) ? s.hover : 'lift',
-      orden: Array.isArray(s.orden) ? s.orden : ['hero', 'contenido']
+      orden: Array.isArray(s.orden) ? s.orden : ['hero', 'contenido'],
+      showHeader: s.showHeader !== false,
+      showFooter: s.showFooter !== false
     };
   } catch (e) {
     return def;
@@ -1376,8 +1378,9 @@ app.get('/:slug', (req, res) => {
   res.locals.money = moneyFor(biz);
   res.locals.currencySymbol = currencyInfo(biz.currency).symbol;
   res.locals.currencyCode = biz.currency;
-  app.render('catalog', { biz, categories, products: productsFinal, estilo, theme: getTemplateTheme(biz.template), components: getComponents(biz), pages, seoUrl: BASE_URL ? BASE_URL + '/' + biz.slug : '', money: moneyFor(biz), currencySymbol: currencyInfo(biz.currency).symbol, currencyCode: biz.currency, mascaraCss: MASCARA_CSS, mascaraConfig: { MASCARA_SIZES, SHAPE_DEFS, getShapeClip } }, (err, html) => {
-    if (err) return res.status(500).send('Error al generar el catálogo.');
+  const sponsoredAds = adsOn(biz) ? pickSponsored(biz, 6) : [];
+  app.render('catalog', { biz, categories, products: productsFinal, estilo, theme: getTemplateTheme(biz.template), components: getComponents(biz), pages, seoUrl: BASE_URL ? BASE_URL + '/' + biz.slug : '', money: moneyFor(biz), currencySymbol: currencyInfo(biz.currency).symbol, currencyCode: biz.currency, mascaraCss: MASCARA_CSS, mascaraConfig: { MASCARA_SIZES, SHAPE_DEFS, getShapeClip }, adsEnabled: adsOn(biz), sponsoredAds }, (err, html) => {
+    if (err) { console.error('Template render error:', err.stack || err); return res.status(500).send('Error al generar el catálogo: ' + err.message); }
     res.send(finishCatalog(html, biz, pal, estilo));
   });
 });
@@ -2706,7 +2709,9 @@ function applyConfig(biz, body) {
         shadow: ['none', 'suave', 'media', 'fuerte'].includes(s.shadow) ? s.shadow : 'media',
         hover: ['none', 'scale', 'lift', 'zoom', 'glow'].includes(s.hover) ? s.hover : 'lift',
         orden: (Array.isArray(s.orden) ? s.orden : ['hero', 'contenido']).slice(0, 3),
-        nav: cleanNav(s.nav)
+        nav: cleanNav(s.nav),
+        showHeader: s.showHeader !== false,
+        showFooter: s.showFooter !== false
       });
     } catch (e) { return biz.sections || ''; }
   })();
@@ -2744,10 +2749,10 @@ function applyConfig(biz, body) {
         base.url = String(b.url || '').slice(0, 500);
         base.count = Math.max(0, parseInt(b.count) || 0);
         base.category_id = Math.max(0, parseInt(b.category_id) || 0);
-        base.layout = ['grid', 'lista'].includes(b.layout) ? b.layout : 'grid';
+        base.layout = ['grid', 'lista', 'masonry', 'slider', 'split', 'cards', 'centro', 'izq', 'abajo'].includes(b.layout) ? b.layout : 'grid';
         base.cols = [2, 3, 4].includes(Number(b.cols)) ? Number(b.cols) : 3;
         base.height = ['compacto', 'normal', 'grande', 'full', 'auto'].includes(b.height) ? b.height : '';
-        base.size = ['pequeno', 'normal', 'grande'].includes(b.size) ? b.size : '';
+        base.size = ['pequeno', 'normal', 'grande', 'muygrande', 'enorme', 'gigante'].includes(b.size) ? b.size : '';
         base.align = ['left', 'center'].includes(b.align) ? b.align : '';
         base.width = ['auto', 'full', 'grande', 'media', 'pequena'].includes(b.width) ? b.width : '';
         base.border = ['none', '1', '2', '4'].includes(String(b.border)) ? String(b.border) : '';
@@ -2812,6 +2817,16 @@ function applyConfig(biz, body) {
         base.placeholder = String(b.placeholder || '').slice(0, 80);
         base.accent = String(b.accent || '').slice(0, 7);
         base.autor = String(b.autor || '').slice(0, 100);
+        base.variant = ['solid','outline','ghost','circle','square','roundrect','pill','triangle','diamond','star4','star5','star6','custom'].includes(b.variant) ? b.variant : '';
+        base.icono = /^bi-[a-z0-9-]{1,50}$/.test(b.icono || '') ? b.icono : '';
+        base.iconoTam = Math.max(10, Math.min(64, parseInt(b.iconoTam) || 18));
+        base.iconoColor = /^#[0-9a-fA-F]{6}$/.test(b.iconoColor || '') ? b.iconoColor : '';
+        base.iconoPos = ['left','right'].includes(b.iconoPos) ? b.iconoPos : 'right';
+        base.descarga = b.descarga === 'si' ? 'si' : '';
+        base.dur = ['flash','rapido','normal','lento','muy-lento','relajada','cinematica','epica'].includes(b.dur) ? b.dur : '';
+        base.rotation = Math.max(-180, Math.min(180, parseInt(b.rotation) || 0));
+        base.offsetX = Math.max(-400, Math.min(400, parseInt(b.offsetX) || 0));
+        base.offsetY = Math.max(-400, Math.min(400, parseInt(b.offsetY) || 0));
         if (type === 'row') {
           const colsArr = Array.isArray(b.columns) ? b.columns.slice(0, 12) : [];
           base.gap = Math.max(0, Math.min(40, parseInt(b.gap) || 12));

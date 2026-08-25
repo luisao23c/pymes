@@ -1,12 +1,21 @@
+<%
+  var _sec = {};
+  try { _sec = JSON.parse(biz.sections || '{}'); } catch(e) {}
+  var _showHeader = _sec.showHeader !== false;
+  var _showFooter = _sec.showFooter !== false;
+%>
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title><%= biz.name %> · Catálogo</title>
-  <script src="https://cdn.tailwindcss.com"></script>  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=<%= theme.fontLink %>&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/material.css">
+  <script src="/js/material.js"></script>
   <style>
     :root {
       --accent: <%= theme.accent %>;
@@ -17,56 +26,182 @@
       --card: <%= theme.card %>;
       --border: <%= theme.border %>;
       --radius: <%= theme.radius %>;
-      --navcolor: <%= theme.accent %>;
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: <%= theme.bodyFont %>; background: var(--bg); color: var(--text); line-height: 1.5; min-height: 100vh; }
     h1, h2, h3 { font-family: <%= theme.headFont %>; font-weight: 700; letter-spacing: -0.01em; }
     a { color: inherit; text-decoration: none; }
-    .wrap { max-width: 1140px; margin: 0 auto; padding: 0 24px; }
 
-    header { position: sticky; top: 0; z-index: 50; background: var(--bg); border-bottom: 1px solid var(--border); }
-    .nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; }
-    .logo { font-family: <%= theme.headFont %>; font-weight: 700; font-size: 1.4rem; }
-    .navcta { background: <%= theme.accent %>; color: #fff; padding: 10px 20px; border-radius: <%= theme.radius %>; font-weight: 700; font-size: .9rem; }
+    .product-card {
+      background: var(--card) !important;
+      border: 1px solid var(--border) !important;
+      border-radius: var(--radius) !important;
+      transition: all .25s ease !important;
+      overflow: hidden;
+    }
+    .product-card:hover {
+      transform: translateY(-4px) !important;
+      box-shadow: 0 12px 32px rgba(0,0,0,.06) !important;
+    }
+    .offer-card {
+      background: var(--card) !important;
+      border: 1px solid var(--border) !important;
+      border-radius: var(--radius) !important;
+    }
+    .badge-offer {
+      background: #ef4444 !important; color: #fff !important;
+      font-size:.6rem; font-weight:800; padding:.15rem .6rem; border-radius:60px;
+    }
+    .chip-active {
+      background: var(--accent) !important; color: #fff !important;
+      border-color: var(--accent) !important; border-radius: 999px !important;
+    }
+    .chip-idle {
+      background: var(--card) !important; color: var(--text) !important;
+      border: 1px solid var(--border) !important; border-radius: 999px !important;
+    }
+    .chip-idle:hover {
+      background: var(--accent) !important; color: #fff !important;
+      border-color: var(--accent) !important;
+    }
+    .search-input {
+      background: var(--card) !important; color: var(--text) !important;
+      border: 1px solid var(--border) !important; border-radius: 12px !important;
+    }
+    .search-input:focus {
+      border-color: var(--accent) !important;
+      box-shadow: 0 0 0 3px rgba(79,70,229,.12) !important;
+    }
+    .cat-chip { border-radius: 999px !important; }
 
-    footer { background: <%= theme.dark ? theme.card : theme.text %>; color: <%= theme.dark ? theme.text : theme.bg %>; padding: 50px 24px 26px; <%= theme.dark ? 'border-top: 1px solid ' + theme.border : '' %>; }
-    .fgrid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 40px; max-width: 1140px; margin: 0 auto 30px; }
-    footer h3 { margin-bottom: 14px; color: <%= theme.dark ? theme.accent2 : theme.bg %>; font-family: <%= theme.headFont %>; }
-    footer p, footer li { color: <%= theme.dark ? theme.muted : 'rgba(255,255,255,0.75)' %>; font-size: .92rem; }
-    footer ul { list-style: none; }
-    footer li { margin-bottom: 8px; }
-    .fbottom { text-align: center; border-top: 1px solid <%= theme.dark ? theme.border : 'rgba(255,255,255,0.15)' %>; padding-top: 20px; font-size: .82rem; color: <%= theme.dark ? theme.muted : 'rgba(255,255,255,0.6)' %>; max-width: 1140px; margin: 0 auto; }
-    @media (max-width: 860px) { .fgrid { grid-template-columns: 1fr; } }
+    .sponsored-section {
+      background: linear-gradient(180deg, var(--bg) 0%, rgba(0,0,0,0.02) 100%);
+      border-top: 1px solid var(--border);
+      padding: 40px 24px 48px;
+    }
+    .sponsored-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .sponsored-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      opacity: 0.6;
+      margin-bottom: 20px;
+    }
+    .sponsored-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 16px;
+    }
+    .sponsored-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+      text-decoration: none;
+      color: inherit;
+      display: block;
+    }
+    .sponsored-card:hover {
+      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+      transform: translateY(-3px);
+    }
+    .sponsored-card img {
+      width: 100%;
+      aspect-ratio: 16/10;
+      object-fit: cover;
+      display: block;
+    }
+    .sponsored-card .sc-body {
+      padding: 14px 16px;
+    }
+    .sponsored-card .sc-store {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 4px;
+    }
+    .sponsored-card .sc-name {
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 1.3;
+      margin-bottom: 6px;
+    }
+    .sponsored-card .sc-price {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--accent);
+    }
+
+    @media (max-width: 600px) {
+      .sponsored-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+      }
+      .sponsored-card .sc-body { padding: 10px 12px; }
+      .sponsored-card .sc-name { font-size: 13px; }
+      footer > div:first-child { grid-template-columns: 1fr !important; gap: 20px !important; }
+    }
     <%- theme.css %>
   </style>
 </head>
 <body>
-
-  <header>
-    <div class="nav wrap">
-      <div class="logo"><%= biz.name %></div>
-      <a class="navcta" href="https://wa.me/<%= biz.whatsapp.startsWith('52') ? biz.whatsapp : '52' + biz.whatsapp %>" target="_blank" rel="noopener">Pedir</a>
+  <% if (_showHeader) { %>
+  <header style="position:sticky;top:0;z-index:50;background:var(--bg);border-bottom:1px solid var(--border);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 24px;max-width:1100px;margin:0 auto;">
+      <div style="font-family:<%= theme.headFont %>;font-weight:700;font-size:1.3rem;"><%= biz.name %></div>
+      <a href="https://wa.me/<%= biz.whatsapp.startsWith('52') ? biz.whatsapp : '52' + biz.whatsapp %>" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;background:var(--accent);color:#fff;padding:10px 22px;border-radius:<%= theme.radius %>;font-weight:700;font-size:.88rem;text-decoration:none;box-shadow:0 4px 12px rgba(0,0,0,0.1);transition:all 0.25s;">Pedir</a>
     </div>
   </header>
+  <% } %>
 
-  <main data-sec="contenido" class="wrap" style="padding:24px 0 70px;">
+  <main data-sec="contenido" style="width:100%;padding:0 20px;">
     <%- include('../partials/components', { biz, products, money, categories, components, pages, theme, editMode }) %>
   </main>
 
-  <footer id="contacto">
-    <div class="fgrid">
-      <div>
-        <h3><%= biz.name %></h3>
-        <p><%= biz.description %></p>
-      </div>
-      <div>
-        <h3>Contacto</h3>
-        <ul><li>WhatsApp: <%= biz.whatsapp %></li></ul>
+  <% if (adsEnabled && sponsoredAds.length > 0) { %>
+  <section class="sponsored-section">
+    <div class="sponsored-inner">
+      <div class="sponsored-label">También te puede interesar</div>
+      <div class="sponsored-grid">
+        <% sponsoredAds.forEach(function(ad) { %>
+        <a href="/<%= ad.store.slug %>" class="sponsored-card">
+          <% if (ad.image) { %><img src="<%= ad.image %>" alt="<%= ad.name %>" loading="lazy" onerror="this.onerror=null;this.src='/img/sin-imagen.svg'"><% } %>
+          <div class="sc-body">
+            <div class="sc-store"><%= ad.store.name %></div>
+            <div class="sc-name"><%= ad.name %></div>
+            <% if (ad.price) { %><div class="sc-price">$<%= ad.price %></div><% } %>
+          </div>
+        </a>
+        <% }) %>
       </div>
     </div>
-    <div class="fbottom">© 2026 <%= biz.name %></div>
+  </section>
+  <% } %>
+
+  <% if (_showFooter) { %>
+  <footer style="background:<%= theme.dark ? theme.card : theme.text %>;color:<%= theme.dark ? theme.text : theme.bg %>;padding:48px 24px 24px;<%= theme.dark ? 'border-top:1px solid ' + theme.border : '' %>;">
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:32px;max-width:1100px;margin:0 auto 24px;">
+      <div>
+        <h3 style="margin-bottom:12px;color:<%= theme.dark ? theme.accent2 : theme.bg %>;font-family:<%= theme.headFont %>;"><%= biz.name %></h3>
+        <p style="color:<%= theme.dark ? theme.muted : 'rgba(255,255,255,0.75)' %>;font-size:.9rem;"><%= biz.description %></p>
+      </div>
+      <div>
+        <h3 style="margin-bottom:12px;color:<%= theme.dark ? theme.accent2 : theme.bg %>;font-family:<%= theme.headFont %>;">Contacto</h3>
+        <ul style="list-style:none;"><li style="margin-bottom:6px;color:<%= theme.dark ? theme.muted : 'rgba(255,255,255,0.75)' %>;font-size:.9rem;">WhatsApp: <%= biz.whatsapp %></li></ul>
+      </div>
+    </div>
+    <div style="text-align:center;border-top:1px solid <%= theme.dark ? theme.border : 'rgba(255,255,255,0.15)' %>;padding-top:18px;font-size:.8rem;color:<%= theme.dark ? theme.muted : 'rgba(255,255,255,0.5)' %>;max-width:1100px;margin:0 auto;">© 2026 <%= biz.name %></div>
   </footer>
+  <% } %>
 
   <%- include('../partials/cart-js', { biz, products }) %>
 </body>
