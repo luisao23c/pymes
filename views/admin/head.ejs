@@ -20,16 +20,59 @@
   };
 </script>
 <style>
-  body { font-family: 'Inter', system-ui, sans-serif; }
-  .scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
-  .scrollbar-thin::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 99px; }
+  /* ===== ADMIN PANEL — MODERNO 2026 ===== */
+  :root {
+    --ap-bg: #f8f7f5;
+    --ap-card: #ffffff;
+    --ap-text: #1a1a1a;
+    --ap-text-sec: #7a7470;
+    --ap-accent: #2563eb;
+    --ap-accent-light: #60a5fa;
+    --ap-border: rgba(0,0,0,.06);
+    --ap-shadow: 0 1px 3px rgba(0,0,0,.04);
+    --ap-shadow-lg: 0 10px 40px -8px rgba(0,0,0,.12);
+    --ap-radius: 14px;
+  }
+  body { font-family: 'Inter', system-ui, sans-serif; background: var(--ap-bg); color: var(--ap-text); }
+
+  /* Scrollbar moderno */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #c4bfba; border-radius: 10px; }
+  ::-webkit-scrollbar-thumb:hover { background: #a09890; }
+  .scrollbar-thin::-webkit-scrollbar { width: 5px; height: 5px; }
+  .scrollbar-thin::-webkit-scrollbar-thumb { background: #c4bfba; border-radius: 10px; }
   .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+
   input[type="number"]::-webkit-outer-spin-button,
   input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-  .fade-in { animation: fadeIn .25s ease both; }
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
-  .toast-in { animation: toastIn .25s ease both; }
-  @keyframes toastIn { from { opacity: 0; transform: translateY(10px) scale(.97); } to { opacity: 1; transform: none; } }
+
+  /* Animaciones suaves */
+  .fade-in { animation: fadeIn .35s cubic-bezier(.22,1,.36,1) both; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  .toast-in { animation: toastIn .4s cubic-bezier(.22,1,.36,1) both; }
+  @keyframes toastIn { from { opacity: 0; transform: translateY(12px) scale(.95); } to { opacity: 1; transform: none; } }
+
+  /* Sidebar moderno */
+  .m-sidebar { transition: width .3s cubic-bezier(.22,1,.36,1); }
+  .m-sidebar a, .m-sidebar button { transition: all .2s; border-radius: 10px; }
+  .m-sidebar a:hover, .m-sidebar button:hover { background: rgba(37,99,235,.06); }
+
+  /* Cards admin */
+  .m-card { background: var(--ap-card); border: 1px solid var(--ap-border); border-radius: var(--ap-radius); box-shadow: var(--ap-shadow); transition: all .3s cubic-bezier(.22,1,.36,1); }
+  .m-card:hover { box-shadow: var(--ap-shadow-lg); transform: translateY(-2px); }
+
+  /* Botones admin */
+  .m-btn { border-radius: 10px; font-weight: 600; transition: all .2s cubic-bezier(.22,1,.36,1); }
+  .m-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,.08); }
+  .m-btn:active { transform: scale(.97); }
+
+  /* Glass header */
+  .m-header { background: rgba(255,255,255,.82); backdrop-filter: blur(20px) saturate(1.8); border-bottom: 1px solid var(--ap-border); }
+
+  /* Modo oscuro admin */
+  body.dark { --ap-bg: #0d1117; --ap-card: #161b22; --ap-text: #e6edf3; --ap-text-sec: #8b949e; --ap-border: rgba(255,255,255,.08); --ap-shadow: 0 1px 3px rgba(0,0,0,.3); --ap-shadow-lg: 0 10px 40px -8px rgba(0,0,0,.5); }
+  body.dark .m-header { background: rgba(13,17,23,.85); border-bottom-color: rgba(255,255,255,.06); }
 </style>
 <link rel="stylesheet" href="/css/material.css">
 <script src="/js/material.js"></script>

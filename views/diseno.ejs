@@ -565,7 +565,8 @@
       </div>
       <button onclick="togglePageBgPop()" title="Fondo de la página">🎨 Fondo</button>
       <button onclick="toggleNavPanel()" title="Diseño del menú de navegación">🧭 Menú</button>
-      <button onclick="abrirPlantillas()" title="Elegir plantilla">🎨 Plantillas</button>
+      <% if (!editingCustomTpl) { %><button onclick="abrirPlantillas()" title="Elegir plantilla">🎨 Plantillas</button><% } %>
+      <% if (editingCustomTpl) { %><span style="background:#10b981;color:#fff;padding:4px 10px;border-radius:8px;font-size:12px;font-weight:700;">📋 Editando plantilla</span><% } else if (esMaestro) { %><button onclick="guardarComoPlantilla()" title="Guardar diseño actual como plantilla del equipo" style="background:#10b981;color:#fff;border:none;">💾 Como plantilla</button><% } %>
       <button id="btn-toggle-header" onclick="togglePageLayout('header')" title="Mostrar/ocultar barra superior con nombre y botón" style="display:inline-flex;align-items:center;gap:4px;border:1px solid var(--wp-line);background:var(--wp-bg);padding:5px 10px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;transition:all 0.2s;">📌 Barra arriba</button>
       <button id="btn-toggle-footer" onclick="togglePageLayout('footer')" title="Mostrar/ocultar pie de página con contacto" style="display:inline-flex;align-items:center;gap:4px;border:1px solid var(--wp-line);background:var(--wp-bg);padding:5px 10px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;transition:all 0.2s;">📋 Pie de página</button>
       <a href="<%= '/' + biz.slug %>" target="_blank">🛒 Ver catálogo</a>
@@ -847,6 +848,8 @@
   var TPL_CASOS = <%- safeJson((typeof locals !== 'undefined' && locals.TPL_CASOS) || []) %>;
   var _CASE_ICONS = { local:'🏘️', tienda:'🛒', servicio:'💼', restaurante:'🍽️', portafolio:'🎨' };
   var TPL_SEL = <%- safeJson(template || '') %>;
+  var CUSTOM_TPLS = <%- safeJson(customTemplates || []) %>;
+  var EDITING_CUSTOM_TPL = <%- safeJson((typeof locals !== 'undefined' && locals.editingCustomTpl) || null) %>;
   var SECTIONS_RAW = <%- safeJson(biz.sections || '{}') %>;
   var _sectionsObj = {};
   try { _sectionsObj = JSON.parse(SECTIONS_RAW || '{}'); } catch(e){}
@@ -3242,6 +3245,14 @@
   }
 
   function guardarDisenoCore(){
+    // Si estamos editando una plantilla del equipo, guardar solo los bloques
+    if (EDITING_CUSTOM_TPL) {
+      var body = JSON.stringify({ blocks: PAGINAS });
+      var tok = (window.__csrfValue && window.__csrfValue()) || '';
+      var headers = { 'Content-Type':'application/json' };
+      if (tok) headers['x-csrf-token'] = tok;
+      return fetch('/maestro/plantilla/' + EDITING_CUSTOM_TPL + '/diseno', { method:'POST', body: body, headers: headers, credentials:'same-origin' });
+    }
     var body = new URLSearchParams();
     body.set('blocks', JSON.stringify(PAGINAS));
     body.set('template', TPL_SEL || '');
@@ -3261,7 +3272,7 @@
     guardarDisenoCore().then(function(r){
       if (r.ok) {
         _dirty = false;
-        mostrarToast(msg || 'Guardado ✓ (se refleja en tu catálogo)');
+        mostrarToast(msg || (EDITING_CUSTOM_TPL ? 'Plantilla guardada ✓' : 'Guardado ✓ (se refleja en tu catálogo)'));
         setSaveStatus('saved');
       }
       else { mostrarToast('Error al guardar'); setSaveStatus('error'); }
@@ -3360,6 +3371,35 @@
       del.forEach(function(t){ sub.appendChild(makeCard(t)); });
       grid.appendChild(sub);
     });
+    if (CUSTOM_TPLS && CUSTOM_TPLS.length) {
+      var headEq=document.createElement('div'); headEq.className='tpl-case';
+      headEq.innerHTML='<div class="tpl-case-emoji">👥</div><div><div class="tpl-case-name">Plantillas del equipo</div><div class="tpl-case-desc">Diseñadas por el administrador — disponibles para todos</div></div>';
+      grid.appendChild(headEq);
+      var subEq=document.createElement('div'); subEq.className='tpl-grid';
+      CUSTOM_TPLS.forEach(function(ct){
+        var c=document.createElement('div'); c.className='tpl-card';
+        c.style.borderColor='#10b981';
+        var blocksCount = 0;
+        try { var bj = JSON.parse(ct.blocks_json || '[]'); blocksCount = Array.isArray(bj) ? bj.length : 0; } catch(e){}
+        c.innerHTML=
+          '<div style="height:90px;background:linear-gradient(135deg,#10b981,#059669);display:flex;flex-direction:column;justify-content:center;align-items:center;padding:8px 12px;position:relative;">' +
+            '<div style="font-size:28px;margin-bottom:2px;">'+(ct.emoji||'📄')+'</div>' +
+            '<div style="font-family:Inter,sans-serif;font-size:12px;font-weight:700;color:#fff;line-height:1.15;text-align:center;">'+esc(ct.name)+'</div>' +
+            '<div style="font-family:Inter,sans-serif;font-size:8px;color:rgba(255,255,255,.7);margin-top:2px;">Plantilla del equipo</div>' +
+          '</div>' +
+          '<div style="background:#f0fdf4;padding:8px;">' +
+            '<div style="font-size:11px;color:#166534;font-weight:600;">'+esc(ct.description||'Sin descripción')+'</div>' +
+            '<div style="display:flex;gap:4px;margin-top:4px;">' +
+              (ct.category ? '<span style="font-size:9px;padding:1px 6px;border-radius:99px;background:#dcfce7;color:#166534;font-weight:700;">'+esc(ct.category)+'</span>' : '') +
+              (ct.giro ? '<span style="font-size:9px;padding:1px 6px;border-radius:99px;background:#dbeafe;color:#1e40af;font-weight:700;">'+esc(ct.giro)+'</span>' : '') +
+              '<span style="font-size:9px;padding:1px 6px;border-radius:99px;background:#f1f5f9;color:#64748b;font-weight:700;">'+blocksCount+' bloques</span>' +
+            '</div>' +
+          '</div>';
+        c.onclick=function(){ elegirCustomTpl(ct); };
+        subEq.appendChild(c);
+      });
+      grid.appendChild(subEq);
+    }
     if (pend.length){
       var head2=document.createElement('div'); head2.className='tpl-case';
       head2.innerHTML='<div class="tpl-case-emoji">✦</div><div><div class="tpl-case-name">Otras</div><div class="tpl-case-desc">Plantillas adicionales</div></div>';
@@ -3413,6 +3453,41 @@
     syncLayoutButtons();
     applyPalette(); renderTabs(); renderCanvas(); cerrarPlantillas();
     guardarDiseno(meta ? 'Plantilla ' + meta.nombre + ' aplicada ✓' : 'Modo libre ✓');
+  }
+  function elegirCustomTpl(ct){
+    if (paginasTieneContenido() && !window.confirm('Esta acción reemplazará los bloques actuales de la página. ¿Quieres continuar?')) return;
+    TPL_SEL = '';
+    var raw = [];
+    try { raw = JSON.parse(ct.blocks_json || '[]'); } catch(e){}
+    // Detectar si viene como PAGINAS (array de {id,title,blocks}) o como bloques sueltos
+    if (raw.length && raw[0] && raw[0].blocks && Array.isArray(raw[0].blocks)) {
+      // Ya viene en formato PAGINAS — usar directo
+      PAGINAS = JSON.parse(JSON.stringify(raw));
+    } else if (raw.length) {
+      // Son bloques sueltos — envolver en una página
+      PAGINAS = [{ id: nuevoId('pg'), title:'Inicio', icon:'🏠', blocks: JSON.parse(JSON.stringify(raw)) }];
+    } else {
+      PAGINAS = [{ id: nuevoId('pg'), title:'Inicio', icon:'🏠', blocks: [] }];
+    }
+    paginaActiva = PAGINAS[0].id;
+    renderTabs(); renderCanvas(); cerrarPlantillas();
+    guardarDiseno('Plantilla del equipo \'' + ct.name + '\' aplicada ✓');
+  }
+  function guardarComoPlantilla(){
+    var nombre = prompt('Nombre para la plantilla:', PAGINAS[0] ? PAGINAS[0].title : 'Mi plantilla');
+    if (!nombre) return;
+    var emoji = prompt('Emoji (opcional):', '📄') || '📄';
+    var desc = prompt('Descripción (opcional):', '') || '';
+    var blocks = [];
+    try { blocks = JSON.parse(JSON.stringify(PAGINAS[0] ? PAGINAS[0].blocks : [])); } catch(e){}
+    fetch('/maestro/plantilla/guardar', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ name: nombre, emoji: emoji, description: desc, blocks_json: JSON.stringify(blocks) })
+    }).then(function(r){ return r.json(); }).then(function(d){
+      if (d.ok) { Swal.fire({icon:'success',title:'Plantilla guardada ✓',timer:1800,showConfirmButton:false}); CUSTOM_TPLS.push(d.tpl); }
+      else { Swal.fire({icon:'error',title:'Error',text:d.error||'No se pudo guardar'}); }
+    }).catch(function(){ Swal.fire({icon:'error',title:'Error de red'}); });
   }
 
   /* ===== PALETA REAL (WYSIWYG) ===== */

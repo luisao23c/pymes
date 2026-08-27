@@ -1,0 +1,174 @@
+/* =======================================================================
+   CAPA PREMIUM — CATÁLOGO PÚBLICO
+   Cargar DESPUÉS de design.ejs / constructor.ejs / components.ejs
+   No toca estructura, solo redefine tokens y refina componentes existentes.
+   ======================================================================= */
+
+/* Google Fonts — añadir también como <link> en el <head> para mejor
+   rendimiento (preconnect + preload); el @import queda como fallback. */
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  /* ---- Paleta: mercado premium (verde esmeralda + dorado, uso comedido) ---- */
+  --accent: #146356;              /* antes #2563eb */
+  --accent2: #C89B3C;             /* antes #7c3aed — reservado a precios/ofertas */
+  --accent-deep: #0D3A31;         /* para gradientes de header */
+  --font: 'Inter', system-ui, sans-serif;
+  --font-display: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+
+  --bg: #FAF9F6;                  /* blanco cálido, no cream genérico */
+  --text: #1A2420;                /* tinta con matiz verde, no negro puro */
+  --muted: #5C6B64;
+  --card: #FFFFFF;
+  --border: #E5E1D6;              /* borde con matiz cálido */
+  --radius: 18px;
+
+  --header: linear-gradient(135deg, var(--accent-deep), var(--accent));
+  --header-text: #FFFFFF;
+  --badge: var(--accent);
+
+  /* Sombras con tinte cálido en vez de negro puro */
+  --shadow-sm: 0 1px 2px rgba(26,36,32,0.05), 0 1px 3px rgba(26,36,32,0.07);
+  --shadow-md: 0 4px 10px rgba(26,36,32,0.06), 0 2px 4px rgba(26,36,32,0.08);
+  --shadow-lg: 0 14px 30px rgba(26,36,32,0.08), 0 4px 12px rgba(26,36,32,0.05);
+  --shadow-xl: 0 24px 55px rgba(26,36,32,0.10), 0 8px 22px rgba(26,36,32,0.06);
+}
+
+body { font-family: var(--font); }
+
+/* ---- Tipografía de exhibición: títulos, precios, nombres de producto ---- */
+.cat-title,
+.pv-banner h2,
+.pv-section-title,
+.p-card .p-name,
+.p-card .p-price,
+.sponsored-card .sc-name,
+.sponsored-card .sc-price,
+.pv-cat-cards .cat-card {
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
+}
+
+/* ---- Header ---- */
+.header-gradient {
+  background: var(--header) !important;
+  position: relative;
+  overflow: hidden;
+}
+/* textura sutil de trama diagonal, muy discreta, no compite con el contenido */
+.header-gradient::after {
+  content: '';
+  position: absolute; inset: 0; pointer-events: none;
+  background-image: repeating-linear-gradient(
+    135deg, rgba(255,255,255,.035) 0 2px, transparent 2px 14px
+  );
+}
+
+/* ---- Chips: sólido, sin degradado verde→dorado (se ve sucio) ---- */
+.chip-active {
+  background: var(--accent) !important;
+  color: #fff !important;
+  border-color: transparent !important;
+  box-shadow: 0 2px 8px rgba(20,99,86,0.25), 0 0 0 1px rgba(255,255,255,0.1) inset;
+}
+.chip-idle:hover { border-color: var(--accent) !important; }
+
+/* ---- Botones ---- */
+.btn-accent {
+  background: var(--accent) !important;
+  box-shadow: 0 2px 10px rgba(20,99,86,0.22);
+}
+.btn-accent:hover { filter: brightness(1.1); }
+
+/* ---- Búsqueda ---- */
+.search-input:focus {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px rgba(20,99,86,0.12), var(--shadow-md);
+}
+
+/* ---- Precios ---- */
+.price-accent { color: var(--accent) !important; font-family: var(--font-display); }
+.price-sale { color: #B5461C !important; font-family: var(--font-display); } /* rojo-teja, no rojo genérico */
+
+/* =======================================================================
+   TARJETA DE PRODUCTO — motivo "ticket de mercado"
+   Firma visual: el único lugar donde el diseño se permite un capricho.
+   ======================================================================= */
+
+.product-card, .offer-card, .p-card {
+  border-radius: var(--radius) !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+.product-card:hover, .offer-card:hover, .p-card:hover {
+  box-shadow: var(--shadow-lg) !important;
+}
+
+/* Insignias con corte de "etiqueta de precio" (clip-path — sin trucos frágiles) */
+.p-card .p-feat,
+.p-card .p-off,
+.prev .badge-offer {
+  clip-path: polygon(9px 0, 100% 0, 100% 100%, 9px 100%, 0 50%);
+  padding-left: 13px !important;
+  font-family: var(--font-display);
+  letter-spacing: 0.02em;
+}
+.p-card .p-feat {
+  background: var(--accent2) !important;
+  color: #3D2B06 !important;
+}
+.p-card .p-off, .prev .badge-offer {
+  background: #B5461C !important;
+  color: #fff !important;
+}
+
+/* Línea de "desprender aquí" sobre el botón de compra — punteado sutil */
+.p-card .pv-product-action {
+  position: relative;
+  margin-top: 12px !important;
+}
+.p-card .pv-product-action::before {
+  content: '';
+  display: block;
+  height: 1px;
+  margin: 0 0 10px;
+  background-image: repeating-linear-gradient(
+    to right, var(--border) 0 4px, transparent 4px 8px
+  );
+}
+.p-card .pv-product-action {
+  background: var(--accent) !important;
+}
+.p-card .pv-product-action:hover { filter: brightness(1.1); }
+
+.p-card .p-cat { color: var(--muted); font-weight: 700; }
+.p-card .p-name { font-weight: 600; }
+
+/* ---- Grid de categorías ---- */
+.pv-cat-cards .cat-card-mark { background: var(--accent); opacity: 1; }
+.pv-cat-cards .cat-card:hover { border-color: var(--accent); }
+
+/* ---- Paginación ---- */
+.prev .prod-pager button.on, .pv-pager button.on {
+  background: var(--accent) !important;
+  border-color: var(--accent) !important;
+  box-shadow: 0 4px 12px -2px rgba(20,99,86,0.4);
+}
+
+/* ---- Patrocinados: etiqueta de tienda en dorado, no verde (jerarquía) ---- */
+.sponsored-card .sc-store { color: var(--accent2) !important; }
+.sponsored-card .sc-price { color: var(--accent) !important; }
+.sponsored-card:hover { box-shadow: var(--shadow-lg); }
+
+/* ---- Slider hero ---- */
+.ct-sld { box-shadow: var(--shadow-xl); }
+.ct-sld-arrow { background: rgba(13,58,49,0.55); }
+.ct-sld-arrow:hover { background: rgba(13,58,49,0.85); }
+.ct-sld-dot.active { background: var(--accent2); }
+
+/* ---- Respeta reduced-motion (ya heredado del original, se mantiene) ---- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

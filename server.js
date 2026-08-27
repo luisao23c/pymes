@@ -343,8 +343,19 @@ app.post('/maestro/:id/uploadfile', maestroAuth, uploadFile.single('archivo'), v
 
 const TEMPLATES = ['fotografia'];
 
+const DEFAULT_THEME = {
+  id: 'constructor', nombre: 'Constructor', emoji: '🧩',
+  dark: false, caso: 'tienda',
+  accent: '#2563eb', accent2: '#1d4ed8', bg: '#ffffff', text: '#1e293b',
+  muted: '#94a3b8', card: '#f8fafc', border: '#e2e8f0',
+  font: 'inter', radius: '12px', style: 'moderno',
+  fontLink: 'Inter:wght@400;500;600;700;800',
+  bodyFont: "'Inter', sans-serif",
+  headFont: "'Inter', sans-serif",
+  css: '', dept: null, figuras: [], departments: []
+};
 function getTemplateTheme(tpl) {
-  return TPL_THEMES[tpl] || null;
+  return TPL_THEMES[tpl] || DEFAULT_THEME;
 }
 
 // Colores con degradado (c1 = inicio, c2 = fin)
@@ -1197,7 +1208,7 @@ app.post('/registrar', (req, res) => {
   }
   const colorObj = getColor(color);
   const giroOk = GIROS.includes(giro) ? giro : '';
-  const tpl = TEMPLATES.includes(template) ? template : (GIRO_TEMPLATE[giroOk] || 'clasica');
+  const tpl = 'constructor';
   const estSel = ESTILOS.some(e => e.id === estilo) ? estilo : (GIRO_STYLE[giroOk] || 'moderno');
   const r = db.prepare(
     `INSERT INTO businesses (slug, name, whatsapp, description, pin, pin_hash, template, color, color_hex, color_hex2, giro, estilo, color_mode)
@@ -1260,7 +1271,8 @@ app.get('/maestro/panel', maestroAuth, (req, res) => {
   const plans = db.prepare('SELECT * FROM plans ORDER BY active DESC, id ASC').all();
   const planUsage = {};
   stores.forEach(s => { planUsage[s.plan] = (planUsage[s.plan] || 0) + 1; });
-  res.render('maestro', { error: null, list: stores, plans, planUsage, GIROS });
+  const customTemplates = db.prepare('SELECT * FROM custom_templates WHERE active=1 ORDER BY category, name').all();
+  res.render('maestro', { error: null, list: stores, plans, planUsage, GIROS, customTemplates });
 });
 
 app.post('/maestro/:id/toggle', maestroAuth, (req, res) => {
@@ -1337,6 +1349,145 @@ app.post('/maestro/cerrar', (req, res) => {
   deleteSession(req.cookies && req.cookies.sid);
   res.clearCookie('sid', { path: '/' });
   res.redirect('/maestro');
+});
+
+// ================= PLANTILLAS PERSONALIZADAS DEL EQUIPO =================
+app.post('/maestro/plantilla/crear', maestroAuth, (req, res) => {
+  const { name, emoji, description, category, giro } = req.body;
+  const cleanName = (name || '').trim().slice(0, 80);
+  if (!cleanName) return res.redirect('/maestro/panel?tab=plantillas&err=' + encodeURIComponent('Nombre requerido'));
+  db.prepare('INSERT INTO custom_templates (name, emoji, description, category, giro) VALUES (?,?,?,?,?)').run(
+    cleanName, (emoji || '📄').slice(0, 4), (description || '').trim().slice(0, 200), (category || '').trim(), (giro || '').trim()
+  );
+  res.redirect('/maestro/panel?tab=plantillas&ok=' + encodeURIComponent('Plantilla creada'));
+});
+
+app.post('/maestro/plantilla/:tid/editar', maestroAuth, (req, res) => {
+  const { name, emoji, description, category, giro } = req.body;
+  const cleanName = (name || '').trim().slice(0, 80);
+  if (!cleanName) return res.redirect('/maestro/panel?tab=plantillas&err=' + encodeURIComponent('Nombre requerido'));
+  db.prepare('UPDATE custom_templates SET name=?, emoji=?, description=?, category=?, giro=? WHERE id=?').run(
+    cleanName, (emoji || '📄').slice(0, 4), (description || '').trim().slice(0, 200), (category || '').trim(), (giro || '').trim(), req.params.tid
+  );
+  res.redirect('/maestro/panel?tab=plantillas&ok=' + encodeURIComponent('Plantilla actualizada'));
+});
+
+app.post('/maestro/plantilla/:tid/eliminar', maestroAuth, (req, res) => {
+  db.prepare('DELETE FROM custom_templates WHERE id=?').run(req.params.tid);
+  res.redirect('/maestro/panel?tab=plantillas&ok=' + encodeURIComponent('Plantilla eliminada'));
+});
+
+app.post('/maestro/plantilla/:tid/default', maestroAuth, (req, res) => {
+  const tpl = db.prepare('SELECT id FROM custom_templates WHERE id=? AND active=1').get(req.params.tid);
+  if (!tpl) return res.redirect('/maestro/panel?tab=plantillas');
+  db.prepare('UPDATE custom_templates SET is_default = 0').run();
+  db.prepare('UPDATE custom_templates SET is_default = 1 WHERE id = ?').run(req.params.tid);
+  db.prepare("INSERT OR REPLACE INTO site_config (key, value) VALUES ('default_template_id', ?)").run(String(req.params.tid));
+  res.redirect('/maestro/panel?tab=plantillas&ok=' + encodeURIComponent('Plantilla marcada como predeterminada'));
+});
+
+app.post('/maestro/plantilla/:tid/quitar-default', maestroAuth, (req, res) => {
+  db.prepare('UPDATE custom_templates SET is_default = 0 WHERE id = ?').run(req.params.tid);
+  db.prepare("INSERT OR REPLACE INTO site_config (key, value) VALUES ('default_template_id', '')").run();
+  res.redirect('/maestro/panel?tab=plantillas&ok=' + encodeURIComponent('Plantilla predeterminada removida'));
+});
+
+// Guardar bloques del constructor como plantilla del equipo (JSON body)
+app.post('/maestro/plantilla/guardar', maestroAuth, (req, res) => {
+  try {
+    const { name, emoji, description, blocks_json, category, giro } = req.body;
+    const cleanName = (name || '').trim().slice(0, 80);
+    if (!cleanName) return res.json({ ok: false, error: 'Nombre requerido' });
+    const r = db.prepare('INSERT INTO custom_templates (name, emoji, description, category, giro, blocks_json) VALUES (?,?,?,?,?,?)').run(
+      cleanName, (emoji || '📄').slice(0, 4), (description || '').trim().slice(0, 200), (category || '').trim(), (giro || '').trim(), (blocks_json || '[]').slice(0, 500000)
+    );
+    const tpl = db.prepare('SELECT * FROM custom_templates WHERE id=?').get(r.lastInsertRowid);
+    res.json({ ok: true, tpl });
+  } catch (e) {
+    res.json({ ok: false, error: e.message });
+  }
+});
+
+// Actualizar bloques de una plantilla existente (JSON body)
+app.post('/maestro/plantilla/:tid/bloques', maestroAuth, (req, res) => {
+  try {
+    const { blocks_json } = req.body;
+    db.prepare('UPDATE custom_templates SET blocks_json=? WHERE id=?').run(
+      (blocks_json || '[]').slice(0, 500000), req.params.tid
+    );
+    res.json({ ok: true });
+  } catch (e) {
+    res.json({ ok: false, error: e.message });
+  }
+});
+
+// ================= EDITOR DE PLANTILLA DESDE EL MAESTRO =================
+app.get('/maestro/plantilla/:tid/diseno', maestroAuth, (req, res) => {
+  const row = db.prepare('SELECT * FROM custom_templates WHERE id=? AND active=1').get(req.params.tid);
+  if (!row) return res.redirect('/maestro/panel?tab=plantillas');
+  // Crear un "business virtual" con los datos de la plantilla para alimentar al editor
+  const biz = {
+    id: -(parseInt(row.id) || 0),  // id negativo para distinguir de businesses reales
+    slug: 'plantilla-' + row.id,
+    name: row.name,
+    description: row.description || '',
+    logo: '',
+    banner: '',
+    whatsapp: '',
+    giro: row.giro || '',
+    giros: row.giro ? JSON.stringify([row.giro]) : '[]',
+    template: '',
+    style: 'moderno',
+    color: 'blue',
+    color_hex: '#2563eb',
+    color_hex2: '',
+    color_mode: 'degradado',
+    bg: '',
+    card: '',
+    text: '',
+    muted: '',
+    border: '',
+    radius: '',
+    font: '',
+    accent: '',
+    accent2: '',
+    header: '',
+    header_text: '',
+    sections: '{}',
+    blocks: row.blocks_json || '[]',
+    horario: '[]',
+    horario_msg: '',
+    grid_cols: 3,
+    wa_message: '',
+    currency: 'MXN',
+    show_network: 0,
+    page_bg: '',
+    active: 1,
+    created_at: row.created_at
+  };
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+  res.render('diseno', {
+    ...configLocals(biz, { esMaestro: true, editingCustomTpl: parseInt(row.id) }),
+    biz,
+    editingCustomTpl: parseInt(row.id),
+    money: '$',
+    currencySymbol: '$',
+    mascaraConfig: { MASCARA_SIZES, SHAPE_DEFS, getShapeClip: getShapeClip.toString(), MASCARA_CSS: MASCARA_CSS.replace(/\n\s*/g,'') }
+  });
+});
+
+// Guardar bloques de una plantilla del equipo desde el constructor
+app.post('/maestro/plantilla/:tid/diseno', maestroAuth, (req, res) => {
+  try {
+    const { blocks } = req.body;
+    const blocksJson = Array.isArray(blocks) ? JSON.stringify(blocks) : (blocks || '[]');
+    db.prepare('UPDATE custom_templates SET blocks_json=? WHERE id=?').run(
+      blocksJson.slice(0, 500000), req.params.tid
+    );
+    res.json({ ok: true });
+  } catch (e) {
+    res.json({ ok: false, error: e.message });
+  }
 });
 
 // ================= CATÁLOGO PÚBLICO =================
@@ -1650,12 +1801,18 @@ function verifyPin(pin, stored) {
 // Sesión con token aleatorio (se guarda en la tabla sessions)
 function createSession(bizId, kind, empId) {
   const token = crypto.randomBytes(32).toString('hex');
-  db.prepare('INSERT INTO sessions (token, biz_id, kind, emp_id) VALUES (?, ?, ?, ?)').run(token, bizId || null, kind || 'owner', empId || null);
+  const expiresAt = new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString();
+  db.prepare('INSERT INTO sessions (token, biz_id, kind, emp_id, expires_at) VALUES (?, ?, ?, ?, ?)').run(token, bizId || null, kind || 'owner', empId || null, expiresAt);
   return token;
 }
 function findSession(token) {
   if (!token) return null;
-  return db.prepare('SELECT * FROM sessions WHERE token = ?').get(token);
+  const sess = db.prepare('SELECT * FROM sessions WHERE token = ?').get(token);
+  if (sess && sess.expires_at && new Date(sess.expires_at) < new Date()) {
+    db.prepare('DELETE FROM sessions WHERE token = ?').run(token);
+    return null;
+  }
+  return sess;
 }
 function deleteSession(token) {
   if (token) db.prepare('DELETE FROM sessions WHERE token = ?').run(token);
@@ -1734,9 +1891,6 @@ app.post('/:slug/admin', loginRateLimit, (req, res) => {
   let ok = false;
   if (biz.pin_hash) {
     ok = verifyPin(pin, biz.pin_hash);
-  } else if (pin === biz.pin) {
-    db.prepare('UPDATE businesses SET pin_hash = ? WHERE id = ?').run(hashPin(pin), biz.id);
-    ok = true;
   }
   if (ok) {
     const token = createSession(biz.id, 'owner');
@@ -2676,6 +2830,7 @@ function configLocals(biz, opts) {
     diseno,
     TPL_META,
     TPL_CASOS,
+    customTemplates: db.prepare('SELECT * FROM custom_templates WHERE active=1 ORDER BY category, name').all(),
     template: biz.template || '',
     theme: theme,
     girosList,
@@ -2687,6 +2842,7 @@ function configLocals(biz, opts) {
     previewProducts,
     pal,
     esMaestro: !!(opts && opts.esMaestro),
+    editingCustomTpl: (opts && opts.editingCustomTpl) || null,
     canDesign: !!(opts && opts.esMaestro) || designAllowed(biz),
     error: (opts && opts.error) || null,
     ok: (opts && opts.ok) || null
@@ -2878,8 +3034,13 @@ function applyConfig(biz, body) {
   const fontOk = FONTS.some(f => f.css === font);
   const designPosted = Object.prototype.hasOwnProperty.call(body, 'bg');
   const headerFinal = designPosted ? (body.header_user === '1' ? (header || '') : '') : biz.header;
+  const redes = JSON.stringify({
+    facebook: String(body.redes_facebook || '').trim().slice(0, 300),
+    instagram: String(body.redes_instagram || '').trim().slice(0, 300),
+    tiktok: String(body.redes_tiktok || '').trim().slice(0, 300)
+  });
   db.prepare(
-    `UPDATE businesses SET name = ?, whatsapp = ?, description = ?, template = ?, color = ?, color_hex = ?, color_hex2 = ?, color_mode = ?, grid_cols = ?, logo = ?, banner = ?, giro = ?, giros = ?, estilo = ?, bg = ?, card = ?, text = ?, muted = ?, border = ?, radius = ?, font = ?, accent = ?, accent2 = ?, header = ?, header_text = ?, wa_message = ?, currency = ?, sections = ?, demo = ?, horario = ?, horario_msg = ?, blocks = ?, page_bg = ? WHERE id = ?`
+    `UPDATE businesses SET name = ?, whatsapp = ?, description = ?, template = ?, color = ?, color_hex = ?, color_hex2 = ?, color_mode = ?, grid_cols = ?, logo = ?, banner = ?, giro = ?, giros = ?, estilo = ?, bg = ?, card = ?, text = ?, muted = ?, border = ?, radius = ?, font = ?, accent = ?, accent2 = ?, header = ?, header_text = ?, wa_message = ?, currency = ?, sections = ?, demo = ?, horario = ?, horario_msg = ?, blocks = ?, page_bg = ?, redes = ? WHERE id = ?`
   ).run(
     name || biz.name,
     cleanWa || biz.whatsapp,
@@ -2914,6 +3075,7 @@ function applyConfig(biz, body) {
     horarioMsg,
     blocks,
     sanitizePageBg(page_bg, Object.prototype.hasOwnProperty.call(body, 'page_bg'), biz.page_bg),
+    redes,
     biz.id
   );
   // Modo fácil: guarda el preset elegido y crea las páginas sugeridas
@@ -2933,7 +3095,7 @@ app.get('/:slug/admin/config', requireAuth, can('config'), (req, res) => {
   res.render('config', configLocals(req.biz, {}));
 });
 
-app.post('/:slug/admin/config', requireAuth, (req, res) => {
+app.post('/:slug/admin/config', requireAuth, can('config'), (req, res) => {
   const biz = applyConfig(req.biz, req.body);
   res.render('config', configLocals(biz, { ok: 'Configuración guardada' }));
 });
@@ -2946,6 +3108,7 @@ app.get('/:slug/admin/diseno', requireAuth, can('diseno'), (req, res) => {
 
 // ================= PLANES (el dueño ve y elige su plan) =================
 app.get('/:slug/admin/planes', requireAuth, (req, res) => {
+  if (req.role !== 'owner') return res.redirect('/' + req.params.slug + '/admin/panel');
   res.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
   const plans = db.prepare('SELECT * FROM plans WHERE active = 1 ORDER BY price ASC').all();
   const current = getPlan(req.biz);
@@ -2953,6 +3116,7 @@ app.get('/:slug/admin/planes', requireAuth, (req, res) => {
 });
 
 app.post('/:slug/admin/plan', requireAuth, (req, res) => {
+  if (req.role !== 'owner') return res.redirect('/' + req.params.slug + '/admin/panel');
   const plan = db.prepare('SELECT * FROM plans WHERE key = ? AND active = 1').get(req.body.plan);
   if (!plan) return res.redirect('/' + req.params.slug + '/admin/planes');
   const ends = plan.days > 0 ? new Date(Date.now() + plan.days * 86400000).toISOString().slice(0, 10) : '';
@@ -2968,8 +3132,7 @@ function getEmployees(bizId) {
 // Devuelve true si ese PIN ya lo usa el dueño u otro empleado
 function pinInUse(biz, pin, excludeEmpId) {
   if (!pin) return false;
-  if (biz.pin_hash) { if (verifyPin(pin, biz.pin_hash)) return true; }
-  else if (pin === biz.pin) return true;
+  if (biz.pin_hash && verifyPin(pin, biz.pin_hash)) return true;
   const emps = db.prepare('SELECT pin_hash FROM employees WHERE business_id = ? AND id != ?').all(biz.id, excludeEmpId || 0);
   return emps.some(e => verifyPin(pin, e.pin_hash));
 }
@@ -3156,7 +3319,7 @@ app.get('/maestro/:id/diseno', maestroAuth, (req, res) => {
 app.post('/:slug/admin/cambiar-pin', requireAuth, (req, res) => {
   const { pin_actual, pin_nuevo, pin_repite } = req.body;
   const biz = req.biz;
-  const actualOk = biz.pin_hash ? verifyPin(String(pin_actual || ''), biz.pin_hash) : (pin_actual === biz.pin);
+  const actualOk = biz.pin_hash && verifyPin(String(pin_actual || ''), biz.pin_hash);
   if (!actualOk) {
     return res.render('config', configLocals(biz, { error: 'El PIN actual no coincide.' }));
   }
@@ -3164,7 +3327,8 @@ app.post('/:slug/admin/cambiar-pin', requireAuth, (req, res) => {
     return res.render('config', configLocals(biz, { error: 'El PIN nuevo debe tener de 6 a 12 dígitos y coincidir.' }));
   }
   db.prepare('UPDATE businesses SET pin_hash = ?, pin = \'\' WHERE id = ?').run(hashPin(String(pin_nuevo)), biz.id);
-  res.render('config', configLocals(getBusiness(biz.slug), { ok: 'PIN actualizado correctamente' }));
+  db.prepare('DELETE FROM sessions WHERE biz_id = ? AND token != ?').run(biz.id, req.cookies.sid || '');
+  res.render('config', configLocals(getBusiness(biz.slug), { ok: 'PIN actualizado correctamente. Las demás sesiones fueron cerradas.' }));
 });
 
 // Resetear PIN (solo con código maestro)
@@ -3176,11 +3340,16 @@ app.post('/:slug/admin/resetear-pin', (req, res) => {
     return res.render('config', configLocals(biz, { error: 'Código maestro incorrecto. No se puede resetear el PIN.' }));
   }
   db.prepare('UPDATE businesses SET pin_hash = ?, pin = \'\' WHERE id = ?').run(hashPin('123456'), biz.id);
-  res.render('config', configLocals(getBusiness(biz.slug), { ok: 'PIN reseteado a 123456. Pídele al dueño cambiarlo.' }));
+  db.prepare('DELETE FROM sessions WHERE biz_id = ?').run(biz.id);
+  res.render('config', configLocals(getBusiness(biz.slug), { ok: 'PIN reseteado a 123456. Todas las sesiones fueron cerradas.' }));
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
+  db.prepare("DELETE FROM sessions WHERE expires_at IS NOT NULL AND expires_at < datetime('now')").run();
+  setInterval(() => {
+    db.prepare("DELETE FROM sessions WHERE expires_at IS NOT NULL AND expires_at < datetime('now')").run();
+  }, 60 * 60 * 1000);
   console.log(`Nessik corriendo en http://localhost:${PORT}`);
   console.log(`Landing:      http://localhost:${PORT}/`);
   console.log(`Registrar:    http://localhost:${PORT}/registrar  (código maestro: ${MASTER_KEY})`);

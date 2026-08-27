@@ -64,20 +64,6 @@
     return mins >= toM(dia.o) && mins < toM(dia.c);
   }
   function closedMsg() { return HORARIO_MSG || 'Estamos cerrados ahora. Recibimos tu pedido y te respondemos en cuanto abramos.'; }
-  function renderStatusBadge() {
-    const abierto = horarioAbierto();
-    let el = document.getElementById('status-badge');
-    if (!el) {
-      el = document.createElement('div');
-      el.id = 'status-badge';
-      el.style.cssText = 'position:fixed;top:14px;right:14px;z-index:950;padding:5px 13px;border-radius:999px;font-size:12px;font-weight:800;box-shadow:0 2px 10px rgba(0,0,0,.12);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);';
-      document.body.appendChild(el);
-    }
-    el.textContent = abierto ? '🟢 Abierto' : '🔴 Cerrado';
-    el.style.background = abierto ? 'rgba(220,252,231,.88)' : 'rgba(254,226,226,.88)';
-    el.style.color = abierto ? '#166534' : '#991b1b';
-    el.style.border = '1px solid ' + (abierto ? '#bbf7d0' : '#fecaca');
-  }
 
   function normVariantModel(v) {
     const empty = { attrs: [], images: {}, stock: {}, prices: {} };
@@ -1031,7 +1017,6 @@
   document.addEventListener('DOMContentLoaded', () => {
     buildChat();
     renderCart();
-    renderStatusBadge();
     catCards().forEach(card => {
       const id = card.getAttribute('data-id');
       const btn = card.querySelector('button[onclick^="addToCart"]');

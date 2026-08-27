@@ -314,6 +314,26 @@
             </div>
           </div>
 
+          <% var _redes = {}; try { _redes = JSON.parse(biz.redes || '{}'); } catch(e) {} %>
+          <div class="border-t border-slate-200 dark:border-[#30363d] pt-4 mt-3">
+            <label class="config-label">Redes sociales</label>
+            <p class="text-xs text-slate-400 dark:text-slate-500 mb-3">Agrega los enlaces de tus redes para que aparezcan en tu catálogo.</p>
+            <div class="grid md:grid-cols-3 gap-4">
+              <div>
+                <label class="config-label !text-xs !mb-1"><i class="bi bi-facebook mr-1"></i> Facebook</label>
+                <input name="redes_facebook" value="<%= _redes.facebook || '' %>" class="config-input" placeholder="https://facebook.com/tu-pagina">
+              </div>
+              <div>
+                <label class="config-label !text-xs !mb-1"><i class="bi bi-instagram mr-1"></i> Instagram</label>
+                <input name="redes_instagram" value="<%= _redes.instagram || '' %>" class="config-input" placeholder="@tu-cuenta o enlace">
+              </div>
+              <div>
+                <label class="config-label !text-xs !mb-1"><i class="bi bi-tiktok mr-1"></i> TikTok</label>
+                <input name="redes_tiktok" value="<%= _redes.tiktok || '' %>" class="config-input" placeholder="@tu-cuenta o enlace">
+              </div>
+            </div>
+          </div>
+
           <div>
             <label class="config-label">Descripción</label>
             <textarea name="description" rows="2" class="config-input" placeholder="¿Qué vende tu negocio?"><%= biz.description %></textarea>
@@ -379,9 +399,8 @@
             <div class="w-12 h-12 rounded-xl bg-fuchsia-50 dark:bg-fuchsia-900/30 text-fuchsia-600 dark:text-fuchsia-400 flex items-center justify-center text-2xl shrink-0">🎨</div>
             <div class="flex-1 min-w-[200px]">
               <h2 class="font-extrabold text-slate-900 dark:text-white">Diseño del catálogo</h2>
-              <p class="text-xs text-slate-400 dark:text-slate-500">Plantillas, estilos, colores, tipografía y vista previa en vivo, ahora en su propio apartado.</p>
+              <p class="text-xs text-slate-400 dark:text-slate-500">Colores, tipografía y vista previa del catálogo.</p>
             </div>
-            <a href="<%= esMaestro ? '/maestro/' + biz.id + '/diseno' : '/' + biz.slug + '/admin/diseno' %>" class="m-btn m-btn-filled">Abrir el constructor →</a>
           </div>
         </section>
 

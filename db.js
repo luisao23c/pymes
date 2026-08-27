@@ -72,7 +72,8 @@ CREATE TABLE IF NOT EXISTS sessions (
   created_at TEXT DEFAULT (datetime('now'))
 );
 `);
-addColumnIfMissing('sessions', 'emp_id', 'INTEGER'); // si la sesión es de un empleado, su id
+addColumnIfMissing('sessions', 'emp_id', 'INTEGER');
+addColumnIfMissing('sessions', 'expires_at', 'TEXT');
 
 // Empleados por tienda (cada uno con su PIN y permisos)
 db.exec(`
@@ -348,6 +349,26 @@ addColumnIfMissing('businesses', 'onboarding_done', 'INTEGER DEFAULT 0');
 // Bloques de contenido del catálogo (banner, texto, destacados…) ordenables con drag&drop
 addColumnIfMissing('businesses', 'blocks', "TEXT DEFAULT '[]'");
 addColumnIfMissing('businesses', 'page_bg', "TEXT DEFAULT ''");
+addColumnIfMissing('businesses', 'redes', "TEXT DEFAULT '{}'");
+
+// ============ Plantillas personalizadas del equipo ============
+db.exec(`
+CREATE TABLE IF NOT EXISTS custom_templates (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  emoji TEXT DEFAULT '📄',
+  description TEXT DEFAULT '',
+  category TEXT DEFAULT '',
+  giro TEXT DEFAULT '',
+  blocks_json TEXT DEFAULT '[]',
+  colors_json TEXT DEFAULT '{}',
+  created_at TEXT DEFAULT (datetime('now')),
+  active INTEGER DEFAULT 1
+);
+`);
+addColumnIfMissing('custom_templates', 'is_default', 'INTEGER DEFAULT 0');
+db.exec("CREATE TABLE IF NOT EXISTS site_config (key TEXT PRIMARY KEY, value TEXT)");
+db.exec("INSERT OR IGNORE INTO site_config (key, value) VALUES ('default_template_id', '')");
 
 function crearPaginasSugeridas(businessId, paginasSugeridas) {
   if (!Array.isArray(paginasSugeridas) || !paginasSugeridas.length) return;
