@@ -622,7 +622,6 @@
     }
     .prod-wa-btn:hover { background:#20bd5a; transform:translateY(-1px); box-shadow:0 4px 12px rgba(37,211,102,.3); }
     .prod-wa-btn i { font-size:14px; }
-    .prod-card-actions { display:flex; gap:6px; margin-top:8px; }
 
     .prod-img-wrap::after {
       content:''; position:absolute; inset:0;
@@ -1292,16 +1291,6 @@
       if (modal) modal.classList.remove('pd-open');
       setTimeout(function(){ m.remove(); }, 300);
       document.body.style.overflow = '';
-    }
-    function shareProduct(id, name, price) {
-      var url = window.location.origin + '/<%= biz.slug %>/p/' + id;
-      var text = 'Mira este producto: ' + name + ' - ' + money(price) + '\n' + url;
-      if (navigator.share) {
-        navigator.share({ title: name, text: text, url: url }).catch(function(){});
-      } else {
-        var waUrl = 'https://wa.me/?text=' + encodeURIComponent(text);
-        window.open(waUrl, '_blank');
-      }
     }
     function shareWhatsApp(id, name, price) {
       var url = window.location.origin + '/<%= biz.slug %>/p/' + id;
