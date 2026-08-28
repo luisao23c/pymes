@@ -3,17 +3,17 @@
 <head>
   <%- include('admin/head', { title: 'Panel', biz }) %>
 </head>
-<body class="m-material bg-slate-100 min-h-screen">
+<body class="m-material min-h-screen" style="background:var(--ap-bg);color:var(--ap-text)">
   <%- include('admin/sidebar', { biz, active: 'panel', canDesign }) %>
 
-  <main class="md:pl-60">
-    <div class="max-w-6xl mx-auto px-3 md:px-6 py-4 md:py-5 pb-24 md:pb-6">
+  <main class="transition-all duration-300">
+    <div class="px-4 md:px-8 py-4 md:py-6 pb-24 md:pb-6">
 
       <!-- Encabezado compacto -->
       <div class="flex items-center justify-between flex-wrap gap-2 mb-3">
         <div>
-          <h1 class="text-lg md:text-xl font-black tracking-tight text-slate-900">Hola, <%= biz.name.split(' ')[0] %> 👋</h1>
-          <p class="text-xs text-slate-500 mt-0.5">Resumen de tu catálogo hoy.</p>
+          <h1 class="text-lg md:text-xl font-bold tracking-tight" style="color:var(--ap-text);font-family:'Playfair Display',serif">Hola, <%= biz.name.split(' ')[0] %> 👋</h1>
+          <p class="text-xs mt-0.5" style="color:var(--ap-text-sec)">Resumen de tu catálogo hoy.</p>
         </div>
         <div class="flex items-center gap-2">
           <a href="/<%= biz.slug %>" target="_blank" class="m-btn m-btn-tonal m-btn-sm">
@@ -47,8 +47,8 @@
       <% } %>
 
       <!-- Comparte tu catálogo (compacto) -->
-      <section class="m-card mb-3 p-3.5 bg-gradient-to-r from-emerald-500 to-teal-500 !border-transparent text-white">
-        <div class="flex items-center justify-between flex-wrap gap-3">
+      <section class="share-card mb-3 p-4 !text-white" style="border-radius:var(--ap-radius)">
+        <div class="flex items-center justify-between flex-wrap gap-3" style="position:relative;z-index:1">
           <div class="flex-1 min-w-52">
             <p class="font-extrabold text-sm">Comparte tu catálogo 🚀</p>
             <div class="flex items-center gap-1.5 bg-white/15 rounded-full pl-3 pr-1.5 py-1 mt-2">
@@ -79,16 +79,16 @@
           { label: 'Conversión', value: stats.conv, isPct: true, icon: 'M3 13h4v8H3zM10 5h4v16h-4zM17 9h4v12h-4z', tint: 'text-fuchsia-600 bg-fuchsia-50' }
         ]; %>
         <% cards.forEach((c, i) => { %>
-          <div class="m-card m-hover m-ripple p-3.5 m-stagger cursor-pointer" data-active-layer>
+          <div class="metric-card <%= ['blue','green','purple','gold'][i] %> p-3.5 cursor-pointer">
             <div class="flex items-center justify-between gap-2">
               <div class="min-w-0">
-                <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400"><%= c.label %></p>
-                <% if (c.isMoney) { %><p class="text-xl md:text-2xl font-black text-slate-900 mt-0.5" data-count="<%= c.value %>" data-prefix="$" data-decimals="2">$0.00</p><% } else if (c.isPct) { %><p class="text-xl md:text-2xl font-black text-slate-900 mt-0.5" data-count="<%= c.value %>" data-decimals="1">0.0%</p><% } else { %><p class="text-xl md:text-2xl font-black text-slate-900 mt-0.5" data-count="<%= c.value %>">0</p><% } %>
+                <p class="text-[10px] font-bold uppercase tracking-wider" style="color:var(--ap-text-sec)"><%= c.label %></p>
+                <% if (c.isMoney) { %><p class="text-xl md:text-2xl font-black mt-0.5" style="color:var(--ap-text)" data-count="<%= c.value %>" data-prefix="$" data-decimals="2">$0.00</p><% } else if (c.isPct) { %><p class="text-xl md:text-2xl font-black mt-0.5" style="color:var(--ap-text)" data-count="<%= c.value %>" data-decimals="1">0.0%</p><% } else { %><p class="text-xl md:text-2xl font-black mt-0.5" style="color:var(--ap-text)" data-count="<%= c.value %>">0</p><% } %>
                 <% if (typeof c.delta !== 'undefined') { %>
                   <span class="inline-flex items-center gap-1 text-[10px] font-black mt-1 px-2 py-0.5 rounded-full <%= c.delta > 0 ? 'bg-emerald-50 text-emerald-600' : c.delta < 0 ? 'bg-red-50 text-red-500' : 'bg-slate-100 text-slate-400' %>"><%= c.delta > 0 ? '▲' : c.delta < 0 ? '▼' : '·' %> <%= Math.abs(c.delta) %>% <span class="font-semibold opacity-70"><%= c.deltaLabel %></span></span>
                 <% } %>
               </div>
-              <div class="w-10 h-10 rounded-xl <%= c.tint %> flex items-center justify-center shrink-0">
+              <div class="metric-icon <%= ['blue','green','purple','gold'][i] %>">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8"><path d="<%= c.icon %>"/></svg>
               </div>
             </div>
@@ -97,17 +97,17 @@
       </section>
 
       <% if (lowStock && lowStock.length > 0) { %>
-        <section class="mb-3 bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3">
+        <section class="warning-card mb-3 px-4 py-3">
           <div class="flex items-center gap-3 flex-wrap">
             <span class="text-xl">⚠️</span>
             <div class="flex-1 min-w-[200px]">
-              <p class="text-sm font-extrabold text-amber-800">Stock bajo en <%= lowStock.length %> producto(s)</p>
-              <p class="text-xs text-amber-700 mt-0.5 truncate">
+              <p class="text-sm font-extrabold" style="color:#a07d3c">Stock bajo en <%= lowStock.length %> producto(s)</p>
+              <p class="text-xs mt-0.5 truncate" style="color:#b8892e">
                 <% lowStock.slice(0, 6).forEach((p, i) => { %><%= i > 0 ? ' · ' : '' %><b><%= p.name %></b> (<%= p.stock <= 0 ? 'agotado' : p.stock %><% }) %>
                 <% if (lowStock.length > 6) { %> y <%= lowStock.length - 6 %> más<% } %>
               </p>
             </div>
-            <a href="/<%= biz.slug %>/admin/productos" class="m-btn m-btn-filled m-btn-sm !bg-amber-600">Ver productos</a>
+            <a href="/<%= biz.slug %>/admin/productos" class="m-btn m-btn-sm" style="background:var(--ap-accent-gold);color:#fff">Ver productos</a>
           </div>
         </section>
       <% } %>
@@ -115,16 +115,16 @@
       <% if (priceHistory && priceHistory.length > 0) { %>
         <section class="m-card p-4 mb-3">
           <div class="flex items-center justify-between mb-2">
-            <h2 class="font-extrabold text-slate-900 text-sm">Historial de precios y promos</h2>
-            <a href="/<%= biz.slug %>/admin/reporte" class="text-xs font-bold text-blue-600 hover:text-blue-700">Descargar CSV</a>
+            <h2 class="font-bold text-sm" style="color:var(--ap-text)">Historial de precios y promos</h2>
+            <a href="/<%= biz.slug %>/admin/reporte" class="text-xs font-bold" style="color:var(--ap-accent-light)">Descargar CSV</a>
           </div>
           <div class="space-y-1 max-h-64 overflow-y-auto m-scroll">
             <% priceHistory.forEach(h => { %>
-              <div class="flex items-center gap-2 text-xs py-1 border-b border-slate-50">
-                <span class="text-slate-400 shrink-0 w-32"><%= (h.created_at || '').slice(0, 16) %></span>
-                <span class="font-semibold text-slate-700 truncate flex-1"><%= h.name %></span>
-                <span class="font-black text-slate-900 shrink-0"><%= money(h.price) %></span>
-                <% if (h.old_price) { %><span class="text-slate-400 line-through shrink-0"><%= money(h.old_price) %></span><% } %>
+              <div class="flex items-center gap-2 text-xs py-1.5" style="border-bottom:1px solid var(--ap-border)">
+                <span class="shrink-0 w-32" style="color:var(--ap-text-sec)"><%= (h.created_at || '').slice(0, 16) %></span>
+                <span class="font-semibold truncate flex-1" style="color:var(--ap-text)"><%= h.name %></span>
+                <span class="font-black shrink-0" style="color:var(--ap-text)"><%= money(h.price) %></span>
+                <% if (h.old_price) { %><span class="line-through shrink-0" style="color:var(--ap-text-sec);opacity:0.5"><%= money(h.old_price) %></span><% } %>
                 <% if (h.promo_type === 'regalo') { %><span class="m-badge m-badge-error shrink-0">🎁 <%= h.promo_gift %></span><% } else if (h.promo_type) { %><span class="m-badge m-badge-warn shrink-0"><%= h.promo_type %></span><% } %>
               </div>
             <% }) %>
@@ -134,14 +134,14 @@
 
       <!-- Funnel + pedidos semana en una fila -->
       <div class="grid lg:grid-cols-3 gap-2.5 mb-3">
-        <section class="lg:col-span-2 m-card p-4 m-stagger">
+        <section class="lg:col-span-2 m-card p-5">
           <div class="flex items-center justify-between mb-3">
             <div>
-              <h2 class="font-extrabold text-slate-900">Funnel de ventas</h2>
-              <p class="text-[11px] text-slate-400">De la visita al pedido</p>
+              <h2 class="font-bold text-sm" style="color:var(--ap-text)">Funnel de ventas</h2>
+              <p class="text-[11px]" style="color:var(--ap-text-sec)">De la visita al pedido</p>
             </div>
             <span class="m-badge m-badge-success"><%= money(stats.revenueWeek) %> esta semana</span>
-            <span class="m-badge m-badge-neutral">Ticket prom. <%= money(stats.avgOrder) %></span>
+            <span class="m-badge m-badge-primary">Ticket prom. <%= money(stats.avgOrder) %></span>
           </div>
           <% const steps = [
             { label: 'Visitas', value: stats.total, pct: 100, color: 'from-blue-600 to-sky-400' },
@@ -153,29 +153,29 @@
               <div class="flex-1 flex flex-col items-center gap-1.5">
                 <div class="w-full rounded-lg bg-gradient-to-r <%= s.color %> transition-all duration-700" data-bar-v="<%= (s.pct / 100) * 64 %>" style="height: 0px"></div>
                 <div class="text-center">
-                  <p class="font-black text-slate-900 text-sm"><%= s.value %></p>
-                  <p class="text-[10px] text-slate-400 font-semibold"><%= s.label %></p>
-                  <p class="text-[10px] font-black <%= s.pct === 100 ? 'text-blue-600' : 'text-slate-500' %>"><%= s.pct %>%</p>
+                  <p class="font-bold text-sm" style="color:var(--ap-text)"><%= s.value %></p>
+                  <p class="text-[10px] font-semibold" style="color:var(--ap-text-sec)"><%= s.label %></p>
+                  <p class="text-[10px] font-bold" style="color:<%= s.pct === 100 ? 'var(--ap-accent)' : 'var(--ap-text-sec)' %>"><%= s.pct %>%</p>
                 </div>
               </div>
             <% }) %>
           </div>
-          <p class="text-[11px] text-slate-400 mt-2.5 text-center">Pedido → <b class="text-slate-600"><%= stats.orderRate %>%</b> · WhatsApp → <b class="text-slate-600"><%= stats.clickRate %>%</b></p>
+          <p class="text-[11px] mt-2.5 text-center" style="color:var(--ap-text-sec)">Pedido → <b style="color:var(--ap-text)"><%= stats.orderRate %>%</b> · WhatsApp → <b style="color:var(--ap-text)"><%= stats.clickRate %>%</b></p>
         </section>
 
-        <section class="m-card p-4 m-stagger">
-          <h2 class="font-extrabold text-slate-900 mb-3">Productos más vistos</h2>
+        <section class="m-card p-4">
+          <h2 class="font-bold text-sm mb-3" style="color:var(--ap-text)">Productos más vistos</h2>
           <% if (stats.topProducts.length > 0) { %>
             <div class="space-y-2.5">
               <% const maxC = Math.max(...stats.topProducts.map(t => t.c), 1); %>
               <% stats.topProducts.forEach((t, i) => { %>
                 <div>
                   <div class="flex items-center justify-between text-xs mb-1">
-                    <span class="font-semibold text-slate-700 truncate pr-2"><%= i + 1 %>. <%= t.name %></span>
-                    <span class="font-bold text-slate-500 shrink-0"><%= t.c %> <span class="font-normal text-slate-400">vistas</span></span>
+                    <span class="font-semibold truncate pr-2" style="color:var(--ap-text)"><%= i + 1 %>. <%= t.name %></span>
+                    <span class="font-bold shrink-0" style="color:var(--ap-text-sec)"><%= t.c %> <span class="font-normal opacity-70">vistas</span></span>
                   </div>
-                  <div class="h-1.5 rounded-full bg-slate-100 overflow-hidden">
-                    <div class="h-full rounded-full bg-gradient-to-r from-blue-500 to-sky-400" style="width: 0%" data-bar="<%= Math.round((t.c / maxC) * 100) %>"></div>
+                  <div class="progress-bar">
+                    <div class="progress-bar-fill blue" style="width: 0%" data-bar="<%= Math.round((t.c / maxC) * 100) %>"></div>
                   </div>
                 </div>
               <% }) %>
@@ -192,17 +192,17 @@
       <!-- Productos que más se piden por WhatsApp -->
       <% if (stats.topWaProducts && stats.topWaProducts.length > 0) { %>
         <section class="m-card p-4 mb-3">
-          <h2 class="font-extrabold text-slate-900 text-sm mb-3">Productos que más se piden por WhatsApp 💬</h2>
+          <h2 class="font-bold text-sm mb-3" style="color:var(--ap-text)">Productos que más se piden por WhatsApp 💬</h2>
           <div class="space-y-2.5">
             <% const maxW = Math.max(...stats.topWaProducts.map(t => t.c), 1); %>
             <% stats.topWaProducts.forEach((t, i) => { %>
               <div>
                 <div class="flex items-center justify-between text-xs mb-1">
-                  <span class="font-semibold text-slate-700 truncate pr-2"><%= i + 1 %>. <%= t.name %></span>
-                  <span class="font-bold text-slate-500 shrink-0"><%= t.c %> <span class="font-normal text-slate-400">pedidos</span></span>
-                </div>
-                <div class="h-1.5 rounded-full bg-slate-100 overflow-hidden">
-                  <div class="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400" style="width: <%= Math.round((t.c / maxW) * 100) %>%"></div>
+                    <span class="font-semibold truncate pr-2" style="color:var(--ap-text)"><%= i + 1 %>. <%= t.name %></span>
+                    <span class="font-bold shrink-0" style="color:var(--ap-text-sec)"><%= t.c %> <span class="font-normal opacity-70">pedidos</span></span>
+                  </div>
+                  <div class="progress-bar">
+                    <div class="progress-bar-fill green" style="width: <%= Math.round((t.c / maxW) * 100) %>%"></div>
                 </div>
               </div>
             <% }) %>
@@ -213,19 +213,19 @@
       <!-- Productos más vendidos -->
       <% if (stats.topSellers && stats.topSellers.length > 0) { %>
         <section class="m-card p-4 mb-3">
-          <h2 class="font-extrabold text-slate-900 text-sm mb-3">Productos más vendidos 🏆</h2>
-          <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
+          <h2 class="font-bold text-sm mb-3" style="color:var(--ap-text)">Productos más vendidos 🏆</h2>
+          <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
             <% const maxS = Math.max(...stats.topSellers.map(t => t.c), 1); %>
             <% stats.topSellers.forEach((t, i) => { %>
-              <div class="flex items-center gap-3 p-2.5 rounded-xl border border-slate-100">
-                <span class="w-7 h-7 rounded-full bg-amber-100 text-amber-700 text-xs font-black flex items-center justify-center shrink-0"><%= i + 1 %></span>
+              <div class="flex items-center gap-3 p-3 rounded-xl" style="border:1px solid var(--ap-border)">
+                <span class="w-8 h-8 rounded-xl text-xs font-black flex items-center justify-center shrink-0" style="background:rgba(201,168,108,0.1);color:#a07d3c"><%= i + 1 %></span>
                 <div class="flex-1 min-w-0">
-                  <p class="text-sm font-semibold text-slate-800 truncate"><%= t.name %></p>
-                  <div class="h-1.5 rounded-full bg-slate-100 overflow-hidden mt-1">
-                    <div class="h-full rounded-full bg-gradient-to-r from-amber-400 to-orange-400" style="width: <%= Math.round((t.c / maxS) * 100) %>%"></div>
+                  <p class="text-sm font-semibold truncate" style="color:var(--ap-text)"><%= t.name %></p>
+                  <div class="progress-bar mt-1">
+                    <div class="progress-bar-fill gold" style="width: <%= Math.round((t.c / maxS) * 100) %>%"></div>
                   </div>
                 </div>
-                <span class="text-sm font-black text-slate-900 shrink-0"><%= t.c %></span>
+                <span class="text-sm font-black shrink-0" style="color:var(--ap-text)"><%= t.c %></span>
               </div>
             <% }) %>
           </div>
@@ -234,11 +234,11 @@
 
       <!-- Gráficas de 7 días -->
       <div class="grid lg:grid-cols-2 gap-2.5 mb-3">
-        <section class="m-card p-4 m-stagger">
+        <section class="m-card p-4">
           <div class="flex items-center justify-between mb-3">
             <div>
-              <h2 class="font-extrabold text-slate-900 text-sm">Visitas · 7 días</h2>
-              <p class="text-[11px] text-slate-400"><%= stats.week %> visitas en la semana</p>
+              <h2 class="font-bold text-sm" style="color:var(--ap-text)">Visitas · 7 días</h2>
+              <p class="text-[11px]" style="color:var(--ap-text-sec)"><%= stats.week %> visitas en la semana</p>
             </div>
             <span class="m-badge m-badge-neutral">Semana</span>
           </div>
@@ -246,42 +246,42 @@
             <div class="flex items-end gap-1.5 h-28">
               <% stats.daily.forEach(d => { %>
                 <div class="flex-1 flex flex-col items-center gap-1 group" title="<%= d.d %>: <%= d.c %> visitas">
-                  <div class="w-full max-w-9 rounded-md bg-gradient-to-t from-blue-600 to-sky-400 group-hover:from-blue-700 group-hover:to-sky-500 transition rounded-b-sm" style="height: 0%" data-bar-v="<%= Math.max(8, (d.c / (stats.week || 1)) * 100) %>%"></div>
-                  <span class="text-[9px] text-slate-400 font-medium truncate w-full text-center"><%= d.d.slice(8) %></span>
+                  <div class="w-full max-w-9 chart-bar blue" style="height: 0%" data-bar-v="<%= Math.max(8, (d.c / (stats.week || 1)) * 100) %>%"></div>
+                  <span class="text-[9px] font-medium truncate w-full text-center" style="color:var(--ap-text-sec)"><%= d.d.slice(8) %></span>
                 </div>
               <% }) %>
             </div>
           <% } else { %>
             <div class="text-center py-6">
               <p class="text-2xl mb-1">📈</p>
-              <p class="text-xs text-slate-500 font-semibold">Aún no hay visitas esta semana</p>
+              <p class="text-xs font-semibold" style="color:var(--ap-text-sec)">Aún no hay visitas esta semana</p>
             </div>
           <% } %>
         </section>
 
-        <section class="m-card p-4 m-stagger">
-          <h2 class="font-extrabold text-slate-900 text-sm mb-3">Pedidos · 7 días</h2>
+        <section class="m-card p-4">
+          <h2 class="font-bold text-sm mb-3" style="color:var(--ap-text)">Pedidos · 7 días</h2>
           <% if (stats.ordersDaily.length > 0) { %>
             <% const maxO = Math.max(...stats.ordersDaily.map(d => d.c), 1); %>
             <div class="flex items-end gap-1.5 h-28">
               <% stats.ordersDaily.forEach(d => { %>
                 <div class="flex-1 flex flex-col items-center gap-1 group" title="<%= d.d %>: <%= d.c %> pedidos · <%= money(d.s) %>">
-                  <div class="w-full max-w-9 rounded-md bg-gradient-to-t from-emerald-600 to-teal-400 group-hover:from-emerald-700 group-hover:to-teal-500 transition rounded-b-sm" style="height: 0%" data-bar-v="<%= Math.max(8, (d.c / maxO) * 100) %>%"></div>
-                  <span class="text-[9px] text-slate-400 font-medium truncate w-full text-center"><%= d.d.slice(8) %></span>
+                  <div class="w-full max-w-9 chart-bar green" style="height: 0%" data-bar-v="<%= Math.max(8, (d.c / maxO) * 100) %>%"></div>
+                  <span class="text-[9px] font-medium truncate w-full text-center" style="color:var(--ap-text-sec)"><%= d.d.slice(8) %></span>
                 </div>
               <% }) %>
             </div>
           <% } else { %>
-            <p class="text-xs text-slate-400 font-semibold py-6 text-center">Sin pedidos esta semana todavía.</p>
+            <p class="text-xs font-semibold py-6 text-center" style="color:var(--ap-text-sec)">Sin pedidos esta semana todavía.</p>
           <% } %>
         </section>
       </div>
 
       <!-- Pedidos recientes -->
-      <section class="m-card p-4 mb-3 m-stagger">
+      <section class="m-card p-4 mb-3">
         <div class="flex items-center justify-between flex-wrap gap-2 mb-2.5">
           <div class="flex items-center gap-2">
-            <h2 class="font-extrabold text-slate-900 text-sm">Pedidos recientes</h2>
+            <h2 class="font-bold text-sm" style="color:var(--ap-text)">Pedidos recientes</h2>
             <% if (pending > 0) { %>
               <span class="m-badge m-badge-warn"><%= pending %> por cobrar</span>
             <% } %>
@@ -303,13 +303,13 @@
 
         <div class="flex flex-wrap items-center gap-1.5 mb-3" id="order-filters">
           <% estados.forEach(es => { %>
-            <button data-f="<%= es.f %>" class="m-chip m-chip-selected !h-8 <%= es.f !== 'all' ? '!opacity-60' : '' %>"><%= es.label %> <span class="m-badge <%= es.cl %> !h-5 !text-[10px]"><%= es.n %></span></button>
+            <button data-f="<%= es.f %>" class="m-chip <%= es.f === 'all' ? 'm-chip-selected' : '' %>"><%= es.label %> <span class="m-badge <%= es.cl %> !h-5 !text-[10px]" style="<%= es.f === 'all' ? 'background:rgba(255,255,255,0.2);color:#fff' : '' %>"><%= es.n %></span></button>
           <% }) %>
         </div>
 
         <div class="flex flex-wrap items-center gap-2 mb-3">
           <div class="relative flex-1 min-w-[160px]">
-            <input id="order-search" type="text" placeholder="Buscar pedido (producto o cliente)…" class="w-full border border-slate-200 rounded-full pl-9 pr-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <input id="order-search" type="text" placeholder="Buscar pedido (producto o cliente)…" class="w-full text-xs" style="border:1px solid var(--ap-border);border-radius:12px;padding:6px 12px 6px 36px;background:var(--ap-card);color:var(--ap-text);outline:none">
             <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z"/></svg>
           </div>
           <div class="flex items-center gap-1.5">
@@ -321,28 +321,28 @@
         </div>
 
         <% if (orders.length === 0) { %>
-          <div class="text-center py-6 border-2 border-dashed border-slate-200 rounded-xl">
-            <p class="text-2xl mb-1">🧾</p>
-            <p class="text-xs text-slate-500 font-semibold">Aún no hay pedidos</p>
+          <div class="text-center py-8 rounded-xl" style="border:2px dashed var(--ap-border)">
+            <p class="text-3xl mb-2">🧾</p>
+            <p class="text-xs font-semibold" style="color:var(--ap-text-sec)">Aún no hay pedidos</p>
           </div>
         <% } else { %>
           <div class="divide-y divide-slate-100" id="order-list">            <% orders.forEach(o => { %>
               <div class="m-list-item m-ripple px-2 first:pt-1 last:pb-1" data-active-layer
                    data-order-status="<%= o.status %>" data-paid="<%= o.paid ? 1 : 0 %>" data-confirm-anchor
                    data-search="<%= (o.items + ' ' + (o.customer_name || '')).toLowerCase().replace(/"/g, '&quot;') %>" data-created="<%= o.created_at %>">
-                <div class="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 shrink-0">
+                <div class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style="background:rgba(26,60,94,0.06);color:var(--ap-accent)">
                   <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13l-1 5h12M7 13L5.4 5M7 13l.4 2M10 21a1 1 0 100-2 1 1 0 000 2zm8 0a1 1 0 100-2 1 1 0 000 2z"/></svg>
                 </div>
                 <div class="min-w-0 flex-1">
                   <div class="flex items-center justify-between gap-2">
-                    <p class="font-bold text-slate-800 text-sm"><%= money(o.total) %></p>
+                    <p class="font-bold text-sm" style="color:var(--ap-text)"><%= money(o.total) %></p>
                     <span class="m-badge <%= o.status === 'entregado' ? 'm-badge-success' : o.status === 'cancelado' ? 'm-badge-error' : o.paid ? 'm-badge-success' : 'm-badge-warn' %> !h-5 !text-[10px] shrink-0"><%= ({ nuevo: '● NUEVO', pagado: '● PAGADO', entregado: '✓ ENTREGADO', cancelado: '✕ CANCELADO' })[o.status] || '○ POR COBRAR' %></span>
                   </div>
-                  <p class="text-[11px] text-slate-400 truncate mt-0.5"><%= o.items %></p>
+                  <p class="text-[11px] truncate mt-0.5" style="color:var(--ap-text-sec)"><%= o.items %></p>
                   <% if (o.customer_name) { %>
                     <p class="text-[11px] text-blue-600 font-semibold truncate mt-0.5">👤 <%= o.customer_name %></p>
                   <% } %>
-                  <p class="text-[10px] text-slate-400 mt-0.5"><%= o.created_at %></p>
+                  <p class="text-[10px] mt-0.5" style="color:var(--ap-text-sec)"><%= o.created_at %></p>
                 </div>
                 <div class="flex flex-wrap items-center gap-1 shrink-0 justify-end">
                   <% if (o.status !== 'entregado' && o.status !== 'cancelado') { %>
