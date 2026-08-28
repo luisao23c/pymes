@@ -611,17 +611,11 @@
       box-shadow:0 2px 8px rgba(0,0,0,.08); z-index:5;
     }
     .prod-card:hover .prod-share-btn { opacity:1; transform:scale(1); }
-    .prod-share-btn:hover { background:var(--accent); color:#fff; border-color:var(--accent); transform:scale(1.1)!important; }
+    .prod-view-btn:hover { border-color:var(--accent,#1a3c5e); color:var(--accent,#1a3c5e); transform:translateY(-1px); }
+  .prod-share-btn:hover { background:var(--accent); color:#fff; border-color:var(--accent); transform:scale(1.1)!important; }
 
     /* WhatsApp share button */
-    .prod-wa-btn {
-      display:inline-flex; align-items:center; justify-content:center; gap:4px;
-      background:#25d366; color:#fff; border:none; border-radius:10px;
-      padding:7px 12px; font-size:11px; font-weight:700; cursor:pointer;
-      transition:all .25s; flex:1; text-decoration:none;
-    }
-    .prod-wa-btn:hover { background:#20bd5a; transform:translateY(-1px); box-shadow:0 4px 12px rgba(37,211,102,.3); }
-    .prod-wa-btn i { font-size:14px; }
+    
 
     .prod-img-wrap::after {
       content:''; position:absolute; inset:0;
@@ -862,7 +856,7 @@
             </div>
             <div style="display:flex;gap:4px;margin-top:6px;">
               <button class="prod-btn" style="flex:1;font-size:11px;padding:6px;" onclick="event.stopPropagation();addToCart(<%= p.id %>,'<%= p.name.replace(/'/g,"\\'").replace(/"/g,'&quot;') %>',<%= parseFloat(p.price)||0 %>,'',{slug:'<%= biz.slug %>',name:'<%= biz.name.replace(/'/g,"\\'") %>',whatsapp:'<%= _whatsapp %>',logo:'<%= (biz.logo||'').replace(/'/g,"\\'") %>'},'<%= (p.image||'').replace(/'/g,"\\'") %>');this.classList.add('added');this.innerHTML='<i class=\'bi bi-check-lg\'></i> Agregado';setTimeout(()=>{this.classList.remove('added');this.innerHTML='<i class=\'bi bi-bag-plus\'></i> Agregar';},1200);"><i class="bi bi-bag-plus"></i> Agregar</button>
-              <a class="prod-wa-btn" style="padding:6px 8px;font-size:11px;" href="javascript:void(0)" onclick="event.stopPropagation();shareWhatsApp(<%= p.id %>,'<%= p.name.replace(/'/g,"\\'").replace(/"/g,'&quot;') %>',<%= parseFloat(p.price)||0 %>)" title="Compartir"><i class="bi bi-whatsapp"></i></a>
+              <button class="prod-share-btn" style="padding:6px 8px;font-size:11px;" onclick="event.stopPropagation();shareProduct(<%= p.id %>,'<%= p.name.replace(/'/g,"\\'").replace(/"/g,'&quot;') %>',<%= parseFloat(p.price)||0 %>)" title="Compartir"><i class="bi bi-share"></i></button>
             </div>
           </div>
         </div>
@@ -942,7 +936,7 @@
                 <% if (p.old_price && p.old_price > p.price) { %><span class="prod-badge-offer">-<%= Math.round((1-p.price/p.old_price)*100) %>%</span><% } %>
                 <% if (p.promo_badge) { %><span class="prod-badge-promo"><%= p.promo_badge %></span><% } %>
               </div>
-              <button class="prod-share-btn" onclick="event.stopPropagation();shareWhatsApp(<%= p.id %>,'<%= p.name.replace(/'/g,"\\'").replace(/"/g,"&quot;") %>',<%= parseFloat(p.price)||0 %>)" title="Compartir por WhatsApp"><i class="bi bi-whatsapp"></i></button>
+              <button class="prod-share-btn" onclick="event.stopPropagation();shareProduct(<%= p.id %>,'<%= p.name.replace(/'/g,"\\'").replace(/"/g,"&quot;") %>',<%= parseFloat(p.price)||0 %>)" title="Compartir"><i class="bi bi-share"></i></button>
             </div>
             <div class="prod-body">
               <div class="prod-name"><%= p.name %></div>
@@ -953,7 +947,8 @@
               </div>
               <div style="display:flex;gap:6px;margin-top:8px;">
                 <button class="prod-btn" style="flex:1;" onclick="event.stopPropagation();addToCart(<%= p.id %>,'<%= p.name.replace(/'/g,"\\'").replace(/"/g,'&quot;') %>',<%= parseFloat(p.price)||0 %>,'',{slug:'<%= biz.slug %>',name:'<%= biz.name.replace(/'/g,"\\'") %>',whatsapp:'<%= _whatsapp %>',logo:'<%= (biz.logo||'').replace(/'/g,"\\'") %>'},'<%= (p.image||'').replace(/'/g,"\\'") %>');this.classList.add('added');this.innerHTML='<i class=\'bi bi-check-lg\'></i> Agregado';setTimeout(()=>{this.classList.remove('added');this.innerHTML='<i class=\'bi bi-bag-plus\'></i> Agregar';},1200);"><i class="bi bi-bag-plus"></i> Agregar</button>
-                <a class="prod-wa-btn" href="javascript:void(0)" onclick="event.stopPropagation();shareWhatsApp(<%= p.id %>,'<%= p.name.replace(/'/g,"\\'").replace(/"/g,'&quot;') %>',<%= parseFloat(p.price)||0 %>)" title="Compartir por WhatsApp"><i class="bi bi-whatsapp"></i></a>
+                <a class="prod-view-btn" href="/<%= biz.slug %>/p/<%= p.id %>" onclick="event.stopPropagation();" title="Ver producto"><i class="bi bi-eye"></i> Ver</a>
+                <button class="prod-share-btn" onclick="event.stopPropagation();shareProduct(<%= p.id %>,'<%= p.name.replace(/'/g,"\\'").replace(/"/g,'&quot;') %>',<%= parseFloat(p.price)||0 %>)" title="Compartir"><i class="bi bi-share"></i></button>
               </div>
             </div>
           </div>
@@ -1291,12 +1286,7 @@
       if (modal) modal.classList.remove('pd-open');
       setTimeout(function(){ m.remove(); }, 300);
       document.body.style.overflow = '';
-    }
-    function shareWhatsApp(id, name, price) {
-      var url = window.location.origin + '/<%= biz.slug %>/p/' + id;
-      var text = 'Mira este producto: ' + name + ' - ' + money(price) + '\n' + url;
-      window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
-    }
+    }
 
     /* ===== SCROLL ANIMATIONS ===== */
     (function() {
