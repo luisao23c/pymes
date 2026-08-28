@@ -584,6 +584,8 @@
       .prod-price { font-size:1.1rem; }
       .oferta-card { flex:0 0 160px; }
       .contact-form-wrap { padding:20px; }
+      .filter-price-row { flex-direction:column; align-items:stretch; }
+      .filter-dash { display:none; }
     }
     /* ===== ANIMACIONES PREMIUM ===== */
 
@@ -992,22 +994,16 @@
         <h2><i class="bi bi-chat-dots" style="color:var(--accent);"></i> ¿Tienes alguna pregunta?</h2>
         <p class="contact-sub">Escríbenos y te respondemos lo antes posible</p>
         <form class="contact-form" onsubmit="event.preventDefault();sendContactForm();">
-          <div class="cf-row">
-            <input type="text" id="cfName" placeholder="Tu nombre" required class="cf-input">
-            <input type="email" id="cfEmail" placeholder="Tu correo" required class="cf-input">
-          </div>
-          <div class="cf-row">
-            <input type="tel" id="cfPhone" placeholder="Teléfono (opcional)" class="cf-input">
-            <select id="cfTopic" class="cf-input">
-              <option value="">Asunto...</option>
-              <option value="producto">Consulta de producto</option>
-              <option value="envio">Envío y entrega</option>
-              <option value="pedido">Estado de pedido</option>
-              <option value="otro">Otro</option>
-            </select>
-          </div>
+          <input type="text" id="cfName" placeholder="Tu nombre" required class="cf-input" style="margin-bottom:10px;">
+          <select id="cfTopic" class="cf-input" style="margin-bottom:10px;">
+            <option value="">Asunto...</option>
+            <option value="producto">Consulta de producto</option>
+            <option value="envio">Envío y entrega</option>
+            <option value="pedido">Estado de pedido</option>
+            <option value="otro">Otro</option>
+          </select>
           <textarea id="cfMsg" placeholder="Escribe tu mensaje..." rows="4" required class="cf-input cf-textarea"></textarea>
-          <button type="submit" class="cf-submit"><i class="bi bi-send"></i> Enviar mensaje</button>
+          <button type="submit" class="cf-submit"><i class="bi bi-whatsapp"></i> Enviar por WhatsApp</button>
         </form>
       </div>
     </div>
@@ -1074,7 +1070,7 @@
           <% if (_horarioHtml) { %><div style="font-size:13px;"><%- _horarioHtml %></div><% } else { %><p style="font-size:13px;">Consultar horarios</p><% } %>
         </div>
       </div>
-      <div class="ftr-copy">© 2026 <%= biz.name %>. Hecho con Freebuff.</div>
+      <div class="ftr-copy">© 2026 <%= biz.name %>. Hecho por nessik.net</div>
     </div>
   </footer>
   <% } %>
@@ -1213,15 +1209,11 @@
     // ===== FORMULARIO DE CONTACTO =====
     function sendContactForm() {
       var name = (document.getElementById('cfName')||{}).value||'';
-      var email = (document.getElementById('cfEmail')||{}).value||'';
-      var phone = (document.getElementById('cfPhone')||{}).value||'';
       var topic = (document.getElementById('cfTopic')||{}).value||'';
       var msg = (document.getElementById('cfMsg')||{}).value||'';
-      if (!name||!email||!msg) return;
+      if (!name||!msg) { toast('Escribe tu nombre y mensaje'); return; }
       var topicMap = {producto:'Consulta de producto',envio:'Envío y entrega',pedido:'Estado de pedido',otro:'Otro'};
-      var text = 'Hola, soy ' + name + '.\n\nAsunto: ' + (topicMap[topic]||'Consulta') + '\n' + msg;
-      if (phone) text += '\n\nTel: ' + phone;
-      text += '\nEmail: ' + email;
+      var text = 'Hola, soy ' + name + '.\nAsunto: ' + (topicMap[topic]||'Consulta') + '\n\n' + msg;
       window.open('https://wa.me/<%= _whatsapp %>?text=' + encodeURIComponent(text), '_blank', 'noopener');
       var form = document.querySelector('.contact-form');
       if (form) form.reset();
@@ -1286,7 +1278,7 @@
       if (modal) modal.classList.remove('pd-open');
       setTimeout(function(){ m.remove(); }, 300);
       document.body.style.overflow = '';
-    }
+    }
 
     /* ===== SCROLL ANIMATIONS ===== */
     (function() {
