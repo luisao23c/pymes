@@ -1,0 +1,495 @@
+<% /* Bot de inglés "Maya" PRO — perfil, voz, animación y diversión */ %>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#1a3c5e">
+<title>Maya · Aprende inglés conversando</title>
+<style>
+  :root{
+    --bg:#f4f1ea; --card:#fffdf8; --text:#22272e; --muted:#6b7280;
+    --accent:#1a3c5e; --accent2:#2f5d8a; --bubble-me:#dceeff; --bubble-ai:#ffffff;
+    --border:#e6e1d6; --green:#25d366; --err:#b3261e; --radius:18px; --gold:#f5b301;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:linear-gradient(160deg,#eef2f7 0%,#fbf8f2 55%,#e8f0fa 100%);
+    color:var(--text); min-height:100vh;
+  }
+  .wrap{max-width:760px; margin:0 auto; width:100%; display:flex; flex-direction:column; height:100vh; padding:0}
+  header{background:var(--accent); color:#fff; padding:10px 14px; box-shadow:0 2px 12px rgba(26,60,94,.25); z-index:5}
+  .top{display:flex; align-items:center; gap:10px}
+  .ava{width:54px; height:54px; border-radius:18px; background:linear-gradient(135deg,#2f5d8a,#1a3c5e); display:flex; align-items:center; justify-content:center; flex:0 0 auto; border:2px solid rgba(255,255,255,.35); overflow:hidden}
+  .hinfo{flex:1; min-width:0}
+  .hinfo h1{margin:0; font-size:16px; line-height:1.2; display:flex; align-items:center; gap:6px}
+  .hinfo p{margin:0; font-size:11.5px; opacity:.85}
+  .seed{width:9px; height:9px; border-radius:50%; background:var(--green); display:inline-block; animation:pulse 1.4s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(37,211,102,.5)}70%{box-shadow:0 0 0 7px rgba(37,211,102,0)}100%{box-shadow:0 0 0 0 rgba(37,211,102,0)}}
+  .hbtns{display:flex; gap:5px}
+  .iconb{background:rgba(255,255,255,.14); border:0; color:#fff; width:34px; height:34px; border-radius:10px; cursor:pointer; font-size:15px; display:flex; align-items:center; justify-content:center; transition:.15s}
+  .iconb:hover{background:rgba(255,255,255,.25)}
+  .iconb.on{background:var(--gold); box-shadow:0 0 0 3px rgba(245,179,1,.4)}
+  /* ---- barra de progreso del alumno ---- */
+  .stats{display:flex; align-items:center; gap:10px; margin-top:10px; background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.18); border-radius:14px; padding:8px 12px; flex-wrap:wrap}
+  .lvl-badge{background:#fff; color:var(--accent); font-weight:900; font-size:15px; border-radius:10px; padding:5px 10px; letter-spacing:.5px}
+  .xpbar{flex:1; min-width:150px}
+  .xpbar .lbl{display:flex; justify-content:space-between; font-size:10.5px; opacity:.9; margin-bottom:3px; font-weight:600}
+  .bar-tr{height:9px; background:rgba(0,0,0,.25); border-radius:99px; overflow:hidden}
+  .bar-fill{height:100%; width:0%; background:linear-gradient(90deg,#f5b301,#ffd54f); border-radius:99px; transition:width .6s cubic-bezier(.2,.8,.2,1)}
+  .mini{display:flex; gap:14px; font-size:12px; font-weight:700}
+  .mini b{display:inline-flex; align-items:center; gap:3px}
+  .bar{background:var(--card); border-bottom:1px solid var(--border); padding:8px 12px; display:flex; align-items:center; gap:10px; flex-wrap:wrap}
+  .lvlb{font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:var(--muted)}
+  .chips{display:flex; gap:6px; flex:1; overflow-x:auto; scrollbar-width:none}
+  .chips::-webkit-scrollbar{display:none}
+  .chip{border:1.5px solid var(--accent); background:#fff; color:var(--accent); border-radius:999px; padding:5px 13px; font-size:13px; cursor:pointer; white-space:nowrap; font-weight:600; transition:all .15s}
+  .chip.act{background:var(--accent); color:#fff}
+  .chip.opt:hover{background:#e8f0fa}
+  #msgs{flex:1; overflow-y:auto; padding:14px 14px 6px; display:flex; flex-direction:column; gap:10px; scroll-behavior:smooth}
+  .row{display:flex; flex-direction:column; max-width:88%; animation:fadein .2s ease}
+  .row.me{align-self:flex-end; align-items:flex-end}
+  .row.ai{align-self:flex-start; align-items:flex-start}
+  @keyframes fadein{from{opacity:0; transform:translateY(6px)}to{opacity:1; transform:none}}
+  .bub{background:var(--bubble-ai); border:1px solid var(--border); border-radius:var(--radius); border-bottom-left-radius:4px; padding:10px 13px; font-size:15px; line-height:1.55; white-space:pre-wrap; word-break:break-word; box-shadow:0 1px 2px rgba(0,0,0,.05)}
+  .row.me .bub{background:var(--bubble-me); border-color:#b9d7f2; border-radius:var(--radius); border-bottom-right-radius:4px}
+  .meta{font-size:10.5px; color:var(--muted); margin-top:3px; padding:0 4px}
+  .typing{display:none; align-self:flex-start; align-items:center; gap:5px; padding:12px 16px; background:#fff; border:1px solid var(--border); border-radius:18px; border-bottom-left-radius:4px}
+  .typing.vis{display:flex}
+  .typing i{width:8px; height:8px; border-radius:50%; background:var(--accent2); animation:bw 1s infinite}
+  .typing i:nth-child(2){animation-delay:.15s}
+  .typing i:nth-child(3){animation-delay:.3s}
+  @keyframes bw{0%,60%,100%{opacity:.25; transform:translateY(0)}30%{opacity:1; transform:translateY(-3px)}}
+  .sugg{flex-wrap:wrap; gap:6px; padding:0 14px 2px; display:none}
+  .sugg.vis{display:flex}
+  .sug-btn{background:#e8f0fa; border:1px solid #cfe0f2; color:var(--accent); border-radius:999px; padding:6px 13px; font-size:13px; cursor:pointer}
+  .sug-btn:hover{background:#d7e6f6}
+  form#f{display:flex; gap:7px; padding:10px 12px 12px}
+  .inp{flex:1; border:1px solid var(--border); background:#fff; border-radius:24px; padding:12px 17px; font-size:15px; outline:none; transition:border-color .15s; font-family:inherit}
+  .inp:focus{border-color:var(--accent2)}
+  button.ent, #mic{width:47px; height:47px; border-radius:50%; border:0; cursor:pointer; font-size:17px; flex:0 0 auto; display:flex; align-items:center; justify-content:center; transition:transform .1s}
+  button.ent{background:var(--accent); color:#fff; box-shadow:0 3px 10px rgba(26,60,94,.3)}
+  #mic{background:#e8f0fa; color:var(--accent); box-shadow:0 3px 10px rgba(26,60,94,.15)}
+  button.ent:hover{background:var(--accent2)}
+  #mic:hover{background:#d7e6f6}
+  button.ent:active, #mic:active{transform:scale(.93)}
+  button.ent:disabled{opacity:.5; cursor:default}
+  #mic.on{background:#e02424; color:#fff; animation:micoff 1s infinite}
+  @keyframes micoff{0%,100%{box-shadow:0 0 0 0 rgba(224,36,36,.4)}50%{box-shadow:0 0 0 9px rgba(224,36,36,0)}}
+  .speakbar{align-self:center; align-items:center; gap:8px; background:rgba(26,60,94,.08); border:1px solid var(--border); color:var(--accent); font-size:13px; font-weight:600; border-radius:999px; padding:7px 16px; margin:0 14px 4px; display:none}
+  .speakbar.vis{display:flex; justify-content:center}
+  .wave{display:flex; gap:3px; align-items:center; margin-left:4px}
+  .wave i{width:4px; height:15px; background:var(--accent2); border-radius:2px; animation:wv 1s ease-in-out infinite}
+  .wave i:nth-child(2){animation-delay:.12s}
+  .wave i:nth-child(3){animation-delay:.24s}
+  .wave i:nth-child(4){animation-delay:.36s}
+  @keyframes wv{0%,100%{transform:scaleY(.45)}50%{transform:scaleY(1)}}
+  .bub b{font-weight:800}
+  .err-banner{margin:0 14px 6px; padding:10px 14px; background:#fdeceb; border:1px solid #f5c6c2; color:var(--err); border-radius:12px; font-size:13px; display:none}
+  .speak-link{align-self:flex-end; background:none; border:1px solid var(--border); color:var(--accent2); cursor:pointer; font-size:11.5px; padding:3px 9px; border-radius:999px; opacity:.9; font-family:inherit; font-weight:600; margin-top:4px}
+  .speak-link:hover{opacity:1; background:#e8f0fa}
+  footer small{display:block; text-align:center; color:var(--muted); font-size:11px; padding:4px 0 12px}
+  a{color:var(--accent2)}
+  @media (max-width:520px){ .bar{flex-direction:column; align-items:stretch} }
+  /* ---- modal de nivel + confeti ---- */
+  .overlay{position:fixed; inset:0; background:rgba(20,25,30,.55); display:none; align-items:center; justify-content:center; z-index:50; padding:20px}
+  .overlay.vis{display:flex}
+  .modal{background:#fff; border-radius:22px; padding:26px 24px 22px; max-width:340px; width:100%; text-align:center; animation:pop .4s cubic-bezier(.2,1.4,.4,1)}
+  @keyframes pop{from{transform:scale(.7); opacity:0}to{transform:scale(1); opacity:1}}
+  .modal .big{font-size:52px; animation:bye 1.2s infinite alternate}
+  @keyframes bye{from{transform:rotate(-8deg) scale(1)}to{transform:rotate(8deg) scale(1.1)}}
+  .modal h2{margin:10px 0 4px; color:var(--accent)}
+  .modal p{margin:0 0 16px; color:var(--muted); font-size:14px}
+  .modal button{background:var(--accent); color:#fff; border:0; border-radius:14px; padding:11px 22px; font-size:15px; font-weight:700; cursor:pointer}
+  .modal button:hover{background:var(--accent2)}
+  .confetti{position:fixed; top:-14px; width:10px; height:16px; z-index:60; pointer-events:none; animation:fall linear forwards}
+  @keyframes fall{to{transform:translateY(110vh) rotate(720deg); opacity:0}}
+  .flash{position:fixed; inset:0; background:radial-gradient(circle,rgba(245,179,1,.35),transparent 60%); animation:fade 1.4s ease-out forwards; pointer-events:none; z-index:45}
+  @keyframes fade{from{opacity:1}to{opacity:0}}
+  /* ---- Maya animada (SVG) ---- */
+  .maya-b{display:none}
+  .maya-talk #maya-svg{animation:talkb .35s ease-in-out infinite alternate}
+  @keyframes talkb{from{transform:translateY(0) scale(1)}to{transform:translateY(-3px) scale(1.04)}}
+  .maya-listen #maya-svg{filter:drop-shadow(0 0 0 transparent); animation:listenb 1s ease-in-out infinite}
+  @keyframes listenb{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(4deg)}}
+  .maya-happy #maya-svg{animation:happyb .4s ease}
+  @keyframes happyb{0%{transform:scale(1) rotate(0)}40%{transform:scale(1.18) rotate(-8deg)}100%{transform:scale(1) rotate(0)}}
+</style>
+</head>
+<body class="">
+
+<div class="wrap">
+  <header>
+    <div class="top">
+      <div class="ava" id="maya-svg-wrap">
+        <svg id="maya-svg" width="48" height="48" viewBox="0 0 48 48">
+          <g id="maya-body">
+            <circle cx="24" cy="26" r="19" fill="#ffd166" stroke="#1a3c5e" stroke-width="1.5"/>
+            <circle cx="24" cy="22" r="10" fill="#fff7e0"/>
+            <circle cx="19.5" cy="21" r="2.6" fill="#1a3c5e"/>
+            <circle cx="28.5" cy="21" r="2.6" fill="#1a3c5e"/>
+            <circle cx="24" cy="27" r="3.2" fill="#ff8f6b"/>
+          </g>
+          <g id="maya-brows">
+            <path d="M16 15 q4 -3 7 0" stroke="#1a3c5e" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+            <path d="M25 15 q3 -3 7 0" stroke="#1a3c5e" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+          </g>
+          <g id="maya-mouth">
+            <path id="mouth-path" d="M20 31 q4 5 8 0" stroke="#1a3c5e" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+          </g>
+          <g id="maya-hair">
+            <path d="M16 14 q-2 6 0 12 q-2 -4 2 -6 q-3 5 0 9 q-1 -6 1 -9 q-2 5 1 10 q-1 -8 1 -11 q5 3 9 3 q3 0 6 -2 q-2 6 -1 10 q-1 -6 0 -9 q3 4 4 9 q-1 -7 0 -10 q3 3 4 8 q-1 -7 -1 -10 q4 2 7 7 q-1 -8 -5 -10 q-3 -4 -9 -4 q-6 0 -9 -3 z" fill="rgba(26,60,94,.15)" stroke="#1a3c5e" stroke-width="1.4"/>
+            <circle cx="24" cy="7" r="3" fill="#1a3c5e"/>
+          </g>
+        </svg>
+      </div>
+      <div class="hinfo">
+        <h1>Maya <span class="seed" id="online"></span></h1>
+        <p id="status">Tu maestra·compañera de inglés ✨</p>
+      </div>
+      <div class="hbtns">
+        <button class="iconb" id="btnSpk" title="Maya responde en voz alta">🔊</button>
+        <button class="iconb" id="btnLoop" title="Modo manos libres">⚡</button>
+        <button class="iconb" id="btnReview" title="Muro de errores 📒">📒</button>
+        <button class="iconb" id="btnNew" title="Reiniciar">🔄</button>
+      </div>
+    </div>
+    <div class="stats" id="stats">
+      <div class="lvl-badge" id="lvlBadge">A0</div>
+      <div class="xpbar">
+        <div class="lbl"><span id="xpLbl">0 XP</span><span id="nextLvl">→ A1 · 50 XP</span></div>
+        <div class="bar-tr"><div class="bar-fill" id="xpFill"></div></div>
+      </div>
+      <div class="mini" id="mini">
+        <b>🔥 <span id="streakTa">0</span></b>
+        <b>📩 <span id="msgTa">0</span></b>
+        <b>🎤 <span id="voiceTa">0</span></b>
+      </div>
+    </div>
+  </header>
+
+  <div class="bar" id="barTop">
+    <span class="lvlb">Nivel objetivo</span>
+    <div class="chips" id="goals"></div>
+  </div>
+
+  <div class="err-banner" id="err"></div>
+  <div id="msgs"></div>
+  <div class="typing" id="typing"><i></i><i></i><i></i></div>
+  <div class="speakbar" id="speakbar"><span>Escuchando…</span><span class="wave"><i></i><i></i><i></i><i></i></span></div>
+  <div class="sugg" id="sugg"></div>
+
+  <form id="f" autocomplete="off">
+    <button class="ent" id="mic" type="button" title="Hablar (dictado en inglés)">🎤</button>
+    <input class="inp" id="inp" placeholder="Escribe o toca el micrófono 🎤 y habla…" maxlength="600">
+    <button class="ent" id="send" type="submit" title="Enviar">➤</button>
+  </form>
+  <footer><small>Con DeepSeek·Gemma vía OpenRouter · modelos gratuitos con respaldo automático · <a href="/">← volver</a></small></footer>
+</div>
+
+<div class="overlay" id="lvlModal">
+  <div class="modal">
+    <div class="big" id="modalEmoji">🎉</div>
+    <h2 id="modalTitle">¡Subiste de nivel!</h2>
+    <p id="modalText">Ahora eres nivel A1. ¡Sigue así!</p>
+    <button onclick="document.getElementById('lvlModal').classList.remove('vis'); document.body.classList.remove('maya-happy');">¡A seguir! 🚀</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  const $ = s => document.querySelector(s);
+  const msgsEl = $('#msgs'), inp = $('#inp'), send = $('#send'), typing = $('#typing'), errEl = $('#err'), sugg = $('#sugg');
+  const micBtn = $('#mic'), speakbar = $('#speakbar'), btnSpk = $('#btnSpk'), btnLoop = $('#btnLoop');
+  const statsEl = $('#stats'), lvlBadge = $('#lvlBadge'), xpFill = $('#xpFill'), xpLbl = $('#xpLbl'), nextLvl = $('#nextLvl');
+  const streakTa = $('#streakTa'), msgTa = $('#msgTa'), voiceTa = $('#voiceTa'), status = $('#status'), online = $('#online');
+  const KEY = 'nessik_ingles';
+  const LID = localStorage.getItem('nessik_ingles_id') || (localStorage.setItem('nessik_ingles_id', 'S' + Date.now().toString(36) + Math.random().toString(36).slice(2,7)), localStorage.getItem('nessik_ingles_id'));
+  const state = JSON.parse(localStorage.getItem(KEY) || 'null') || { history:[], goal:'A1' };
+  const GOALS = [ 'A1', 'A2', 'B1', 'B2', 'C1' ];
+  const NAME = localStorage.getItem('nessik_ingles_name') || '';
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let freezing = false, pendingVoice = false;
+  let rec = null, listening = false;
+  let autoSpeak = localStorage.getItem('nessik_ingles_speak') !== '0';
+  let handsFree = localStorage.getItem('nessik_ingles_hands') === '1';
+  let firstSpeak = true, flowActive = false;
+
+  /* ================= PERFIL ================= */
+  let me = null;
+  function renderMe(){
+    if (!me) { lvlBadge.textContent='A0'; xpFill.style.width='0%'; return; }
+    lvlBadge.textContent = me.level;
+    xpLbl.textContent = me.xp + ' XP';
+    nextLvl.textContent = me.nextLevel ? ('→ ' + me.nextLevel + ' · ' + me.need + ' XP') : '¡MAX! 100% 🏆';
+    xpFill.style.width = (me.pct || 0) + '%';
+    streakTa.textContent = me.streak || 0;
+    msgTa.textContent = me.total_msg || 0;
+    voiceTa.textContent = me.voice_msg || 0;
+  }
+  function loadMe(){
+    fetch('/api/ingles/me?id=' + encodeURIComponent(LID)).then(r => r.json()).then(d => {
+      if (d) { me = d; renderMe(); }
+    }).catch(() => {});
+  }
+  function setStatus(t){ status.textContent = t; }
+
+  function updToggles(){ btnSpk.classList.toggle('on', autoSpeak); btnLoop.classList.toggle('on', handsFree); }
+  updToggles();
+
+  function showErr(m){ errEl.textContent = '⚠️ ' + m; errEl.style.display = 'block'; }
+  function hideErr(){ errEl.style.display = 'none'; }
+
+  /* ================= MAYA animada ================= */
+  function mood(cls){
+    document.body.classList.remove('maya-talk','maya-listen','maya-happy');
+    if (cls) document.body.classList.add(cls);
+  }
+  function confettiBurst(){
+    const colors = ['#f5b301','#25d366','#2f5d8a','#ff8f6b','#b3261e','#8e44ad'];
+    const flash = document.createElement('div'); flash.className='flash'; document.body.appendChild(flash);
+    setTimeout(()=>flash.remove(), 1400);
+    for (let i=0;i<36;i++){
+      const c = document.createElement('div');
+      c.className='confetti';
+      c.style.left = Math.random()*100 + 'vw';
+      c.style.background = colors[i % colors.length];
+      c.style.animationDuration = (1.6 + Math.random()*1.6) + 's';
+      c.style.animationDelay = Math.random()*.6 + 's';
+      c.style.width = 7 + Math.random()*8 + 'px';
+      c.style.height = 10 + Math.random()*10 + 'px';
+      c.style.borderRadius = Math.random()>.7 ? '50%' : '3px';
+      document.body.appendChild(c);
+      setTimeout(()=>c.remove(), 3600);
+    }
+  }
+  function celebrateLevel(from, to){
+    mood('maya-happy');
+    const names = { A0:'A0', A1:'A1', A2:'A2', B1:'B1', B2:'B2', C1:'C1' };
+    $('#modalTitle').textContent = '¡SUBISTE DE NIVEL!';
+    $('#modalText').textContent = 'De ' + (names[from]||from) + ' → ' + (names[to]||to) + ' 🎉 Maya te ha ascendido: serás más fuerte, hablando inglés.';
+    $('#lvlModal').classList.add('vis');
+    confettiBurst();
+    speakText('Congratulations! You leveled up! Well done, ' + (me && me.name ? me.name : 'friend') + '!');
+  }
+
+  /* ================= VOZ ================= */
+  function getEngVoice(){
+    if (!('speechSynthesis' in window)) return null;
+    const vs = speechSynthesis.getVoices();
+    return vs.find(v => /^en/i.test(v.lang) && /(google|natural|neural|samantha|daniel|aaron|jenny|ava|aria|sonia)/i.test(v.name))
+      || vs.find(v => /^en-US/i.test(v.lang)) || vs.find(v => /^en/i.test(v.lang)) || null;
+  }
+  if ('speechSynthesis' in window) speechSynthesis.onvoiceschanged = getEngVoice;
+
+  function speakText(text){
+    if (!('speechSynthesis' in window)) return;
+    speechSynthesis.cancel();
+    const plain = String(text).replace(/\*+/g,'').replace(/❌|✅|💡/g,'').replace(/[>\n]+/g,'. ');
+    const u = new SpeechSynthesisUtterance(plain);
+    u.lang = 'en-US'; u.rate = 1.0; u.pitch = 1.05;
+    const v = getEngVoice(); if (v) u.voice = v;
+    mood('maya-talk');
+    u.onend = () => { mood(''); if (flowActive && handsFree){ flowActive=false; setTimeout(()=>micStart(), 400); } else flowActive=false; };
+    u.onerror = () => { mood(''); flowActive=false; };
+    speechSynthesis.speak(u);
+  }
+  function speakReply(text){ if (autoSpeak){ flowActive = true; speakText(text); } }
+
+  function micStart(){
+    if (freezing){ showErr('Espera a que Maya termine.'); return; }
+    if (!SR){ showErr('Tu navegador no soporta dictado. Usa Chrome o Edge.'); return; }
+    speechSynthesis.cancel(); flowActive=false; mood('');
+    hideErr();
+    if (rec){ try{rec.abort();}catch(e){} rec=null; }
+    rec = new SR();
+    rec.lang = 'en-US'; rec.continuous=false; rec.interimResults=true; rec.maxAlternatives=1;
+    rec.onstart = () => { listening=true; micBtn.classList.add('on'); speakbar.classList.add('vis'); mood('maya-listen'); setStatus('Escuchándote… 🎧'); };
+    rec.onresult = (e) => {
+      let fin='', inter='';
+      for (let i=0;i<e.results.length;i++){
+        const t = e.results[i][0].transcript;
+        if (e.results[i].isFinal) fin += (fin?' ':'') + t; else inter += t;
+      }
+      inp.value = fin + inter;
+      if (fin.trim()){ try{rec.stop();}catch(_){ } }
+    };
+    rec.onerror = (e) => { listening=false; micBtn.classList.remove('on'); speakbar.classList.remove('vis'); mood(''); setStatus('Intenta de nuevo 🔊'); hideErr(); showErr('No te entendí. Repite despacio (' + e.error + ').'); };
+    rec.onend = () => { listening=false; micBtn.classList.remove('on'); speakbar.classList.remove('vis'); mood(''); setStatus('Tu maestra·compañera ✨'); hideErr(); if (inp.value.trim()){ pendingVoice=true; submitMsg(); } };
+    try{ rec.start(); }catch(e){ showErr('No pude iniciar el micrófono.'); }
+  }
+  function micStop(){ if (rec){ try{rec.stop();}catch(_){ } } }
+  micBtn.addEventListener('click', () => listening ? micStop() : micStart());
+  btnSpk.addEventListener('click', () => { autoSpeak=!autoSpeak; localStorage.setItem('nessik_ingles_speak', autoSpeak?'1':'0'); updToggles(); });
+  btnLoop.addEventListener('click', () => { handsFree=!handsFree; localStorage.setItem('nessik_ingles_hands', handsFree?'1':'0'); updToggles(); });
+
+  /* ================= MENSAJES ================= */
+  const timeStr = () => new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'});
+  function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function md(s){
+    return esc(s)
+      .replace(/^(\s*)❌\s*/gm,'$1<b style="color:#b3261e">❌</b> ')
+      .replace(/^(\s*)✅\s*/gm,'$1<b style="color:#0a7d33">✅</b> ')
+      .replace(/^(\s*)💡\s*/gm,'$1<b style="color:#b8860b">💡</b> ')
+      .replace(/\*\*(.+?)\*\*/g,'<b>$1</b>')
+      .replace(/\*(.+?)\*/g,'<i>$1</i>');
+  }
+  function addBubble(role, text, voice){
+    const row = document.createElement('div');
+    row.className = 'row ' + (role==='user' ? 'me' : 'ai');
+    const bub = document.createElement('div');
+    bub.className = 'bub';
+    const t = document.createElement('span');
+    t.innerHTML = md(text);
+    bub.appendChild(t);
+    if (role === 'assistant'){
+      const sb = document.createElement('button');
+      sb.className = 'speak-link'; sb.textContent = '🔊 Escuchar';
+      sb.onclick = (e) => { e.stopPropagation(); speakText(text); };
+      bub.appendChild(sb);
+    }
+    row.appendChild(bub);
+    const meta = document.createElement('div');
+    meta.className = 'meta';
+    meta.textContent = (role==='user' ? 'Tú' : 'Maya') + (voice ? ' · 🎤' : '') + ' · ' + timeStr();
+    row.appendChild(meta);
+    msgsEl.appendChild(row);
+    msgsEl.scrollTop = msgsEl.scrollHeight;
+    return row;
+  }
+
+  function setSugg(){
+    const g = state.goal;
+    const P = {
+      A1:["Hello! How are you?","I am learning English 😄","What is your name?","Good morning ☀️","I like pizza 🍕"],
+      A2:["I like to listen to music 🎵","What did you do yesterday?","Can you help me, please?","I am going to the market"],
+      B1:["I think it's going to rain 🌧️","Have you ever traveled abroad?","Tell me about your day","How do I say… in English?"],
+      B2:["Let's talk about technology 💻","Give me job interview advice","Correct all my mistakes please","Debate: remote work, yes or no?"],
+      C1:["Challenge me with idioms 💪","Let's discuss AI and the future","Give me a tough grammar puzzle"]
+    };
+    sugg.innerHTML = '';
+    (P[g]||P.A1).forEach(t => {
+      const b = document.createElement('button');
+      b.className = 'sug-btn'; b.textContent = t;
+      b.onclick = () => { inp.value = t; submitMsg(); };
+      sugg.appendChild(b);
+    });
+    sugg.classList.add('vis');
+  }
+
+  function cup(){
+    let n = (Number(me && me.total_msg) || 0);
+    if (n === 1) return ' 🥇 ¡tu primera frase!';
+    if (n === 5) return ' 🏅 ¡5 mensajes!';
+    if (n === 10) return ' 🎖️ ¡10 mensajes!';
+    if (n === 25) return ' 🏆 Otra racha, tú puedes.';
+    return '';
+  }
+
+  async function submitMsg(){
+    const t = (inp.value || '').trim();
+    const voice = pendingVoice; pendingVoice = false;
+    if (!t || freezing) return;
+    inp.value = '';
+    addBubble('user', t, voice);
+    state.history.push({ role:'user', content: t, voice: voice });
+    state.history = state.history.slice(-40);
+    save();
+    freezing = true; send.disabled = true;
+    typing.classList.add('vis'); sugg.classList.remove('vis'); hideErr();
+    setStatus('Pensando… 🤔');
+    try{
+      const payload = state.history.map(m => ({ role: m.role, content: (m.role==='user' && m.voice) ? '🎤 ' + m.content : m.content }));
+      const r = await fetch('/api/ingles/chat', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ id: LID, messages: payload, name: NAME || undefined, goal: state.goal })
+      });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || 'Error ' + r.status);
+      addBubble('assistant', j.reply + (cup() ? '\n' + cup() : ''));
+      state.history.push({ role:'assistant', content: j.reply });
+      speakReply(j.reply);
+      if (j.profile){
+        me = Object.assign({}, me, j.profile);
+        renderMe();
+        if (j.profile.leveled) celebrateLevel(j.profile.from, j.profile.level);
+      }
+      save(); setSugg();
+    }catch(e){
+      showErr(e.message);
+      state.history.pop(); save(); setSugg();
+    }finally{
+      freezing = false; send.disabled = false;
+      typing.classList.remove('vis');
+      setStatus('Tu maestra·compañera ✨');
+      inp.focus();
+    }
+  }
+
+  function save(){ localStorage.setItem(KEY, JSON.stringify(state)); }
+
+  $('#f').addEventListener('submit', e => { e.preventDefault(); submitMsg(); });
+
+  /* ================= NIVEL OBJETIVO ================= */
+  const goalsEl = $('#goals');
+  function renderGoals(){
+    goalsEl.innerHTML = '';
+    GOALS.forEach(g => {
+      const b = document.createElement('button');
+      b.className = 'chip' + (g === state.goal ? ' act' : '');
+      b.textContent = g;
+      b.onclick = () => { state.goal = g; save(); renderGoals(); setSugg(); addBubble('assistant','Meta fijada: llegar a **' + g + '** 🎯 ¡Chécale! Ahorita hablamos en tu nivel para ir subiendo poco a poco.'); };
+      goalsEl.appendChild(b);
+    });
+  }
+
+  /* ================= MURO DE ERRORES ================= */
+  $('#btnReview').addEventListener('click', () => {
+    if (!me || !(me.errors && me.errors.length)) {
+      showErr('Aún no tienes errores registrados. Cuando Maya te corrija, aparecen aquí para repasarlos. 📒');
+      setTimeout(hideErr, 5000);
+      return;
+    }
+    const list = me.errors.map(e =>
+      '❌ "' + e.said + '"\n✅ "' + e.fixed + '"\n💡 ' + e.tip
+    ).join('\n\n');
+    showErr('📒 TUS ERRORES PARA REPASAR:\n\n' + list);
+  });
+
+  /* ================= REINICIO ================= */
+  $('#btnNew').addEventListener('click', () => {
+    if (state.history.length && !confirm('¿Reiniciar la conversación? Tu perfil y XP se conservan.')) return;
+    speechSynthesis.cancel(); flowActive=false; mood('');
+    if (rec){ try{rec.abort();}catch(_){ } rec=null; }
+    listening=false; micBtn.classList.remove('on'); speakbar.classList.remove('vis');
+    state.history = []; save(); hideErr(); msgsEl.innerHTML = '';
+    welcome();
+  });
+
+  function welcome(){
+    state.history = [];
+    const hi = '¡Hola! 💙 Soy **Maya**, tu maestra y amiga de inglés.\n\nYo te voy **midiendo**: tú solo habla, yo corrijo, anoto tus errores y te **subo de nivel** cuando lo demuestres. Una conversación y un juego a la vez 🎮\n\nEmpieza diciéndome:\n\n> Hello! How are you?\n\n…o habla directo con el 🎤. ¡Tú puedes! ✨';
+    addBubble('assistant', hi);
+    state.history.push({ role:'assistant', content: hi });
+    if (!NAME) setTimeout(()=>{ addBubble('assistant', '¿Cómo te llamas? Dímelo y nuestra amistad sube de nivel 😄'); }, 1600);
+    save(); setSugg();
+    if (firstSpeak){ firstSpeak=false; if (autoSpeak) setTimeout(()=>speakReply(hi), 400); }
+  }
+
+  /* ================= ARRANQUE ================= */
+  renderGoals(); loadMe();
+  if (state.history.length){
+    state.history.forEach(m => addBubble(m.role, m.content, m.voice));
+    setSugg();
+  } else {
+    welcome();
+  }
+  msgsEl.scrollTop = msgsEl.scrollHeight;
+  inp.focus();
+})();
+</script>
+</body>
+</html>

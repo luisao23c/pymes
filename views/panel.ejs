@@ -12,7 +12,7 @@
       <!-- Encabezado compacto -->
       <div class="flex items-center justify-between flex-wrap gap-2 mb-3">
         <div>
-          <h1 class="text-lg md:text-xl font-bold tracking-tight" style="color:var(--ap-text);font-family:'Playfair Display',serif">Hola, <%= biz.name.split(' ')[0] %> 👋</h1>
+          <h1 class="text-lg md:text-xl font-bold tracking-tight" style="color:var(--ap-text);font-family:'Inter',sans-serif">Hola, <%= biz.name.split(' ')[0] %> 👋</h1>
           <p class="text-xs mt-0.5" style="color:var(--ap-text-sec)">Resumen de tu catálogo hoy.</p>
         </div>
         <div class="flex items-center gap-2">
@@ -292,8 +292,8 @@
         <% const estados = [
           { f: 'all', label: 'Todos', n: orders.length, cl: 'm-badge-neutral' },
           { f: 'nuevo', label: 'Nuevos', n: orders.filter(o => o.status === 'nuevo').length, cl: 'm-badge-primary' },
-          { f: 'pendiente', label: 'Por cobrar', n: orders.filter(o => !o.paid && o.status !== 'cancelado').length, cl: 'm-badge-warn' },
-          { f: 'pagado', label: 'Pagados', n: orders.filter(o => o.status === 'pagado').length, cl: 'm-badge-success' },
+          { f: 'pendiente', label: 'Por cobrar', n: orders.filter(o => !o.paid && o.status !== 'cancelado').length, cl: 'm-badge-warn' },            { f: 'parcial', label: 'Parcial', n: orders.filter(o => o.status === 'parcial').length, cl: 'm-badge-warn' },
+            { f: 'pagado', label: 'Pagados', n: orders.filter(o => o.status === 'pagado').length, cl: 'm-badge-success' },
           { f: 'entregado', label: 'Entregados', n: orders.filter(o => o.status === 'entregado').length, cl: 'm-badge-success' },
           { f: 'cancelado', label: 'Cancelados', n: orders.filter(o => o.status === 'cancelado').length, cl: 'm-badge-error' }
         ]; %>
@@ -333,17 +333,67 @@
                 <div class="min-w-0 flex-1">
                   <div class="flex items-center justify-between gap-2">
                     <p class="font-bold text-sm" style="color:var(--ap-text)"><%= money(o.total) %></p>
-                    <span class="m-badge <%= o.status === 'entregado' ? 'm-badge-success' : o.status === 'cancelado' ? 'm-badge-error' : o.paid ? 'm-badge-success' : 'm-badge-warn' %> !h-5 !text-[10px] shrink-0"><%= ({ nuevo: '● NUEVO', pagado: '● PAGADO', entregado: '✓ ENTREGADO', cancelado: '✕ CANCELADO' })[o.status] || '○ POR COBRAR' %></span>
+                    <span class="m-badge <%= o.status === 'entregado' ? 'm-badge-success' : o.status === 'cancelado' ? 'm-badge-error' : o.status === 'parcial' ? 'm-badge-warn' : o.paid ? 'm-badge-success' : 'm-badge-warn' %> !h-5 !text-[10px] shrink-0"><%= ({ nuevo: '● NUEVO', pagado: '✓ PAGADO', entregado: '✓ ENTREGADO', cancelado: '✕ CANCELADO', parcial: '◐ PARCIAL' })[o.status] || '○ POR COBRAR' %></span>
                   </div>
                   <p class="text-[11px] truncate mt-0.5" style="color:var(--ap-text-sec)"><%= o.items %></p>
+                  <% if (o.payment_method && o.payment_method !== 'contado') { %>
+                    <div class="flex items-center gap-2 mt-1">
+                      <% var _pmLabel = ({ efectivo: '💵 Efectivo', tarjeta: '💳 Tarjeta', transferencia: '🏦 Transferencia', parcial: '◐ A plazos', credito: '🕐 Crédito' })[o.payment_method] || o.payment_method; %>
+                      <span class="text-[10px] px-1.5 py-0.5 rounded-full" style="background:rgba(26,60,94,0.08);color:var(--ap-accent)"><%= _pmLabel %></span>
+                      <% if (o.amount_paid > 0 && o.amount_remaining > 0) { %>
+                        <% var _abonos = o.payments ? o.payments.length : 0; %>
+                        <span class="text-[10px]" style="color:var(--ap-text-sec)"><%= money(o.amount_paid) %> pagado · <%= money(o.amount_remaining) %> restante</span>
+                        <% if (_abonos > 0) { %><span class="text-[10px] font-bold" style="color:#f59e0b">(<%= _abonos %> abono<%= _abonos > 1 ? 's' : '' %>)</span><% } %>
+                      <% } else if (o.amount_paid > 0) { %>
+                        <span class="text-[10px]" style="color:#16a34a">✓ Pagado completo</span>
+                      <% } %>
+                    </div>
+                  <% } %>
                   <% if (o.customer_name) { %>
                     <p class="text-[11px] text-blue-600 font-semibold truncate mt-0.5">👤 <%= o.customer_name %></p>
                   <% } %>
                   <p class="text-[10px] mt-0.5" style="color:var(--ap-text-sec)"><%= o.created_at %></p>
+                  <% if (o.payments && o.payments.length > 0) { %>
+                    <details class="mt-1">
+                      <summary class="text-[10px] font-bold cursor-pointer" style="color:var(--ap-accent)">📜 Historial de abonos (<%= o.payments.length %>)</summary>
+                      <div class="mt-1 space-y-0.5">
+                        <% o.payments.forEach(function(pay) { %>
+                          <div class="flex items-center gap-2 text-[10px]" style="color:var(--ap-text-sec)">
+                            <span style="color:#16a34a;font-weight:600">+<%= money(pay.amount) %></span>
+                            <span><%= ({abono:'◐', contado:'💰', credito:'🕐'})[pay.method] || '◐' %> <%= pay.method %></span>
+                            <span class="flex-1 truncate"><%= pay.note || '' %></span>
+                            <span><%= pay.created_at ? pay.created_at.substring(5,16) : '' %></span>
+                          </div>
+                        <% }) %>
+                      </div>
+                    </details>
+                  <% } %>
                 </div>
                 <div class="flex flex-wrap items-center gap-1 shrink-0 justify-end">
                   <% if (o.status !== 'entregado' && o.status !== 'cancelado') { %>
-                    <form method="POST" action="/<%= biz.slug %>/admin/order/<%= o.id %>/entregado" class="inline" data-confirm="Marcar como ENTREGADO y cobrado?" data-confirm-ok="Sí, entregado">
+                    <% if (o.status === 'parcial') { %>
+                    <form method="POST" action="/<%= biz.slug %>/admin/order/<%= o.id %>/pagado" class="inline" style="display:inline">
+                      <input type="number" name="amount_paid" value="<%= o.amount_remaining %>" min="0" step="0.01" style="width:80px;font-size:10px;padding:3px 6px;border:1px solid var(--ap-border);border-radius:6px;background:var(--ap-surface);color:var(--ap-text)" placeholder="Monto">
+                      <input type="hidden" name="payment_method" value="parcial">
+                      <button class="m-btn m-btn-sm m-btn-outlined !min-h-0 !py-1.5" style="font-size:10px">Abonar</button>
+                    </form>
+                    <a href="https://wa.me/<%= biz.whatsapp.startsWith('52') ? biz.whatsapp : '52' + biz.whatsapp %>?text=<%= encodeURIComponent('Hola ' + (o.customer_name || 'cliente') + ', te recordamos que tu pedido de ' + money(o.total) + ' tiene un saldo pendiente de ' + money(o.amount_remaining) + '. ¿Cuándo podrías hacer el siguiente abono? Gracias.') %>" target="_blank" class="m-btn m-btn-sm m-btn-outlined !min-h-0 !py-1.5" style="font-size:10px;color:#25d366;border-color:#25d366">📱 Recordar</a>
+                    <% } else if (o.status !== 'pagado') { %>
+                    <form method="POST" action="/<%= biz.slug %>/admin/order/<%= o.id %>/pagado" class="inline flex items-center gap-1" style="display:inline">
+                      <select name="payment_method" id="pm-<%= o.id %>" onchange="onPaymentMethodChange(<%= o.id %>, <%= o.total %>)" style="font-size:10px;padding:2px 4px;border:1px solid var(--ap-border);border-radius:6px;background:var(--ap-surface);color:var(--ap-text)">
+                        <option value="efectivo">💵 Efectivo</option>
+                        <option value="tarjeta">💳 Tarjeta</option>
+                        <option value="transferencia">🏦 Transferencia</option>
+                      </select>
+                      <select name="payment_schedule" id="ps-<%= o.id %>" onchange="onPaymentScheduleChange(<%= o.id %>, <%= o.total %>)" style="font-size:10px;padding:2px 4px;border:1px solid var(--ap-border);border-radius:6px;background:var(--ap-surface);color:var(--ap-text)">
+                        <option value="contado">De contado</option>
+                        <option value="plazos">A plazos</option>
+                      </select>
+                      <input type="number" name="amount_paid" id="ap-<%= o.id %>" value="<%= o.total %>" min="0" step="0.01" style="width:80px;font-size:10px;padding:3px 6px;border:1px solid var(--ap-border);border-radius:6px;background:var(--ap-surface);color:var(--ap-text);display:none" placeholder="Monto">
+                      <button type="submit" class="m-btn m-btn-sm m-btn-outlined !min-h-0 !py-1.5" style="font-size:10px">Pagar</button>
+                    </form>
+                    <% } %>
+                    <form method="POST" action="/<%= biz.slug %>/admin/order/<%= o.id %>/entregado" class="inline" data-confirm="Marcar como ENTREGADO?" data-confirm-ok="Sí, entregado">
                       <button class="m-btn m-btn-sm m-btn-outlined !min-h-0 !py-1.5">✓ Entregado</button>
                     </form>
                     <form method="POST" action="/<%= biz.slug %>/admin/order/<%= o.id %>/cancelado" class="inline" data-confirm="¿Cancelar este pedido?">
@@ -433,6 +483,23 @@
       if (desde) desde.onchange = function () { page = 1; show(); };
       if (hasta) hasta.onchange = function () { page = 1; show(); };
       show();
+    }
+    function onPaymentMethodChange(orderId, total) {
+      onPaymentScheduleChange(orderId, total);
+    }
+    function onPaymentScheduleChange(orderId, total) {
+      var ps = document.getElementById('ps-' + orderId);
+      var ap = document.getElementById('ap-' + orderId);
+      if (!ps || !ap) return;
+      if (ps.value === 'plazos') {
+        ap.style.display = '';
+        ap.value = '';
+        ap.placeholder = 'Abono';
+        ap.focus();
+      } else {
+        ap.style.display = 'none';
+        ap.value = total;
+      }
     }
     function limpiarFiltrosPedidos() {
       var s = document.getElementById('order-search');

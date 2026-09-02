@@ -100,7 +100,7 @@
                    data-edit-cat="<%= p.category_id || '' %>" data-edit-desc="<%= (p.description || '').replace(/"/g, '&quot;') %>" data-edit-image="<%= (p.image || '').replace(/"/g, '&quot;') %>" data-edit-galeria="<%= (p.galeria || '').replace(/"/g, '&quot;') %>"
                    data-edit-stock="<%= p.stock === null ? '' : p.stock %>" data-edit-variants="<%= encodeURIComponent(JSON.stringify(p.variants || [])) %>" data-edit-featured="<%= p.featured ? 1 : 0 %>" data-edit-promo="<%= p.promo_ends_at || '' %>"
                    data-edit-promo-type="<%= p.promo_type || '' %>" data-edit-promo-value="<%= p.promo_value || '' %>" data-edit-promo-gift="<%= (p.promo_gift || '').replace(/"/g, '&quot;') %>"
-                   data-edit-sku="<%= (p.sku || '').replace(/"/g, '&quot;') %>" data-edit-tags="<%= (p.tags || '').replace(/"/g, '&quot;') %>" data-edit-video="<%= (p.video || '').replace(/"/g, '&quot;') %>" data-edit-specs="<%= (p.specs || '').replace(/"/g, '&quot;') %>" data-edit-barcode="<%= (p.barcode || '').replace(/"/g, '&quot;') %>">
+                   data-edit-sku="<%= (p.sku || '').replace(/"/g, '&quot;') %>" data-edit-tags="<%= (p.tags || '').replace(/"/g, '&quot;') %>" data-edit-video="<%= (p.video || '').replace(/"/g, '&quot;') %>" data-edit-specs="<%= (p.specs || '').replace(/"/g, '&quot;') %>" data-edit-barcode="<%= (p.barcode || '').replace(/"/g, '&quot;') %>" data-edit-payment-plan="<%= (p.payment_plan || '').replace(/"/g, '&quot;') %>">
                 <div class="flex items-center gap-3 min-w-0 w-full sm:w-auto sm:flex-1">
                 <img src="<%= p.image || '/img/sin-imagen.svg' %>" loading="lazy" class="w-11 h-11 rounded-xl object-cover shrink-0 border border-slate-100">
                 <div class="flex-1 min-w-0">
@@ -186,12 +186,6 @@
                     <option value="<%= c.id %>"><%= c.name %></option>
                   <% }) %>
                 </select>
-                <button type="button" onclick="mostrarNuevaCategoria()" class="shrink-0 text-xs font-bold text-blue-600 hover:bg-blue-50 rounded-lg px-3 py-2">＋ Nueva</button>
-              </div>
-              <div id="cat-new-box" class="hidden mt-2 flex items-center gap-2">
-                <input id="cat-new-input" type="text" placeholder="Nombre de la categoría" class="flex-1 min-w-0 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <button type="button" onclick="crearCategoriaInline()" class="text-emerald-600 font-bold px-2">✓</button>
-                <button type="button" onclick="document.getElementById('cat-new-box').classList.add('hidden')" class="text-slate-400 font-bold px-2">✕</button>
               </div>
             </div>
             <div class="m-field">
@@ -237,6 +231,30 @@
             <div class="m-field">
               <label for="f-barcode">Código de barras <span class="font-normal text-slate-400">(opcional)</span></label>
               <input name="barcode" id="f-barcode" placeholder="Ej: 7501234567890">
+            </div>
+            <div class="m-field md:col-span-2">
+              <label>💳 Opciones de pago a plazos <span class="font-normal text-slate-400">(visible al cliente — opcional)</span></label>
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:4px;">
+                <div>
+                  <label class="text-[10px] font-bold text-slate-500">Total a financiar</label>
+                  <input name="payment_amount" id="f-payment-amount" type="number" step="0.01" min="0" placeholder="Ej: 300" class="text-xs">
+                </div>
+                <div>
+                  <label class="text-[10px] font-bold text-slate-500">Frecuencia</label>
+                  <select name="payment_freq" id="f-payment-freq" class="text-xs">
+                    <option value="">Sin plan</option>
+                    <option value="diario">Diario</option>
+                    <option value="semanal">Semanal</option>
+                    <option value="quincenal">Quincenal</option>
+                    <option value="mensual">Mensual</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="text-[10px] font-bold text-slate-500">No. de pagos</label>
+                  <input name="payment_num" id="f-payment-num" type="number" min="1" placeholder="Ej: 6" class="text-xs">
+                </div>
+              </div>
+              <p id="payment-preview" class="text-[11px] text-slate-400 mt-1">Ej: $300 en 3 pagos semanales = $100 cada semana.</p>
             </div>
             <div class="m-field md:col-span-2">
               <label for="f-tags">Etiquetas <span class="font-normal text-slate-400">(separadas por coma — mejoran la búsqueda)</span></label>
@@ -306,28 +324,24 @@
 
       <!-- Categorías -->
       <section id="categorias" class="m-card p-4 mb-3">
-        <div class="flex items-center justify-between flex-wrap gap-2 mb-3">
-          <h3 class="font-bold text-sm text-slate-700">Categorías <span class="m-badge m-badge-neutral !ml-1.5"><%= categories.length %></span></h3>
-          <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-            <input id="cat-name" placeholder="Nueva categoría" class="w-full sm:w-52 border border-slate-200 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
-            <button type="button" onclick="agregarCategoria()" class="m-btn m-btn-tonal m-btn-sm shrink-0">Crear</button>
-          </div>
+        <h3 class="font-bold text-sm text-slate-700 mb-3">Categorías <span class="m-badge m-badge-neutral !ml-1.5"><%= categories.length %></span></h3>
+        <div class="flex items-center gap-2 mb-3">
+          <input id="cat-name" placeholder="Nombre de la categoría" class="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+          <button type="button" onclick="agregarCategoria()" class="m-btn m-btn-tonal m-btn-sm shrink-0">＋ Crear</button>
         </div>
-        <div id="cat-list" class="flex flex-wrap gap-1.5"></div>
+        <div id="cat-list" class="space-y-2"></div>
       </section>
 
       <!-- Mis atributos -->
       <section id="mis-atributos" class="m-card p-4 mb-3">
-        <div class="flex items-center justify-between flex-wrap gap-2 mb-1">
-          <h3 class="font-bold text-sm text-slate-700">Mis atributos <span class="m-badge m-badge-neutral !ml-1.5"><span id="attr-count">0</span></span></h3>
-        </div>
+        <h3 class="font-bold text-sm text-slate-700 mb-1">Mis atributos <span class="m-badge m-badge-neutral !ml-1.5"><span id="attr-count">0</span></span></h3>
+        <p class="text-[11px] text-slate-400 mb-3">Guárdalos una sola vez y úsalos en cualquier producto.</p>
         <div class="flex flex-col sm:flex-row gap-2 w-full mb-3">
-          <input id="attr-name" placeholder="Nombre (ej: Talla)" class="w-full sm:w-44 border border-slate-200 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
-          <input id="attr-values" placeholder="Valores separados por coma (XS, M, L)" class="w-full sm:flex-1 border border-slate-200 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
-          <button type="button" onclick="agregarAtributo()" class="m-btn m-btn-tonal m-btn-sm shrink-0">Guardar</button>
+          <input id="attr-name" placeholder="Nombre (ej: Talla)" class="w-full sm:w-44 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+          <input id="attr-values" placeholder="Valores separados por coma (XS, M, L)" class="w-full sm:flex-1 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+          <button type="button" onclick="agregarAtributo()" class="m-btn m-btn-tonal m-btn-sm shrink-0">＋ Crear</button>
         </div>
-        <p class="text-[11px] text-slate-400 mb-3">Guárdalos una sola vez y úsalos en cualquier producto. Guardar con el mismo nombre actualiza los valores.</p>
-        <div id="attr-list" class="flex flex-wrap gap-1.5"></div>
+        <div id="attr-list" class="space-y-2"></div>
       </section>
 
     </div>
@@ -777,6 +791,29 @@
 
     function setVal(id, v) { var el = document.getElementById(id); if (el) el.value = v; }
 
+    function updatePaymentPreview() {
+      var totalEl = document.getElementById('f-payment-amount');
+      var freqEl = document.getElementById('f-payment-freq');
+      var numEl = document.getElementById('f-payment-num');
+      var out = document.getElementById('payment-preview');
+      if (!totalEl || !freqEl || !numEl || !out) return;
+      var total = parseFloat(totalEl.value);
+      var num = parseInt(numEl.value, 10);
+      var labels = { diario: 'al día', semanal: 'cada semana', quincenal: 'cada quincena', mensual: 'cada mes' };
+      if (total > 0 && num > 0 && freqEl.value) {
+        out.textContent = '$' + total.toFixed(2) + ' en ' + num + ' pagos = $' + (total / num).toFixed(2) + ' ' + labels[freqEl.value] + '.';
+        out.className = 'text-[11px] font-bold text-emerald-600 mt-1';
+      } else {
+        out.textContent = 'Ej: $300 en 3 pagos semanales = $100 cada semana.';
+        out.className = 'text-[11px] text-slate-400 mt-1';
+      }
+    }
+
+    ['f-payment-amount', 'f-payment-freq', 'f-payment-num'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.addEventListener('input', updatePaymentPreview);
+    });
+
     function renderSteps() {
       var box = document.getElementById('pf-steps');
       if (!box) return;
@@ -977,6 +1014,17 @@
       setVal('f-video', card.getAttribute('data-edit-video') || '');
       setVal('f-specs', card.getAttribute('data-edit-specs') || '');
       setVal('f-barcode', card.getAttribute('data-edit-barcode') || '');
+      try {
+        var pp = JSON.parse(card.getAttribute('data-edit-payment-plan') || '{}');
+        setVal('f-payment-amount', pp.total || (pp.amount && pp.num ? Number(pp.amount) * Number(pp.num) : pp.amount) || '');
+        setVal('f-payment-freq', pp.freq || '');
+        setVal('f-payment-num', pp.num || '');
+      } catch(e) {
+        setVal('f-payment-amount', '');
+        setVal('f-payment-freq', '');
+        setVal('f-payment-num', '');
+      }
+      updatePaymentPreview();
       document.getElementById('f-featured').checked = card.getAttribute('data-edit-featured') === '1';
       onPromoTypeChange();
       initVariantes('f', decodeURIComponent(card.getAttribute('data-edit-variants') || ''));
@@ -1169,18 +1217,24 @@
       if (!box) return;
       box.innerHTML = '';
       if (!list.length) {
-        box.innerHTML = '<p class="text-xs text-slate-400">Aún no guardas atributos. Ejemplo: <b>Talla</b> con XS, M, L y <b>Color</b> con Blanco, Azul.</p>';
+        box.innerHTML = '<p class="text-xs text-slate-400 py-2">Aún no guardas atributos. Ejemplo: <b>Talla</b> con XS, M, L y <b>Color</b> con Blanco, Azul.</p>';
         return;
       }
       list.forEach(function (t) {
-        var chip = document.createElement('div');
-        chip.className = 'inline-flex items-center gap-2 bg-white border border-slate-200 rounded-full pl-3 pr-1.5 py-1.5';
-        var info = document.createElement('span');
-        info.className = 'text-xs';
-        info.innerHTML = '<b class="text-slate-700">' + escHTML(t.name) + '</b> <span class="text-slate-300">·</span> <span class="text-slate-500">' + t.values.map(escHTML).join(', ') + '</span>';
+        var row = document.createElement('div');
+        row.className = 'flex items-center gap-3 bg-slate-50 rounded-xl px-3 py-2 border border-slate-100';
+        var nameEl = document.createElement('span');
+        nameEl.className = 'text-sm font-bold text-slate-700 shrink-0';
+        nameEl.textContent = t.name;
+        var sep = document.createElement('span');
+        sep.className = 'text-slate-300 text-xs';
+        sep.textContent = '·';
+        var valsEl = document.createElement('span');
+        valsEl.className = 'text-xs text-slate-500 flex-1 truncate';
+        valsEl.textContent = t.values.join(', ');
         var usar = document.createElement('button');
         usar.type = 'button';
-        usar.className = 'text-[11px] font-bold text-blue-600 hover:bg-blue-50 rounded-full px-2 py-0.5 transition';
+        usar.className = 'text-xs font-bold text-emerald-600 hover:bg-emerald-50 rounded-lg px-2 py-1 transition shrink-0';
         usar.title = 'Usar en el producto que estás creando';
         usar.textContent = '＋ usar';
         usar.onclick = function () {
@@ -1190,22 +1244,21 @@
         };
         var editar = document.createElement('button');
         editar.type = 'button';
-        editar.className = 'text-slate-400 hover:text-blue-500 font-bold px-0.5';
-        editar.title = 'Editar atributo (nombre y valores)';
-        editar.textContent = '✎';
-        editar.onclick = function () { editarAtributo(t.id, t.name, t.values, chip); };
+        editar.className = 'text-xs font-bold text-blue-600 hover:bg-blue-50 rounded-lg px-2 py-1 transition shrink-0';
+        editar.textContent = '✎ Editar';
+        editar.onclick = function () { editarAtributo(t.id, t.name, t.values, row); };
         var del = document.createElement('button');
         del.type = 'button';
-        del.className = 'text-slate-400 hover:text-red-500 font-bold px-1';
-        del.title = 'Eliminar atributo';
+        del.className = 'text-xs font-bold text-red-400 hover:bg-red-50 hover:text-red-600 rounded-lg px-2 py-1 transition shrink-0';
         del.textContent = '✕';
+        del.title = 'Eliminar';
         del.onclick = function () { eliminarAtributo(t.id); };
-        chip.appendChild(info); chip.appendChild(usar); chip.appendChild(editar); chip.appendChild(del);
-        box.appendChild(chip);
+        row.appendChild(nameEl); row.appendChild(sep); row.appendChild(valsEl); row.appendChild(usar); row.appendChild(editar); row.appendChild(del);
+        box.appendChild(row);
       });
     }
 
-    function mostrarNuevaCategoria() { document.getElementById('cat-new-box').classList.remove('hidden'); var i = document.getElementById('cat-new-input'); if (i) i.focus(); }
+    // mostrarNuevaCategoria ya no se necesita — el input está directo en la sección
     function crearCategoriaInline() {
       var inp = document.getElementById('cat-new-input');
       var name = (inp.value || '').trim();
@@ -1267,28 +1320,26 @@
       var box = document.getElementById('cat-list');
       if (!box) return;
       box.innerHTML = '';
-      if (!list.length) { box.innerHTML = '<p class="text-xs text-slate-400">Sin categorías. Crea la primera arriba.</p>'; return; }
+      if (!list.length) { box.innerHTML = '<p class="text-xs text-slate-400 py-2">Sin categorías. Crea la primera arriba.</p>'; return; }
       list.forEach(function (c) {
-        var chip = document.createElement('span');
-        chip.className = 'm-chip';
-        var inner = document.createElement('span');
-        inner.className = 'flex items-center gap-1.5';
-        var info = document.createElement('span'); info.textContent = c.name;
+        var row = document.createElement('div');
+        row.className = 'flex items-center gap-2 bg-slate-50 rounded-xl px-3 py-2 border border-slate-100';
+        var nameSpan = document.createElement('span');
+        nameSpan.className = 'flex-1 text-sm font-semibold text-slate-700';
+        nameSpan.textContent = c.name;
         var editar = document.createElement('button');
         editar.type = 'button';
-        editar.className = 'text-slate-400 hover:text-blue-500 font-bold leading-none';
-        editar.title = 'Editar nombre';
-        editar.textContent = '✎';
-        editar.onclick = function () { editarCategoria(c.id, c.name, chip); };
+        editar.className = 'text-xs font-bold text-blue-600 hover:bg-blue-50 rounded-lg px-2 py-1 transition';
+        editar.textContent = '✎ Editar';
+        editar.onclick = function () { editarCategoria(c.id, c.name, row); };
         var del = document.createElement('button');
         del.type = 'button';
-        del.className = 'text-slate-400 hover:text-red-500 font-bold leading-none';
-        del.title = 'Eliminar categoría';
+        del.className = 'text-xs font-bold text-red-400 hover:bg-red-50 hover:text-red-600 rounded-lg px-2 py-1 transition';
         del.textContent = '✕';
+        del.title = 'Eliminar';
         del.onclick = function () { eliminarCategoria(c.id); };
-        inner.appendChild(info); inner.appendChild(editar); inner.appendChild(del);
-        chip.appendChild(inner);
-        box.appendChild(chip);
+        row.appendChild(nameSpan); row.appendChild(editar); row.appendChild(del);
+        box.appendChild(row);
       });
     }
 
@@ -1302,22 +1353,18 @@
         sel.innerHTML = opts;
         sel.value = val;
       });
-    }
-
-    function editarCategoria(id, nombre, chip) {
+    }    function editarCategoria(id, nombre, row) {
+      var form = document.createElement('div');
+      form.className = 'flex items-center gap-2 bg-blue-50 rounded-xl px-3 py-2 border border-blue-200';
       var inp = document.createElement('input');
-      inp.type = 'text';
-      inp.value = nombre;
-      inp.className = 'text-xs font-semibold border border-blue-300 rounded-full px-2 py-1 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 w-28';
+      inp.type = 'text'; inp.value = nombre;
+      inp.className = 'flex-1 border border-blue-300 rounded-lg px-3 py-1.5 text-sm font-semibold text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500';
       var save = document.createElement('button');
-      save.type = 'button'; save.className = 'text-emerald-600 hover:bg-emerald-50 rounded-full px-1.5 py-0.5 font-bold'; save.textContent = '✓';
+      save.type = 'button'; save.className = 'm-btn m-btn-tonal m-btn-sm'; save.textContent = '✓ Guardar';
       var cancel = document.createElement('button');
-      cancel.type = 'button'; cancel.className = 'text-slate-400 hover:bg-slate-100 rounded-full px-1.5 py-0.5 font-bold'; cancel.textContent = '✕';
-      var wrap = document.createElement('span');
-      wrap.className = 'flex items-center gap-1';
-      wrap.appendChild(inp); wrap.appendChild(save); wrap.appendChild(cancel);
-      chip.innerHTML = '';
-      chip.appendChild(wrap);
+      cancel.type = 'button'; cancel.className = 'm-btn m-btn-outlined m-btn-sm !text-slate-400'; cancel.textContent = '✕';
+      form.appendChild(inp); form.appendChild(save); form.appendChild(cancel);
+      row.parentNode.replaceChild(form, row);
       inp.focus();
       function salir() { renderCatList(); }
       cancel.onclick = salir;
@@ -1339,22 +1386,40 @@
       };
     }
 
-    function editarAtributo(id, nombre, valores, chip) {
+    function editarAtributo(id, nombre, valores, row) {
+      var form = document.createElement('div');
+      form.className = 'bg-blue-50 rounded-xl px-3 py-2 border border-blue-200 space-y-2';
+      var row1 = document.createElement('div');
+      row1.className = 'flex items-center gap-2';
       var inpName = document.createElement('input');
       inpName.type = 'text'; inpName.value = nombre;
-      inpName.className = 'text-xs font-bold border border-blue-300 rounded-full px-2 py-1 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 w-24';
+      inpName.className = 'flex-1 sm:w-44 border border-blue-300 rounded-lg px-3 py-1.5 text-sm font-semibold text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500';
+      var lbl = document.createElement('span');
+      lbl.className = 'text-[10px] font-bold text-slate-400';
+      lbl.textContent = 'Nombre';
+      var lblWrap = document.createElement('div');
+      lblWrap.className = 'flex items-center gap-2';
+      lblWrap.appendChild(lbl);
+      lblWrap.appendChild(inpName);
       var inpVals = document.createElement('input');
       inpVals.type = 'text'; inpVals.value = (valores || []).join(', ');
-      inpVals.className = 'text-xs border border-blue-300 rounded-full px-2 py-1 bg-white text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 w-40';
+      inpVals.className = 'w-full border border-blue-300 rounded-lg px-3 py-1.5 text-sm text-slate-600 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500';
+      inpVals.placeholder = 'Valores separados por coma';
+      var row2 = document.createElement('div');
+      row2.className = 'flex items-center gap-2';
+      var lbl2 = document.createElement('span');
+      lbl2.className = 'text-[10px] font-bold text-slate-400';
+      lbl2.textContent = 'Valores';
+      row2.appendChild(lbl2); row2.appendChild(inpVals);
+      var actions = document.createElement('div');
+      actions.className = 'flex items-center gap-2';
       var save = document.createElement('button');
-      save.type = 'button'; save.className = 'text-emerald-600 hover:bg-emerald-50 rounded-full px-1.5 py-0.5 font-bold'; save.textContent = '✓';
+      save.type = 'button'; save.className = 'm-btn m-btn-tonal m-btn-sm'; save.textContent = '✓ Guardar';
       var cancel = document.createElement('button');
-      cancel.type = 'button'; cancel.className = 'text-slate-400 hover:bg-slate-100 rounded-full px-1.5 py-0.5 font-bold'; cancel.textContent = '✕';
-      var wrap = document.createElement('span');
-      wrap.className = 'flex items-center gap-1 flex-wrap';
-      wrap.appendChild(inpName); wrap.appendChild(inpVals); wrap.appendChild(save); wrap.appendChild(cancel);
-      chip.innerHTML = '';
-      chip.appendChild(wrap);
+      cancel.type = 'button'; cancel.className = 'm-btn m-btn-outlined m-btn-sm !text-slate-400'; cancel.textContent = '✕ Cancelar';
+      actions.appendChild(save); actions.appendChild(cancel);
+      form.appendChild(lblWrap); form.appendChild(row2); form.appendChild(actions);
+      row.parentNode.replaceChild(form, row);
       inpName.focus();
       function salir() { renderAttrCatalog(); }
       cancel.onclick = salir;

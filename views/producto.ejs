@@ -191,6 +191,35 @@
           </div>
         <% } %>
 
+        <!-- Payment plan info -->
+        <% var _pp = null; try { _pp = JSON.parse(product.payment_plan || 'null'); } catch(e) {} if (_pp && _pp.amount && _pp.freq) { %>
+          <% var _freqLabel = {diario:'Diario',semanal:'Semanal',quincenal:'Quincenal',mensual:'Mensual'}; %>
+          <% var _freqPlural = {diario:'diarios',semanal:'semanales',quincenal:'quincenales',mensual:'mensuales'}; %>
+          <div style="margin-top:16px;padding:14px 16px;border-radius:14px;background:linear-gradient(135deg, rgba(16,185,129,0.08), rgba(59,130,246,0.08));border:1px solid rgba(16,185,129,0.2);">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+              <span style="font-size:18px;">💳</span>
+              <span style="font-size:14px;font-weight:800;color:var(--text);">Opciones de pago</span>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:10px;">
+              <div style="flex:1;min-width:120px;padding:10px 12px;background:rgba(255,255,255,0.7);border-radius:10px;text-align:center;">
+                <div style="font-size:20px;font-weight:800;color:#10b981;">$<%= _pp.amount %></div>
+                <div style="font-size:11px;color:var(--text-sec);">por abono</div>
+              </div>
+              <div style="flex:1;min-width:120px;padding:10px 12px;background:rgba(255,255,255,0.7);border-radius:10px;text-align:center;">
+                <div style="font-size:14px;font-weight:700;color:var(--text);"><%= _freqLabel[_pp.freq] || _pp.freq %></div>
+                <div style="font-size:11px;color:var(--text-sec);">frecuencia</div>
+              </div>
+              <% if (_pp.num) { %>
+              <div style="flex:1;min-width:120px;padding:10px 12px;background:rgba(255,255,255,0.7);border-radius:10px;text-align:center;">
+                <div style="font-size:14px;font-weight:700;color:var(--text);"><%= _pp.num %> pagos</div>
+                <div style="font-size:11px;color:var(--text-sec);">en total</div>
+              </div>
+              <% } %>
+            </div>
+            <p style="font-size:12px;color:var(--text-sec);margin-top:8px;">💰 Total: $<%= _pp.total ? Number(_pp.total).toFixed(2) : (_pp.num ? (_pp.amount * _pp.num).toFixed(2) : '?') %></p>
+          </div>
+        <% } %>
+
         <!-- Variants -->
         <div id="prod-variants" style="margin-top:16px;"></div>
 

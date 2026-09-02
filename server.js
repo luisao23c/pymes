@@ -1977,6 +1977,9 @@ function panelData(biz) {
   const orders = db.prepare(
     `SELECT * FROM orders WHERE business_id = ? ORDER BY created_at DESC LIMIT 20`
   ).all(biz.id);
+  // Cargar historial de abonos para cada pedido
+  const payHistStmt = db.prepare('SELECT * FROM payment_history WHERE order_id = ? ORDER BY created_at ASC');
+  orders.forEach(o => { o.payments = payHistStmt.all(o.id); });
   const pending = orders.filter(o => !o.paid).length;
   const stats = getStats(biz.id);
   const planMax = PLAN_MAX(biz);
@@ -2103,6 +2106,33 @@ function parseVariants(v) {
   return model.attrs.length ? JSON.stringify(model) : '';
 }
 
+// Construir payment_plan como JSON estructurado desde el formulario
+function buildPaymentPlan(body) {
+  const total = parseFloat(body.payment_amount) || 0;
+  const freq = (body.payment_freq || '').trim();
+  const num = parseInt(body.payment_num) || 0;
+  if (!total || !freq || !num) return '';
+  const amount = Math.round((total / num) * 100) / 100;
+  return JSON.stringify({ total, amount, freq, num });
+}
+
+// Parsear payment_plan (viene como JSON o string legacy)
+function parsePaymentPlan(raw) {
+  if (!raw) return null;
+  try { const o = JSON.parse(raw); if (o && o.amount && o.freq) return o; } catch (e) {}
+  return null;
+}
+
+// Formatear plan de pago para mostrar al cliente
+function formatPaymentPlan(plan) {
+  if (!plan) return '';
+  const freqLabel = { diario: 'diarios', semanal: 'semanales', quincenal: 'quincenales', mensual: 'mensuales' };
+  const f = freqLabel[plan.freq] || plan.freq;
+  let txt = 'Abonos de $' + Number(plan.amount).toFixed(2) + ' ' + f;
+  if (plan.num) txt += ' (' + plan.num + ' pagos)';
+  return txt;
+}
+
 // Lectura: modelo canónico { attrs, images }
 function parseVariantList(v) {
   return parseVariantModel(v);
@@ -2217,9 +2247,9 @@ app.post('/:slug/admin/producto', requireAuth, can('productos.crear'), (req, res
   }
   try {
     db.prepare(
-      `INSERT INTO products (business_id, category_id, name, price, old_price, description, image, galeria, stock, variants, promo_ends_at, featured, promo_type, promo_value, promo_gift, sku, tags, video, specs, barcode)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-    ).run(biz.id, category_id || null, String(name).trim(), price, old_price, description || '', image || '', parseGaleria(req.body.galeria), parseStock(stock), parseVariants(variants), parsePromoEnd(req.body.promo_ends_at), req.body.featured ? 1 : 0, promo.promo_type, promo.promo_value, promo.promo_gift, (req.body.sku || '').toString().trim().slice(0, 60), (req.body.tags || '').toString().trim().slice(0, 300), (req.body.video || '').toString().trim().slice(0, 300), (req.body.specs || '').toString().slice(0, 2000), (req.body.barcode || '').toString().trim().slice(0, 60));
+      `INSERT INTO products (business_id, category_id, name, price, old_price, description, image, galeria, stock, variants, promo_ends_at, featured, promo_type, promo_value, promo_gift, sku, tags, video, specs, barcode, payment_plan)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).run(biz.id, category_id || null, String(name).trim(), price, old_price, description || '', image || '', parseGaleria(req.body.galeria), parseStock(stock), parseVariants(variants), parsePromoEnd(req.body.promo_ends_at), req.body.featured ? 1 : 0, promo.promo_type, promo.promo_value, promo.promo_gift, (req.body.sku || '').toString().trim().slice(0, 60), (req.body.tags || '').toString().trim().slice(0, 300), (req.body.video || '').toString().trim().slice(0, 300), (req.body.specs || '').toString().slice(0, 2000), (req.body.barcode || '').toString().trim().slice(0, 60), buildPaymentPlan(req.body));
     const created = db.prepare('SELECT * FROM products WHERE business_id = ? ORDER BY id DESC LIMIT 1').get(biz.id);
     if (created) logPriceHistory(biz.id, created);
   } catch (err) {
@@ -2284,9 +2314,9 @@ app.post('/:slug/admin/producto/:id', requireAuth, can('productos.editar'), (req
   }
   try {
     db.prepare(
-      `UPDATE products SET name = ?, price = ?, old_price = ?, category_id = ?, description = ?, image = ?, galeria = ?, stock = ?, variants = ?, promo_ends_at = ?, featured = ?, promo_type = ?, promo_value = ?, promo_gift = ?, sku = ?, tags = ?, video = ?, specs = ?, barcode = ?
+      `UPDATE products SET name = ?, price = ?, old_price = ?, category_id = ?, description = ?, image = ?, galeria = ?, stock = ?, variants = ?, promo_ends_at = ?, featured = ?, promo_type = ?, promo_value = ?, promo_gift = ?, sku = ?, tags = ?, video = ?, specs = ?, barcode = ?, payment_plan = ?
        WHERE id = ? AND business_id = ?`
-    ).run(name.trim(), price, old_price, category_id || null, description || '', image || '', parseGaleria(req.body.galeria), parseStock(stock), parseVariants(variants), parsePromoEnd(req.body.promo_ends_at), req.body.featured ? 1 : 0, promo.promo_type, promo.promo_value, promo.promo_gift, (req.body.sku || '').toString().trim().slice(0, 60), (req.body.tags || '').toString().trim().slice(0, 300), (req.body.video || '').toString().trim().slice(0, 300), (req.body.specs || '').toString().slice(0, 2000), (req.body.barcode || '').toString().trim().slice(0, 60), req.params.id, req.biz.id);
+    ).run(name.trim(), price, old_price, category_id || null, description || '', image || '', parseGaleria(req.body.galeria), parseStock(stock), parseVariants(variants), parsePromoEnd(req.body.promo_ends_at), req.body.featured ? 1 : 0, promo.promo_type, promo.promo_value, promo.promo_gift, (req.body.sku || '').toString().trim().slice(0, 60), (req.body.tags || '').toString().trim().slice(0, 300), (req.body.video || '').toString().trim().slice(0, 300), (req.body.specs || '').toString().slice(0, 2000), (req.body.barcode || '').toString().trim().slice(0, 60), buildPaymentPlan(req.body), req.params.id, req.biz.id);
     const updated = db.prepare('SELECT * FROM products WHERE id = ?').get(req.params.id);
     if (updated) logPriceHistory(req.biz.id, updated);
   } catch (err) {
@@ -2299,11 +2329,11 @@ app.post('/:slug/admin/producto/:id/duplicar', requireAuth, can('productos.crear
   const p = db.prepare('SELECT * FROM products WHERE id = ? AND business_id = ?').get(req.params.id, req.biz.id);
   if (p) {
     db.prepare(
-      `INSERT INTO products (business_id, category_id, name, price, old_price, description, image, galeria, stock, variants, promo_ends_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO products (business_id, category_id, name, price, old_price, description, image, galeria, stock, variants, promo_ends_at, payment_plan)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
       p.business_id, p.category_id, (p.name || '') + ' (copia)', p.price, p.old_price,
-      p.description || '', p.image || '', p.galeria || '', p.stock, p.variants || '', p.promo_ends_at || ''
+      p.description || '', p.image || '', p.galeria || '', p.stock, p.variants || '', p.promo_ends_at || '', p.payment_plan || ''
     );
   }
   res.redirect('/' + req.params.slug + '/admin/productos');
@@ -2365,12 +2395,27 @@ app.post('/:slug/admin/atributo/:id', requireAuth, can('productos.editar'), (req
 
 // ================= PEDIDOS =================
 app.post('/:slug/admin/order/:id/pagado', requireAuth, can('pedidos.gestionar'), (req, res) => {
-  db.prepare('UPDATE orders SET paid = 1, status = ? WHERE id = ? AND business_id = ?').run('pagado', req.params.id, req.biz.id);
+  const abono = parseFloat(req.body.amount_paid) || 0;
+  const method = String(req.body.payment_method || 'efectivo').trim();
+  const schedule = String(req.body.payment_schedule || 'contado').trim();
+  // Combinar método + horario para guardar en payment_method
+  const combinedMethod = schedule === 'plazos' ? 'plazos' : method;
+  const order = db.prepare('SELECT * FROM orders WHERE id = ? AND business_id = ?').get(req.params.id, req.biz.id);
+  if (!order) return res.redirect('/' + req.params.slug + '/admin/panel');
+  const newPaid = (order.amount_paid || 0) + abono;
+  const remaining = Math.max(0, order.total - newPaid);
+  const newStatus = remaining <= 0 ? 'pagado' : 'parcial';
+  const isPaid = remaining <= 0 ? 1 : 0;
+  // Registrar en historial de abonos
+  if (abono > 0) {
+    db.prepare('INSERT INTO payment_history (order_id, business_id, amount, method, note) VALUES (?, ?, ?, ?, ?)').run(order.id, req.biz.id, abono, combinedMethod, req.body.note || '');
+  }
+  db.prepare('UPDATE orders SET paid = ?, status = ?, payment_method = ?, amount_paid = ?, amount_remaining = ? WHERE id = ? AND business_id = ?').run(isPaid, newStatus, combinedMethod, newPaid, remaining, req.params.id, req.biz.id);
   res.redirect('/' + req.params.slug + '/admin/panel');
 });
 
 app.post('/:slug/admin/order/:id/entregado', requireAuth, can('pedidos.gestionar'), (req, res) => {
-  db.prepare('UPDATE orders SET paid = 1, status = ? WHERE id = ? AND business_id = ?').run('entregado', req.params.id, req.biz.id);
+  db.prepare('UPDATE orders SET paid = 1, status = ?, amount_paid = total, amount_remaining = 0 WHERE id = ? AND business_id = ?').run('entregado', req.params.id, req.biz.id);
   res.redirect('/' + req.params.slug + '/admin/panel');
 });
 
@@ -2388,9 +2433,9 @@ app.get('/:slug/admin/reporte', requireAuth, (req, res) => {
   const orders = db.prepare(
     `SELECT * FROM orders WHERE business_id = ? ORDER BY created_at DESC`
   ).all(req.biz.id);
-  let csv = 'Fecha,Productos,Total,Estado,Pagado\n';
+  let csv = 'Fecha,Productos,Total,Estado,Pagado,Metodo_pago,Abonado,Pendiente\n';
   for (const o of orders) {
-    csv += `"${o.created_at}","${o.items.replace(/"/g, '""')}",${o.total},${o.status},${o.paid ? 'SI' : 'NO'}\n`;
+    csv += `"${o.created_at}","${o.items.replace(/"/g, '""')}",${o.total},${o.status},${o.paid ? 'SI' : 'NO'},${o.payment_method || 'contado'},${o.amount_paid || 0},${o.amount_remaining || 0}\n`;
   }
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
   res.setHeader('Content-Disposition', `attachment; filename=pedidos-${req.biz.slug}.csv`);

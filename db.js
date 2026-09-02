@@ -169,6 +169,7 @@ addColumnIfMissing('products', 'tags', "TEXT DEFAULT ''"); // etiquetas separada
 addColumnIfMissing('products', 'video', "TEXT DEFAULT ''"); // URL de video (limitado, 1 por producto)
 addColumnIfMissing('products', 'specs', "TEXT DEFAULT ''"); // características (una por línea: Clave: Valor)
 addColumnIfMissing('products', 'barcode', "TEXT DEFAULT ''"); // código de barras (opcional)
+addColumnIfMissing('products', 'payment_plan', "TEXT DEFAULT ''"); // sugerencia de pago visible al cliente, ej: 'Abonos de $200 semanales'
 
 // Proveedores y pedidos de compra
 db.exec(`
@@ -194,6 +195,9 @@ CREATE TABLE IF NOT EXISTS purchase_orders (
 `);
 addColumnIfMissing('purchase_orders', 'received', 'INTEGER DEFAULT 0');
 addColumnIfMissing('orders', 'customer_phone', "TEXT DEFAULT ''");
+addColumnIfMissing('orders', 'payment_method', "TEXT DEFAULT 'contado'"); // contado | parcial | credito
+addColumnIfMissing('orders', 'amount_paid', 'REAL DEFAULT 0'); // total abonado hasta ahora
+addColumnIfMissing('orders', 'amount_remaining', 'REAL DEFAULT 0'); // saldo pendiente
 
 // Clientes (mini-CRM): contactos frecuentes con su historial de pedidos
 db.exec(`
@@ -218,6 +222,18 @@ CREATE TABLE IF NOT EXISTS orders (
   status TEXT DEFAULT 'nuevo',
   paid INTEGER DEFAULT 0,
   created_at TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS payment_history (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  order_id INTEGER NOT NULL,
+  business_id INTEGER NOT NULL,
+  amount REAL NOT NULL,
+  method TEXT DEFAULT 'abono',  -- abono | contado | credito
+  note TEXT DEFAULT '',
+  created_at TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
   FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE
 );
 
