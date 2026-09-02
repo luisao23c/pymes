@@ -11,7 +11,9 @@
 :root {
   /* ---- Paleta: mercado premium (verde esmeralda + dorado, uso comedido) ---- */
   --accent: #146356;              /* antes #2563eb */
+  --accent-hover: #0f4d43;        /* hover state del accent */
   --accent2: #C89B3C;             /* antes #7c3aed — reservado a precios/ofertas */
+  --accent2-hover: #b08930;       /* hover del dorado */
   --accent-deep: #0D3A31;         /* para gradientes de header */
   --font: 'Inter', system-ui, sans-serif;
   --font-display: 'Space Grotesk', 'Inter', system-ui, sans-serif;
@@ -32,9 +34,32 @@
   --shadow-md: 0 4px 10px rgba(26,36,32,0.06), 0 2px 4px rgba(26,36,32,0.08);
   --shadow-lg: 0 14px 30px rgba(26,36,32,0.08), 0 4px 12px rgba(26,36,32,0.05);
   --shadow-xl: 0 24px 55px rgba(26,36,32,0.10), 0 8px 22px rgba(26,36,32,0.06);
+  --shadow-accent: 0 4px 16px rgba(20,99,86,0.20);
 }
 
-body { font-family: var(--font); }
+body {
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* ---- Selección de texto con paleta ---- */
+::selection { background: rgba(20,99,86,0.12); color: var(--text); }
+::-moz-selection { background: rgba(20,99,86,0.12); color: var(--text); }
+
+/* ---- Focus visible global ---- */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ---- Scrollbar global ---- */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: var(--muted); }
 
 /* ---- Tipografía de exhibición: títulos, precios, nombres de producto ---- */
 .cat-title,
@@ -47,6 +72,7 @@ body { font-family: var(--font); }
 .pv-cat-cards .cat-card {
   font-family: var(--font-display);
   letter-spacing: -0.01em;
+  text-wrap: balance;
 }
 
 /* ---- Header ---- */
@@ -70,6 +96,11 @@ body { font-family: var(--font); }
   color: #fff !important;
   border-color: transparent !important;
   box-shadow: 0 2px 8px rgba(20,99,86,0.25), 0 0 0 1px rgba(255,255,255,0.1) inset;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.chip-active:hover {
+  background: var(--accent-hover) !important;
+  transform: translateY(-1px);
 }
 .chip-idle:hover { border-color: var(--accent) !important; }
 
@@ -77,18 +108,31 @@ body { font-family: var(--font); }
 .btn-accent {
   background: var(--accent) !important;
   box-shadow: 0 2px 10px rgba(20,99,86,0.22);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.btn-accent:hover { filter: brightness(1.1); }
+.btn-accent:hover {
+  background: var(--accent-hover) !important;
+  filter: brightness(1.05);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(20,99,86,0.28);
+}
+.btn-accent:active {
+  transform: scale(0.97);
+}
 
 /* ---- Búsqueda ---- */
+.search-input {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
 .search-input:focus {
   border-color: var(--accent) !important;
   box-shadow: 0 0 0 3px rgba(20,99,86,0.12), var(--shadow-md);
+  outline: none;
 }
 
 /* ---- Precios ---- */
-.price-accent { color: var(--accent) !important; font-family: var(--font-display); }
-.price-sale { color: #B5461C !important; font-family: var(--font-display); } /* rojo-teja, no rojo genérico */
+.price-accent { color: var(--accent) !important; font-family: var(--font-display); font-weight: 700; }
+.price-sale { color: #B5461C !important; font-family: var(--font-display); font-weight: 700; } /* rojo-teja, no rojo genérico */
 
 /* =======================================================================
    TARJETA DE PRODUCTO — motivo "ticket de mercado"
@@ -98,9 +142,11 @@ body { font-family: var(--font); }
 .product-card, .offer-card, .p-card {
   border-radius: var(--radius) !important;
   box-shadow: var(--shadow-sm) !important;
+  transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .product-card:hover, .offer-card:hover, .p-card:hover {
   box-shadow: var(--shadow-lg) !important;
+  transform: translateY(-4px);
 }
 
 /* Insignias con corte de "etiqueta de precio" (clip-path — sin trucos frágiles) */
@@ -111,6 +157,7 @@ body { font-family: var(--font); }
   padding-left: 13px !important;
   font-family: var(--font-display);
   letter-spacing: 0.02em;
+  font-weight: 700;
 }
 .p-card .p-feat {
   background: var(--accent2) !important;
@@ -137,10 +184,18 @@ body { font-family: var(--font); }
 }
 .p-card .pv-product-action {
   background: var(--accent) !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.p-card .pv-product-action:hover { filter: brightness(1.1); }
+.p-card .pv-product-action:hover {
+  background: var(--accent-hover) !important;
+  filter: brightness(1.05);
+  transform: translateY(-1px);
+}
+.p-card .pv-product-action:active {
+  transform: scale(0.97);
+}
 
-.p-card .p-cat { color: var(--muted); font-weight: 700; }
+.p-card .p-cat { color: var(--muted); font-weight: 700; letter-spacing: 0.02em; }
 .p-card .p-name { font-weight: 600; }
 
 /* ---- Grid de categorías ---- */
@@ -153,16 +208,32 @@ body { font-family: var(--font); }
   border-color: var(--accent) !important;
   box-shadow: 0 4px 12px -2px rgba(20,99,86,0.4);
 }
+.prev .prod-pager button, .pv-pager button {
+  transition: all 0.2s ease;
+}
+.prev .prod-pager button:hover, .pv-pager button:hover {
+  border-color: var(--accent) !important;
+  color: var(--accent) !important;
+}
 
 /* ---- Patrocinados: etiqueta de tienda en dorado, no verde (jerarquía) ---- */
-.sponsored-card .sc-store { color: var(--accent2) !important; }
-.sponsored-card .sc-price { color: var(--accent) !important; }
-.sponsored-card:hover { box-shadow: var(--shadow-lg); }
+.sponsored-card .sc-store { color: var(--accent2) !important; font-weight: 700; }
+.sponsored-card .sc-price { color: var(--accent) !important; font-weight: 700; }
+.sponsored-card {
+  transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.sponsored-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-3px); }
 
 /* ---- Slider hero ---- */
 .ct-sld { box-shadow: var(--shadow-xl); }
-.ct-sld-arrow { background: rgba(13,58,49,0.55); }
+.ct-sld-arrow {
+  background: rgba(13,58,49,0.55);
+  transition: all 0.2s ease;
+}
 .ct-sld-arrow:hover { background: rgba(13,58,49,0.85); }
+.ct-sld-dot {
+  transition: all 0.2s ease;
+}
 .ct-sld-dot.active { background: var(--accent2); }
 
 /* ---- Respeta reduced-motion (ya heredado del original, se mantiene) ---- */
@@ -171,4 +242,17 @@ body { font-family: var(--font); }
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* ---- Print styles ---- */
+@media print {
+  .chip-active, .btn-accent, .search-input { display: none; }
+  .product-card, .offer-card, .p-card { box-shadow: none; border: 1px solid #ccc; }
+}
+
+/* ---- High contrast mode ---- */
+@media (forced-colors: active) {
+  .chip-active { border: 2px solid ButtonText; }
+  .btn-accent { border: 2px solid ButtonText; }
+  .p-card .p-feat, .p-card .p-off { border: 1px solid ButtonText; }
 }
