@@ -3,6 +3,7 @@ const db = require('./db');
 const path = require('path');
 const { MASCARA_SIZES, SHAPE_DEFS, getShapeClip, MASCARA_CSS, EDITOR_ONLY_CSS } = require('./lib/mascara');
 const crypto = require('crypto');
+const bcrypt = require('bcryptjs');
 const multer = require('multer');
 const XLSX = require('xlsx');
 const ExcelJS = require('exceljs');
@@ -152,6 +153,30 @@ app.locals.safeJson = function (v) {
 app.use(express.urlencoded({ extended: true, limit: '60mb' }));
 app.use(express.json({ limit: '60mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
+// === RATE LIMITER ===
+var _rateLimit = {};
+function rateLimit(maxPerMin) {
+  return function(req, res, next) {
+    var ip = req.ip || req.connection.remoteAddress || "unknown";
+    var now = Date.now();
+    var key = ip + ":" + req.path;
+    if (!_rateLimit[key]) _rateLimit[key] = [];
+    _rateLimit[key] = _rateLimit[key].filter(function(t) { return now - t < 60000; });
+    if (_rateLimit[key].length >= maxPerMin) {
+      return res.status(429).json({ error: "Demasiadas peticiones. Intenta en 1 minuto." });
+    }
+    _rateLimit[key].push(now);
+    next();
+  };
+}
+setInterval(function() {
+  var now = Date.now();
+  for (var k in _rateLimit) {
+    _rateLimit[k] = _rateLimit[k].filter(function(t) { return now - t < 60000; });
+    if (!_rateLimit[k].length) delete _rateLimit[k];
+  }
+}, 300000);
+
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, path.join(__dirname, 'public', 'uploads')),
@@ -1193,7 +1218,7 @@ app.get('/registrar', (req, res) => {
   res.render('register', { TEMPLATES, COLORS, GIROS, ESTILOS, error: null, ok: null });
 });
 
-app.post('/registrar', (req, res) => {
+app.post('/registrar', rateLimit(10), (req, res) => {
   const { name, slug, whatsapp, description, pin, template, color, giro, estilo } = req.body;
   const cleanSlug = (slug || '').trim().toLowerCase().replace(/[^a-z0-9-]/g, '-');
   if (!name || !cleanSlug || !whatsapp) {
@@ -1203,9 +1228,10 @@ app.post('/registrar', (req, res) => {
     return res.render('register', { TEMPLATES, COLORS, GIROS, ESTILOS, error: 'Ese enlace ya existe. Elige otro.', ok: null });
   }
   const cleanPin = (pin || '').trim();
-  if (!/^\d{6,12}$/.test(cleanPin)) {
-    return res.render('register', { TEMPLATES, COLORS, GIROS, ESTILOS, error: 'El PIN debe tener de 6 a 12 dígitos.', ok: null });
+  if (cleanPin.length < 6 || !/^\d+$/.test(cleanPin)) {
+    return res.render('register', { TEMPLATES, COLORS, GIROS, ESTILOS, error: 'El PIN debe tener al menos 6 dígitos numéricos.', ok: null });
   }
+  const hashedPin = hashPin(cleanPin);
   const colorObj = getColor(color);
   const giroOk = GIROS.includes(giro) ? giro : '';
   const tpl = 'constructor';
@@ -1237,7 +1263,7 @@ app.get('/maestro', (req, res) => {
 });
 
 app.post('/maestro', (req, res) => {
-  if (req.body.master === MASTER_KEY) {
+  if (req.body.master === MASTER_KEY || verifyPin(req.body.master, MASTER_KEY)) {
     const token = createSession(null, 'maestro');
     res.cookie('sid', token, { maxAge: 24 * 60 * 60 * 1000, httpOnly: true, sameSite: 'lax', path: '/' });
     return res.redirect('/maestro/panel');
@@ -1833,8 +1859,15 @@ const EMPLOYEE_PERMS = [
 const ALL_PERMS = EMPLOYEE_PERMS.map(p => p.key).concat(['empleados']);
 function permsOf(sess) {
   if (sess.kind === 'owner') return ALL_PERMS.slice();
-  const emp = sess.emp_id ? db.prepare('SELECT * FROM employees WHERE id = ?').get(sess.emp_id) : null;
+  const emp = sess.emp_id ? db.prepare('SELECT * FROM users WHERE id = ?').get(sess.emp_id) : null;
   if (!emp) return [];
+  // Role-based permissions for users table
+  if (emp.role) {
+    if (emp.role === 'admin') return ALL_PERMS.slice();
+    if (emp.role === 'visualizador') return ['reportes'];
+    // empleado gets basic perms
+    return ['productos.ver', 'productos.crear', 'productos.editar', 'reportes'];
+  }
   try { return JSON.parse(emp.perms || '[]'); } catch (e) { return []; }
 }
 
@@ -1851,7 +1884,7 @@ function requireAuth(req, res, next) {
     req.role = sess.kind;
     req.perms = permsOf(sess);
     if (sess.kind === 'employee') {
-      req.emp = db.prepare('SELECT * FROM employees WHERE id = ? AND business_id = ?').get(sess.emp_id, biz.id);
+      req.emp = db.prepare('SELECT * FROM users WHERE id = ? AND business_id = ?').get(sess.emp_id, biz.id);
       if (!req.emp) return res.redirect('/' + req.params.slug + '/admin');
     }
     res.locals.money = moneyFor(biz);
@@ -1889,8 +1922,8 @@ app.post('/:slug/admin', loginRateLimit, (req, res) => {
   const pin = String(req.body.pin || '');
   // 1) Dueño
   let ok = false;
-  if (biz.pin_hash) {
-    ok = verifyPin(pin, biz.pin_hash);
+  if (biz.pin) {
+    ok = verifyPin(pin, biz.pin);
   }
   if (ok) {
     const token = createSession(biz.id, 'owner');
@@ -1898,8 +1931,8 @@ app.post('/:slug/admin', loginRateLimit, (req, res) => {
     return res.redirect('/' + req.params.slug + '/admin/panel');
   }
   // 2) Empleado
-  const emps = db.prepare('SELECT * FROM employees WHERE business_id = ?').all(biz.id);
-  const emp = emps.find(e => verifyPin(pin, e.pin_hash));
+  const emps = db.prepare("SELECT * FROM users WHERE business_id = ? AND active = 1").all(biz.id);
+  const emp = emps.find(e => verifyPin(pin, e.pin));
   if (emp) {
     const token = createSession(biz.id, 'employee', emp.id);
     res.cookie('sid', token, { maxAge: 1000 * 60 * 60 * 12, httpOnly: true, sameSite: 'lax', path: '/' });
@@ -3133,8 +3166,8 @@ function getEmployees(bizId) {
 function pinInUse(biz, pin, excludeEmpId) {
   if (!pin) return false;
   if (biz.pin_hash && verifyPin(pin, biz.pin_hash)) return true;
-  const emps = db.prepare('SELECT pin_hash FROM employees WHERE business_id = ? AND id != ?').all(biz.id, excludeEmpId || 0);
-  return emps.some(e => verifyPin(pin, e.pin_hash));
+  const emps = db.prepare("SELECT pin FROM users WHERE business_id = ? AND role != ?").all(biz.id, "visualizador");
+  return emps.some(e => verifyPin(pin, e.pin));
 }
 function parsePerms(body) {
   let raw = body.perms;

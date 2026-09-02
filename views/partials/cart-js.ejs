@@ -229,7 +229,10 @@
     const p = PROMAP[String(id)];
     if (!p) { toast('Producto no encontrado', false); return; }
     if (!name) name = p.name;
+    name = String(name).replace(/<[^>]*>/g, '').trim();
+    if (!name) name = 'Producto';
     if (price == null || price === 0) price = p.price;
+    if (!price || price <= 0) { toast('Precio invalido', false); return; }
     if (!image) image = p.image;
     const pvm = normVariantModel(p.variants);
     if (!pvm.attrs.length && (p.stock === null || p.stock === undefined || p.stock <= 0)) { toast('Producto agotado 😕', false); return; }
@@ -264,8 +267,8 @@
     if (!it) return;
     const p = PROMAP[String(it.id)];
     it.qty += delta;
-    if (p && p.stock !== null && it.qty > p.stock) { it.qty = p.stock; toast('Stock máximo disponible', false); }
-    if (it.qty <= 0) delete cart[key];
+    if (isNaN(it.qty) || it.qty <= 0) { delete cart[key]; saveCart(); renderCart(); return; }
+    if (p && p.stock !== null && it.qty > p.stock) { it.qty = p.stock; toast("Stock maximo disponible", false); }
     saveCart();
     renderCart();
   }
@@ -288,7 +291,7 @@
     const total = items.reduce((s, it) => s + it.qty, 0);
     const subtotal = items.reduce((s, it) => s + (it.qty * it.price), 0);
     const countEl = document.getElementById('cart-count');
-    if (countEl) countEl.textContent = total;
+    if (countEl) { countEl.textContent = total; countEl.style.display = total > 0 ? 'flex' : 'none'; }
     const totEl = document.getElementById('cart-total');
     if (totEl) totEl.textContent = money(subtotal);
     const bar = document.getElementById('cart-bar');
@@ -1087,6 +1090,22 @@
       }
     }
   });
+
+  
+  function copyLink(slug, id) {
+    var url = location.origin + '/' + slug + '/p/' + id;
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(url).then(function() {
+        if (typeof toast === 'function') toast('Enlace copiado ✓', true);
+      });
+    } else {
+      var ta = document.createElement('textarea');
+      ta.value = url; ta.style.position='fixed'; ta.style.left='-9999px';
+      document.body.appendChild(ta); ta.select();
+      document.execCommand('copy'); document.body.removeChild(ta);
+      if (typeof toast === 'function') toast('Enlace copiado ✓', true);
+    }
+  }
 
   function shareProduct(id, name, price) {
     const p = PROMAP[String(id)];
