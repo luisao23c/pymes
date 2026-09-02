@@ -5,10 +5,12 @@ const { MASCARA_SIZES, SHAPE_DEFS, getShapeClip, MASCARA_CSS, EDITOR_ONLY_CSS } 
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const multer = require('multer');
-const XLSX = require('xlsx');
 const ExcelJS = require('exceljs');
 const QRCode = require('qrcode');
+const fs = require('fs');
 const { TPL_THEMES, TPL_META, TPL_CASOS } = require('./templates-data');
+const { buildOrderMessage } = require('./lib/order-message');
+const { buildPaymentPlan } = require('./lib/payment-plan');
 const app = express();
 
 // Carga variables de entorno desde .env (si existe), sin dependencias externas
@@ -23,8 +25,18 @@ try {
   }
 } catch (e) {}
 
-const MASTER_KEY = process.env.MASTER_KEY || crypto.randomBytes(12).toString('hex');
+const IS_PRODUCTION = process.env.NODE_ENV === 'production';
+if (IS_PRODUCTION && (!process.env.MASTER_KEY || process.env.MASTER_KEY.length < 32)) {
+  throw new Error('MASTER_KEY es obligatoria en producción y debe tener al menos 32 caracteres.');
+}
+const MASTER_KEY = process.env.MASTER_KEY || crypto.randomBytes(24).toString('hex');
 const BASE_URL = process.env.BASE_URL || '';
+const DATA_DIR = path.resolve(process.env.DATA_DIR || __dirname);
+const UPLOAD_DIR = path.resolve(process.env.UPLOAD_DIR || path.join(DATA_DIR, 'uploads'));
+const BACKUP_DIR = path.resolve(process.env.BACKUP_DIR || path.join(DATA_DIR, 'backups'));
+fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+fs.mkdirSync(BACKUP_DIR, { recursive: true });
+const sessionCookie = (maxAge) => ({ maxAge, httpOnly: true, sameSite: 'lax', secure: IS_PRODUCTION, path: '/' });
 
 // ================= PLANES (configurables desde el panel maestro) =================
 function getPlan(biz) {
@@ -152,7 +164,18 @@ app.locals.safeJson = function (v) {
 };
 app.use(express.urlencoded({ extended: true, limit: '60mb' }));
 app.use(express.json({ limit: '60mb' }));
+app.use('/uploads', express.static(UPLOAD_DIR, { dotfiles: 'deny', fallthrough: false }));
 app.use(express.static(path.join(__dirname, 'public')));
+
+app.get('/health', (req, res) => {
+  try {
+    db.prepare('SELECT 1').get();
+    res.json({ status: 'ok' });
+  } catch (error) {
+    res.status(503).json({ status: 'error' });
+  }
+});
+if (IS_PRODUCTION) app.set('trust proxy', 1);
 // === RATE LIMITER ===
 var _rateLimit = {};
 function rateLimit(maxPerMin) {
@@ -179,7 +202,7 @@ setInterval(function() {
 
 
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, path.join(__dirname, 'public', 'uploads')),
+  destination: (req, file, cb) => cb(null, UPLOAD_DIR),
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
     const allowed = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
@@ -203,13 +226,13 @@ const uploadExcel = multer({
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
-    const allowed = ['.xlsx', '.xls', '.csv'];
+    const allowed = ['.xlsx', '.csv'];
     cb(null, allowed.includes(ext));
   }
 });
 
 const videoStorage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, path.join(__dirname, 'public', 'uploads')),
+  destination: (req, file, cb) => cb(null, UPLOAD_DIR),
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
     const allowed = ['.mp4', '.webm', '.mov', '.m4v', '.ogg'];
@@ -229,7 +252,7 @@ const uploadVideo = multer({
 });
 
 const fileStorage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, path.join(__dirname, 'public', 'uploads')),
+  destination: (req, file, cb) => cb(null, UPLOAD_DIR),
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
     const allowed = ['.mp3', '.wav', '.ogg', '.m4a', '.aac', '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.zip', '.txt', '.csv', '.json'];
@@ -262,7 +285,7 @@ app.use((req, res, next) => {
 app.use((req, res, next) => {
   if (!req.cookies.csrf) {
     req.cookies.csrf = crypto.randomBytes(24).toString('hex');
-    res.cookie('csrf', req.cookies.csrf, { httpOnly: false, sameSite: 'lax', path: '/' });
+    res.cookie('csrf', req.cookies.csrf, { httpOnly: false, sameSite: 'lax', secure: IS_PRODUCTION, path: '/' });
   }
   res.locals.csrf = req.cookies.csrf;
   next();
@@ -271,7 +294,7 @@ app.use((req, res, next) => {
   if (req.method !== 'POST') return next();
   const p = req.path;
   if (p === '/registrar' || p === '/maestro' || p === '/maestro/cerrar') return next();
-  if (p.endsWith('/admin') || p.endsWith('/resetear-pin')) return next(); // logins / reseteo público
+  if (p.endsWith('/admin')) return next(); // login público
   if (!/^\/[^/]+\/admin(\/|$)/.test(p) && !/^\/maestro\//.test(p)) return next();
   // Multipart: el body aún no está parseado aquí; se valida en la ruta tras multer (ver verifyBodyCsrf)
   if (req.is('multipart/form-data')) return next();
@@ -292,14 +315,13 @@ function verifyBodyCsrf(req, res, next) {
 }
 
 // ================= BACKUP AUTOMÁTICO DIARIO =================
-const fs = require('fs');
-const backupsDir = path.join(__dirname, 'backups');
+const backupsDir = BACKUP_DIR;
 if (!fs.existsSync(backupsDir)) fs.mkdirSync(backupsDir, { recursive: true });
 function hacerBackup() {
   try {
     const date = new Date().toISOString().slice(0, 10);
     const dest = path.join(backupsDir, `data-${date}.db`);
-    fs.copyFileSync(path.join(__dirname, 'data.db'), dest);
+    fs.copyFileSync(db.databasePath, dest);
     console.log(`Backup creado: ${dest}`);
   } catch (e) {
     console.error('Error al crear backup:', e.message);
@@ -1136,33 +1158,6 @@ function waLink(biz, text) {
 
 // Arma el mensaje del pedido. Si la tienda configuró uno personalizado, usa sus
 // comodines {tienda}, {productos} y {total}; si no, el mensaje por defecto.
-function cleanOrderText(value) {
-  return String(value == null ? '' : value)
-    .replace(/\uFFFD/g, '')
-    .replace(/\p{Extended_Pictographic}/gu, '')
-    .replace(/[\uFE0E\uFE0F\u200D]/g, '')
-    .replace(/ðŸ[^\s]*/g, '')
-    .replace(/â€¢/g, '-')
-    .replace(/â€”|â€“/g, '-')
-    .replace(/[ \t]{2,}/g, ' ')
-    .replace(/[ \t]+\n/g, '\n')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim();
-}
-function buildOrderMessage(storeName, lines, total, template, sym) {
-  const lista = lines.map(cleanOrderText).join('\n');
-  const cur = sym || '$';
-  const totalStr = cur + total.toFixed(2);
-  const custom = (template && String(template).trim()) ? String(template).trim() : '';
-  if (custom) {
-    return cleanOrderText(custom
-      .replace(/\{tienda\}/g, storeName)
-      .replace(/\{productos\}/g, lista)
-      .replace(/\{total\}/g, totalStr));
-  }
-  return `Hola ${cleanOrderText(storeName)}, quiero realizar el siguiente pedido:\n\n${lista}\n\nTotal: ${totalStr}\n\n¿Me confirma disponibilidad y entrega, por favor?`;
-}
-
 function track(businessId, type, detail) {
   db.prepare('INSERT INTO tracking (business_id, type, detail) VALUES (?, ?, ?)').run(businessId, type, detail || '');
 }
@@ -1278,7 +1273,7 @@ app.get('/maestro', (req, res) => {
 app.post('/maestro', (req, res) => {
   if (req.body.master === MASTER_KEY || verifyPin(req.body.master, MASTER_KEY)) {
     const token = createSession(null, 'maestro');
-    res.cookie('sid', token, { maxAge: 24 * 60 * 60 * 1000, httpOnly: true, sameSite: 'lax', path: '/' });
+    res.cookie('sid', token, sessionCookie(24 * 60 * 60 * 1000));
     return res.redirect('/maestro/panel');
   }
   res.render('maestro', { error: 'Código maestro incorrecto.', list: null });
@@ -1320,9 +1315,9 @@ app.post('/maestro/:id/toggle', maestroAuth, (req, res) => {
 });
 
 app.post('/maestro/:id/reset-pin', maestroAuth, (req, res) => {
-  const newPin = req.body.new_pin || '123456';
-  if (String(newPin).length < 6) {
-    return res.redirect('/maestro/panel?error=' + encodeURIComponent('PIN debe tener al menos 6 dígitos'));
+  const newPin = String(req.body.new_pin || '');
+  if (!/^\d{6,12}$/.test(newPin)) {
+    return res.redirect('/maestro/panel?error=' + encodeURIComponent('Escribe un PIN nuevo de 6 a 12 dígitos'));
   }
   db.prepare('UPDATE businesses SET pin = ? WHERE id = ?').run(hashPin(String(newPin)), req.params.id);
   db.prepare('DELETE FROM sessions WHERE biz_id = ?').run(req.params.id);
@@ -1954,7 +1949,7 @@ app.post('/:slug/admin', loginRateLimit, (req, res) => {
   }
   if (ok) {
     const token = createSession(biz.id, 'owner');
-    res.cookie('sid', token, { maxAge: 1000 * 60 * 60 * 12, httpOnly: true, sameSite: 'lax', path: '/' });
+    res.cookie('sid', token, sessionCookie(1000 * 60 * 60 * 12));
     return res.redirect('/' + req.params.slug + '/admin/panel');
   }
   // 2) Empleado
@@ -1962,7 +1957,7 @@ app.post('/:slug/admin', loginRateLimit, (req, res) => {
   const emp = emps.find(e => verifyPin(pin, e.pin));
   if (emp) {
     const token = createSession(biz.id, 'employee', emp.id);
-    res.cookie('sid', token, { maxAge: 1000 * 60 * 60 * 12, httpOnly: true, sameSite: 'lax', path: '/' });
+    res.cookie('sid', token, sessionCookie(1000 * 60 * 60 * 12));
     return res.redirect('/' + req.params.slug + '/admin/panel');
   }
   res.render('login', { biz, error: 'PIN incorrecto. Intenta de nuevo.', ok: null, pal });
@@ -2117,16 +2112,6 @@ function parseVariantModel(v) {
 function parseVariants(v) {
   const model = parseVariantModel(v);
   return model.attrs.length ? JSON.stringify(model) : '';
-}
-
-// Construir payment_plan como JSON estructurado desde el formulario
-function buildPaymentPlan(body) {
-  const total = parseFloat(body.payment_amount) || 0;
-  const freq = (body.payment_freq || '').trim();
-  const num = parseInt(body.payment_num) || 0;
-  if (!total || !freq || !num) return '';
-  const amount = Math.round((total / num) * 100) / 100;
-  return JSON.stringify({ total, amount, freq, num });
 }
 
 // Parsear payment_plan (viene como JSON o string legacy)
@@ -2647,29 +2632,60 @@ function autoMapColumns(headers) {
 
 // Lee cualquier Excel/CSV y devuelve { headers, rows, totalRows } detectando la fila de encabezado
 // y el separador de CSV (funciona con la lista de precios de cada quien, no solo con la plantilla).
-function parseSheet(buffer, filename) {
-  let workbook;
+function parseCsvRows(buffer) {
+  const text = buffer.toString('utf8').replace(/^\uFEFF/, '');
+  const firstLines = text.split(/\r?\n/).slice(0, 5).join('\n');
+  const candidates = [',', ';', '\t', '|'];
+  const sep = candidates.sort((a, b) => firstLines.split(b).length - firstLines.split(a).length)[0];
+  const rows = [];
+  let row = [], cell = '', quoted = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (ch === '"') {
+      if (quoted && text[i + 1] === '"') { cell += '"'; i++; }
+      else quoted = !quoted;
+    } else if (ch === sep && !quoted) { row.push(cell); cell = ''; }
+    else if ((ch === '\n' || ch === '\r') && !quoted) {
+      if (ch === '\r' && text[i + 1] === '\n') i++;
+      row.push(cell); rows.push(row); row = []; cell = '';
+    } else cell += ch;
+  }
+  if (cell || row.length) { row.push(cell); rows.push(row); }
+  return rows;
+}
+
+function excelCellText(value) {
+  if (value === null || value === undefined) return '';
+  if (value instanceof Date) return value.toISOString().slice(0, 10);
+  if (typeof value === 'object') {
+    if (value.text !== undefined) return String(value.text);
+    if (value.result !== undefined) return String(value.result);
+    if (Array.isArray(value.richText)) return value.richText.map(x => x.text || '').join('');
+  }
+  return String(value);
+}
+
+async function parseSheet(buffer, filename) {
+  let aoa;
   try {
     const ext = (filename || '').toLowerCase();
     const isCsv = ext.endsWith('.csv');
-    const opts = { type: 'buffer', raw: false, defval: '' };
-    if (isCsv) {
-      const firstLines = buffer.toString('utf8').split(/\r?\n/).slice(0, 5).join('\n');
-      let sep = ',';
-      const counts = {};
-      [',', ';', '\t', '|'].forEach(s => { counts[s] = firstLines.split(s).length; });
-      const best = Object.keys(counts).sort((a, b) => counts[b] - counts[a])[0];
-      if (counts[best] > 1 && counts[best] > counts[','] * 0.8) sep = best === '\t' ? '\t' : best;
-      if (sep === ';') { opts.FS = ';'; }
-      if (sep === '\t') { opts.FS = '\t'; }
+    if (isCsv) aoa = parseCsvRows(buffer);
+    else {
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(buffer);
+      const sheet = workbook.worksheets[0];
+      if (!sheet) return { error: 'El archivo no contiene hojas.' };
+      aoa = [];
+      sheet.eachRow({ includeEmpty: true }, (row) => {
+        const values = [];
+        for (let i = 1; i <= row.cellCount; i++) values.push(excelCellText(row.getCell(i).value));
+        aoa.push(values);
+      });
     }
-    workbook = XLSX.read(buffer, opts);
   } catch (e) {
     return { error: 'El archivo no se pudo leer. Verifica que sea un Excel o CSV válido.' };
   }
-
-  const sheetName = workbook.SheetNames[0];
-  const aoa = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1, raw: false, defval: '' });
 
   // Encontrar la fila de encabezado: la primera con 2+ celdas con contenido
   // (ignora títulos o logos de arriba tipo "LISTA DE PRECIOS - JULIO")
@@ -2782,15 +2798,15 @@ app.get('/:slug/admin/plantilla', requireAuth, async (req, res) => {
 });
 
 // Paso 1: subir su propio archivo y mostrar vista previa con mapeo
-app.post('/:slug/admin/importar/vista-previa', requireAuth, uploadExcel.single('archivo'), verifyBodyCsrf, (req, res) => {
+app.post('/:slug/admin/importar/vista-previa', requireAuth, uploadExcel.single('archivo'), verifyBodyCsrf, async (req, res) => {
   const biz = req.biz;
   const categories = db.prepare('SELECT * FROM categories WHERE business_id = ? ORDER BY sort ASC').all(biz.id);
 
   if (!req.file) {
-    return res.render('importar', { biz, categories, resultado: { ok: 0, errores: ['No se recibió ningún archivo. Sube un .xlsx, .xls o .csv.'] } });
+    return res.render('importar', { biz, categories, resultado: { ok: 0, errores: ['No se recibió ningún archivo. Sube un .xlsx o .csv.'] } });
   }
 
-  const parsed = parseSheet(req.file.buffer, req.file.originalname);
+  const parsed = await parseSheet(req.file.buffer, req.file.originalname);
   if (parsed.error) {
     return res.render('importar', { biz, categories, resultado: { ok: 0, errores: [parsed.error] } });
   }
@@ -2817,7 +2833,7 @@ app.post('/:slug/admin/importar/vista-previa', requireAuth, uploadExcel.single('
 });
 
 // Paso 2: aplicar mapeo e importar
-app.post('/:slug/admin/importar/ejecutar', requireAuth, (req, res) => {
+app.post('/:slug/admin/importar/ejecutar', requireAuth, async (req, res) => {
   const biz = req.biz;
   const categories = db.prepare('SELECT * FROM categories WHERE business_id = ? ORDER BY sort ASC').all(biz.id);
   const catByName = {};
@@ -2839,7 +2855,7 @@ app.post('/:slug/admin/importar/ejecutar', requireAuth, (req, res) => {
   if (fieldToCol.nombre === undefined) errores.push('Selecciona la columna del nombre del producto.');
   if (fieldToCol.precio === undefined) errores.push('Selecciona la columna del precio.');
 
-  const parsed = parseSheet(buffer, session.filename || '');
+  const parsed = await parseSheet(buffer, session.filename || '');
   if (parsed.error) errores.push(parsed.error);
 
   if (errores.length > 0) {
@@ -3444,20 +3460,23 @@ app.post('/:slug/admin/resetear-pin', (req, res) => {
   if (master !== MASTER_KEY) {
     return res.render('config', configLocals(biz, { error: 'Código maestro incorrecto. No se puede resetear el PIN.' }));
   }
-  db.prepare('UPDATE businesses SET pin_hash = ?, pin = \'\' WHERE id = ?').run(hashPin('123456'), biz.id);
+  const newPin = String(crypto.randomInt(100000, 1000000));
+  db.prepare('UPDATE businesses SET pin_hash = ?, pin = \'\' WHERE id = ?').run(hashPin(newPin), biz.id);
   db.prepare('DELETE FROM sessions WHERE biz_id = ?').run(biz.id);
-  res.render('config', configLocals(getBusiness(biz.slug), { ok: 'PIN reseteado a 123456. Todas las sesiones fueron cerradas.' }));
+  res.render('config', configLocals(getBusiness(biz.slug), { ok: `PIN temporal: ${newPin}. Guárdalo y cámbialo ahora. Todas las sesiones fueron cerradas.` }));
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+if (require.main === module) app.listen(PORT, () => {
   db.prepare("DELETE FROM sessions WHERE expires_at IS NOT NULL AND expires_at < datetime('now')").run();
   setInterval(() => {
     db.prepare("DELETE FROM sessions WHERE expires_at IS NOT NULL AND expires_at < datetime('now')").run();
   }, 60 * 60 * 1000);
   console.log(`Nessik corriendo en http://localhost:${PORT}`);
   console.log(`Landing:      http://localhost:${PORT}/`);
-  console.log(`Registrar:    http://localhost:${PORT}/registrar  (código maestro: ${MASTER_KEY})`);
+  console.log(`Registrar:    http://localhost:${PORT}/registrar`);
   console.log(`Demo tienda:  http://localhost:${PORT}/ferreteria-demo`);
-  console.log(`Panel demo:   http://localhost:${PORT}/ferreteria-demo/admin  (PIN: 1234)`);
+  if (process.env.SEED_DEMO === 'true') console.log(`Panel demo:   http://localhost:${PORT}/ferreteria-demo/admin`);
 });
+
+module.exports = { app, parseSheet };

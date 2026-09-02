@@ -1,7 +1,11 @@
 const Database = require('better-sqlite3');
 const path = require('path');
+const fs = require('fs');
 
-const db = new Database(path.join(__dirname, 'data.db'));
+const dataDir = path.resolve(process.env.DATA_DIR || __dirname);
+const databasePath = path.resolve(process.env.DATABASE_PATH || path.join(dataDir, 'data.db'));
+fs.mkdirSync(path.dirname(databasePath), { recursive: true });
+const db = new Database(databasePath);
 
 db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
@@ -15,7 +19,7 @@ CREATE TABLE IF NOT EXISTS businesses (
   description TEXT DEFAULT '',
   logo TEXT DEFAULT '',
   banner TEXT DEFAULT '',
-  pin TEXT DEFAULT '1234',
+  pin TEXT DEFAULT '',
   active INTEGER DEFAULT 1,
   created_at TEXT DEFAULT (datetime('now'))
 );
@@ -273,6 +277,9 @@ if (planCount === 0) {
 }
 
 function seed() {
+  const demoWhatsApp = String(process.env.DEMO_WHATSAPP || '').replace(/[^0-9]/g, '');
+  const demoPin = String(process.env.DEMO_PIN || '');
+  if (process.env.SEED_DEMO !== 'true' || !demoWhatsApp || !/^\d{6,12}$/.test(demoPin)) return;
   const existing = db.prepare('SELECT COUNT(*) AS c FROM businesses').get().c;
   if (existing > 0) return;
 
@@ -283,9 +290,9 @@ function seed() {
   const biz = insertBiz.run(
     'ferreteria-demo',
     'Ferretería El Toro',
-    '528719920338',
+    demoWhatsApp,
     'Todo para tu obra y hogar en Torreón. Envíos a toda La Laguna.',
-    '1234'
+    demoPin
   );
   const businessId = biz.lastInsertRowid;
 
@@ -396,5 +403,6 @@ function crearPaginasSugeridas(businessId, paginasSugeridas) {
 }
 
 module.exports = db;
+module.exports.databasePath = databasePath;
 module.exports.crearPaginasSugeridas = crearPaginasSugeridas;
-require('./seed-demo');
+if (process.env.NODE_ENV !== 'production' && process.env.SEED_DEMO === 'true') require('./seed-demo');
