@@ -20,6 +20,24 @@
   .prod-pager button:disabled { opacity:.4; cursor:default; }
   .prod-pager .pp-gap { min-width:18px; text-align:center; color:var(--muted,#94a3b8); font-weight:700; font-size:15px; user-select:none; }
   .prod-pager .pp-nav { font-size:17px; line-height:1; padding:0 6px; }
+  #chat-fab {
+    background:linear-gradient(135deg,var(--accent,#1a3c5e),var(--accent-light,#315f86)) !important;
+    box-shadow:0 12px 30px rgba(15,23,42,.24),0 0 0 1px rgba(255,255,255,.18) inset !important;
+    transition:transform .24s cubic-bezier(.22,1,.36,1),box-shadow .24s ease !important;
+  }
+  #chat-fab:hover { transform:translateY(-3px) scale(1.04); box-shadow:0 18px 38px rgba(15,23,42,.28) !important; }
+  #chat-fab:active { transform:scale(.95); }
+  #chat-panel {
+    border:1px solid rgba(148,163,184,.24);
+    box-shadow:0 28px 80px rgba(15,23,42,.22),0 4px 18px rgba(15,23,42,.08) !important;
+    animation:cartPanelIn .3s cubic-bezier(.22,1,.36,1);
+  }
+  #chat-panel > div:first-child { background:linear-gradient(135deg,var(--accent,#1a3c5e),#0f2940) !important; padding:15px 18px !important; }
+  #chat-panel input[type="text"],#chat-panel input[type="tel"] { transition:border-color .2s,box-shadow .2s,background .2s; }
+  #chat-panel input[type="text"]:focus,#chat-panel input[type="tel"]:focus { border-color:var(--accent,#1a3c5e) !important; box-shadow:0 0 0 3px rgba(26,60,94,.1); background:#fff; }
+  #chat-panel button { transition:transform .18s ease,filter .18s ease,background .18s ease; }
+  #chat-panel button:active { transform:scale(.96); }
+  @keyframes cartPanelIn { from { opacity:0; transform:translateY(14px) scale(.97); } to { opacity:1; transform:none; } }
   /* Drawer de filtros en móvil */
   @media (max-width: 1023px) {
     .catalog-sidebar {
@@ -433,57 +451,67 @@
     const n = String(num || '').replace(/[^0-9]/g, '');
     return n.indexOf('52') === 0 ? n : '52' + n;
   }
+  function cleanWhatsAppText(value) {
+    return String(value == null ? '' : value)
+      .replace(/\uFFFD/g, '')
+      .replace(/ðŸ›’/g, '')
+      .replace(/ðŸ“¦/g, '')
+      .replace(/ðŸ’°/g, '')
+      .replace(/ðŸ’³/g, '')
+      .replace(/âœ…/g, '')
+      .replace(/â€¢/g, '-')
+      .replace(/â€”|â€“/g, '-')
+      .replace(/[ \t]{2,}/g, ' ')
+      .replace(/[ \t]+\n/g, '\n')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+  }
   function orderMessage(store, lines, total) {
-    const lista = lines.join('\n');
+    const lista = lines.map(cleanWhatsAppText).join('\n');
     const totalStr = money(total);
     const custom = (store.wa_message || '').trim();
     const pagoEl = document.querySelector('input[name="chat-pago"]:checked');
     const pago = pagoEl ? pagoEl.value : 'contado';
-    const pagoLabel = { efectivo: '💵 Pago en efectivo', tarjeta: '💳 Pago con tarjeta', transferencia: '🏦 Pago por transferencia' }[pago] || '💵 Pago en efectivo';
+    const pagoLabel = { efectivo: 'Pago en efectivo', tarjeta: 'Pago con tarjeta', transferencia: 'Pago por transferencia' }[pago] || 'Pago en efectivo';
     if (custom) {
-      return custom
+      return cleanWhatsAppText(custom
         .replace(/\{tienda\}/g, store.name)
         .replace(/\{productos\}/g, lista)
         .replace(/\{total\}/g, totalStr)
-        .replace(/\{pago\}/g, pagoLabel);
+        .replace(/\{pago\}/g, pagoLabel));
     }
-    var sep = '─'.repeat(20);
     var msg = '';
-    msg += '🛒 *NUEVO PEDIDO*\n';
-    msg += sep + '\n';
-    msg += '🏪 *' + store.name + '*\n';
-    msg += sep + '\n\n';
-    msg += '📦 *Productos:*\n';
-    lines.forEach(function(l) { msg += '  ' + l + '\n'; });
-    msg += '\n';
-    msg += '━━━━━━━━━━━━━━\n';
-    msg += '💰 *TOTAL: ' + totalStr + '*\n';
-    msg += '━━━━━━━━━━━━━━\n\n';
-    msg += '💳 _' + pagoLabel + '_\n\n';
-    msg += '✅ ¿Me confirmas disponibilidad y envío?';
-    return msg;
+    msg += '*NUEVO PEDIDO*\n';
+    msg += '*' + cleanWhatsAppText(store.name) + '*\n\n';
+    msg += '*Productos*\n';
+    lines.forEach(function(l, index) { msg += (index + 1) + '. ' + cleanWhatsAppText(l).replace(/^[-•]\s*/, '') + '\n'; });
+    msg += '\n*TOTAL: ' + totalStr + '*\n';
+    msg += '_' + pagoLabel + '_\n\n';
+    msg += '¿Me confirma disponibilidad y entrega, por favor?';
+    return cleanWhatsAppText(msg);
   }
   function sendStoreOrder(slug) {
     const g = storeGroups().find(x => x.store.slug === slug);
     if (!g) return;
-    const lines = g.items.map(it => '• ' + it.qty + ' x ' + it.name + (it.variant ? ' (' + it.variant + ')' : '') + ' = ' + money(it.qty * it.price));
+    const lines = g.items.map(it => '- ' + it.qty + ' x ' + cleanWhatsAppText(it.name) + (it.variant ? ' (' + cleanWhatsAppText(it.variant) + ')' : '') + ' = ' + money(it.qty * it.price));
     // Agregar info de plan de pago si el producto lo tiene
     const planLines = g.items.filter(it => it.payment_plan && it.payment_plan.amount && it.payment_plan.freq).map(it => {
       var pp = it.payment_plan;
       var fl = {diario:'diarios',semanal:'semanales',quincenal:'quincenales',mensual:'mensuales'};
-      return '💳 ' + it.name + ': $' + pp.amount + ' ' + (fl[pp.freq]||pp.freq) + (pp.num ? ' x' + pp.num + ' pagos' : '');
+      return it.name + ': $' + Number(pp.amount).toFixed(2) + ' ' + (fl[pp.freq]||pp.freq) + (pp.num ? ' x ' + pp.num + ' pagos' : '');
     });
     const total = g.items.reduce((s, it) => s + it.qty * it.price, 0);
     const nombre = (document.getElementById('chat-nombre') || {}).value || '';
     const telefono = (document.getElementById('chat-telefono') || {}).value || '';
     let msg = orderMessage(g.store, lines, total);
-    if (planLines.length) { msg += '\n\n💳 *Planes de abono: *\n' + planLines.join('\n'); }
+    if (planLines.length) { msg += '\n\n*Planes de abono*\n' + planLines.join('\n'); }
     if (nombre || telefono) {
       const datos = [];
       if (nombre) datos.push('Mi nombre: ' + nombre);
       if (telefono) datos.push('Mi teléfono: ' + telefono);
-      msg += '\n\n' + datos.join('\n');
+      msg += '\n\n*Datos del cliente*\n' + datos.join('\n');
     }
+    msg = cleanWhatsAppText(msg);
     const url = 'https://wa.me/' + waNumber(g.store.whatsapp) + '?text=' + encodeURIComponent(msg);
     try {
       fetch('/api/pedir', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ items: g.items.map(it => ({ store: it.store.slug, id: it.id, qty: it.qty, variant: it.variant })), nombre: nombre, telefono: telefono }) }).catch(() => {});
