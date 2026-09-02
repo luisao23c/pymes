@@ -1136,18 +1136,31 @@ function waLink(biz, text) {
 
 // Arma el mensaje del pedido. Si la tienda configuró uno personalizado, usa sus
 // comodines {tienda}, {productos} y {total}; si no, el mensaje por defecto.
+function cleanOrderText(value) {
+  return String(value == null ? '' : value)
+    .replace(/\uFFFD/g, '')
+    .replace(/\p{Extended_Pictographic}/gu, '')
+    .replace(/[\uFE0E\uFE0F\u200D]/g, '')
+    .replace(/ðŸ[^\s]*/g, '')
+    .replace(/â€¢/g, '-')
+    .replace(/â€”|â€“/g, '-')
+    .replace(/[ \t]{2,}/g, ' ')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
 function buildOrderMessage(storeName, lines, total, template, sym) {
-  const lista = lines.join('\n');
+  const lista = lines.map(cleanOrderText).join('\n');
   const cur = sym || '$';
   const totalStr = cur + total.toFixed(2);
   const custom = (template && String(template).trim()) ? String(template).trim() : '';
   if (custom) {
-    return custom
+    return cleanOrderText(custom
       .replace(/\{tienda\}/g, storeName)
       .replace(/\{productos\}/g, lista)
-      .replace(/\{total\}/g, totalStr);
+      .replace(/\{total\}/g, totalStr));
   }
-  return `Hola ${storeName}! 👋 Quiero pedir:\n\n${lista}\n\nTotal: ${totalStr}\n\n¿Me confirmas disponibilidad y envío?`;
+  return `Hola ${cleanOrderText(storeName)}, quiero realizar el siguiente pedido:\n\n${lista}\n\nTotal: ${totalStr}\n\n¿Me confirma disponibilidad y entrega, por favor?`;
 }
 
 function track(businessId, type, detail) {
@@ -1758,7 +1771,7 @@ app.get('/:slug/pedir', (req, res) => {
     track(biz.id, 'view', p.name);
     track(biz.id, 'wa_product', p.name);
     const variant = it.variant ? ` (${it.variant})` : '';
-    return `• ${qty} x ${p.name}${variant} = ${currencyInfo(biz.currency).symbol}${sub.toFixed(2)}`;
+    return `- ${qty} x ${p.name}${variant} = ${currencyInfo(biz.currency).symbol}${sub.toFixed(2)}`;
   }).filter(Boolean);
 
   if (lines.length === 0) return res.redirect('/' + req.params.slug);
@@ -1801,7 +1814,7 @@ app.post('/api/pedir', (req, res) => {
       total += sub;
       track(b.id, 'view', x.p.name);
       track(b.id, 'wa_product', x.p.name);
-      return `• ${x.qty} x ${x.p.name}${x.variant ? ` (${x.variant})` : ''} = $${sub.toFixed(2)}`;
+      return `- ${x.qty} x ${x.p.name}${x.variant ? ` (${x.variant})` : ''} = $${sub.toFixed(2)}`;
     });
     if (lines.length) {
       const customerData = nombre ? (nombre + (telefono ? ' (' + telefono + ')' : '')) : (telefono || '');

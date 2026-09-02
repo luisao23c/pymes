@@ -454,6 +454,8 @@
   function cleanWhatsAppText(value) {
     return String(value == null ? '' : value)
       .replace(/\uFFFD/g, '')
+      .replace(/\p{Extended_Pictographic}/gu, '')
+      .replace(/[\uFE0E\uFE0F\u200D]/g, '')
       .replace(/ðŸ›’/g, '')
       .replace(/ðŸ“¦/g, '')
       .replace(/ðŸ’°/g, '')
