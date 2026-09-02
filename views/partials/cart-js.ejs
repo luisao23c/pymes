@@ -227,12 +227,12 @@
   function addToCart(id, name, price, variant, store, image) {
     const s = store || CURRENT_STORE;
     const p = PROMAP[String(id)];
-    if (!name && p) name = p.name;
-    if (price === undefined && p) price = p.price;
-    if (!image && p) image = p.image;
-    const pvm = p ? normVariantModel(p.variants) : { attrs: [] };
-    // Sin variantes: el stock del producto gobierna (vacío/0 = agotado, solo > 0 se puede pedir)
-    if (!pvm.attrs.length && p && (p.stock === null || p.stock === undefined || p.stock <= 0)) { toast('Producto agotado 😕', false); return; }
+    if (!p) { toast('Producto no encontrado', false); return; }
+    if (!name) name = p.name;
+    if (price == null || price === 0) price = p.price;
+    if (!image) image = p.image;
+    const pvm = normVariantModel(p.variants);
+    if (!pvm.attrs.length && (p.stock === null || p.stock === undefined || p.stock <= 0)) { toast('Producto agotado 😕', false); return; }
     if (pvm.attrs.length && !variant) { variantPicker(id); return; }
     const key = itemKey(s.slug, id, variant);
     // stock por combinación
@@ -241,8 +241,8 @@
       const st = pvm.stock[ck];
       if (st === undefined || st <= 0) { toast('Esa combinación está agotada 😕', false); return; }
     }
-    cart[key] = cart[key] || { store: s, id, name, price: Number(price), image: image || (p ? p.image : NO_IMAGE), variant: variant || '', qty: 0 };
-    if (!pvm.attrs.length && p && p.stock !== null && cart[key].qty + 1 > p.stock) { toast('Stock máximo disponible', false); return; }
+    cart[key] = cart[key] || { store: s, id, name, price: Number(price), image: image || p.image, variant: variant || '', qty: 0 };
+    if (!pvm.attrs.length && p.stock !== null && cart[key].qty + 1 > p.stock) { toast('Stock máximo disponible', false); return; }
     if (variant && pvm.stock) {
       const ck = variant.split(' / ').join('|');
       const st = pvm.stock[ck];
