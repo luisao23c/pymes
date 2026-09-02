@@ -524,6 +524,11 @@
                     <%= b.active ? '● Activa' : '○ Inactiva' %>
                   </button>
                 </form>
+
+                <!-- Resetear PIN -->
+                <form method="POST" action="/maestro/<%= b.id %>/reset-pin" class="inline" onsubmit="var p=prompt('Nuevo PIN para <%= b.slug %> (min 6 digitos):','123456'); if(!p){event.preventDefault();return;} this.insertAdjacentHTML('beforeend','<input type=hidden name=new_pin value=\'' + p + '\'>');">
+                  <button class="action-btn warning small" title="Resetear PIN de acceso">🔑</button>
+                </form>
               </div>
             </div>
           </div>

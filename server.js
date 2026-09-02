@@ -1219,7 +1219,7 @@ app.get('/registrar', (req, res) => {
 });
 
 app.post('/registrar', rateLimit(10), (req, res) => {
-  const { name, slug, whatsapp, description, pin, template, color, giro, estilo } = req.body;
+  const { name, slug, whatsapp, description, pin, template, color, giro, giro_custom, estilo } = req.body;
   const cleanSlug = (slug || '').trim().toLowerCase().replace(/[^a-z0-9-]/g, '-');
   if (!name || !cleanSlug || !whatsapp) {
     return res.render('register', { TEMPLATES, COLORS, GIROS, ESTILOS, error: 'Nombre, enlace y WhatsApp son obligatorios.', ok: null });
@@ -1233,12 +1233,12 @@ app.post('/registrar', rateLimit(10), (req, res) => {
   }
   const hashedPin = hashPin(cleanPin);
   const colorObj = getColor(color);
-  const giroOk = GIROS.includes(giro) ? giro : '';
+  const giroOk = giro === 'otro' && giro_custom ? giro_custom.trim().toLowerCase() : (GIROS.includes(giro) ? giro : '');
   const tpl = 'constructor';
   const estSel = ESTILOS.some(e => e.id === estilo) ? estilo : (GIRO_STYLE[giroOk] || 'moderno');
   const r = db.prepare(
-    `INSERT INTO businesses (slug, name, whatsapp, description, pin, pin_hash, template, color, color_hex, color_hex2, giro, estilo, color_mode)
-     VALUES (?, ?, ?, ?, '', ?, ?, ?, ?, ?, ?, ?, 'estilo')`
+    `INSERT INTO businesses (slug, name, whatsapp, description, pin, template, color, color_hex, color_hex2, giro, estilo, color_mode)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'estilo')`
   ).run(
     cleanSlug,
     name.trim(),
@@ -1304,6 +1304,16 @@ app.get('/maestro/panel', maestroAuth, (req, res) => {
 app.post('/maestro/:id/toggle', maestroAuth, (req, res) => {
   db.prepare('UPDATE businesses SET active = CASE WHEN active = 1 THEN 0 ELSE 1 END WHERE id = ?').run(req.params.id);
   res.redirect('/maestro/panel?ok=' + encodeURIComponent('Tienda activada/desactivada'));
+});
+
+app.post('/maestro/:id/reset-pin', maestroAuth, (req, res) => {
+  const newPin = req.body.new_pin || '123456';
+  if (String(newPin).length < 6) {
+    return res.redirect('/maestro/panel?error=' + encodeURIComponent('PIN debe tener al menos 6 dígitos'));
+  }
+  db.prepare('UPDATE businesses SET pin = ? WHERE id = ?').run(hashPin(String(newPin)), req.params.id);
+  db.prepare('DELETE FROM sessions WHERE biz_id = ?').run(req.params.id);
+  res.redirect('/maestro/panel?ok=' + encodeURIComponent('PIN reseteado. Sesiones cerradas.'));
 });
 
 app.post('/maestro/:id/plan', maestroAuth, (req, res) => {
@@ -1922,7 +1932,11 @@ app.post('/:slug/admin', loginRateLimit, (req, res) => {
   const pin = String(req.body.pin || '');
   // 1) Dueño
   let ok = false;
-  if (biz.pin) {
+  if (biz.pin_hash && verifyPin(pin, biz.pin_hash)) {
+    ok = true;
+    // Migrate: move hash to pin column for consistency
+    db.prepare('UPDATE businesses SET pin = ? WHERE id = ?').run(biz.pin_hash, biz.id);
+  } else if (biz.pin) {
     ok = verifyPin(pin, biz.pin);
   }
   if (ok) {
