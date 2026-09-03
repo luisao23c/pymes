@@ -1,8 +1,9 @@
+require('express-async-errors');
 const express = require('express');
 const path = require('path');
 const { createRuntimeConfig } = require('./config/runtime');
 const runtime = createRuntimeConfig(__dirname);
-const db = require('./db');
+const db = require('./database/mariadb');
 const { MASCARA_SIZES, SHAPE_DEFS, getShapeClip, MASCARA_CSS, EDITOR_ONLY_CSS } = require('./lib/mascara');
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
@@ -24,8 +25,8 @@ const { upload, uploadExcel, uploadVideo, uploadFile } = createUploaders(UPLOAD_
 const rateLimit = createRateLimiter();
 
 // ================= PLANES (configurables desde el panel maestro) =================
-function getPlan(biz) {
-  const p = db.prepare('SELECT * FROM plans WHERE key = ?').get((biz && biz.plan) || 'free');
+async function getPlan(biz) {
+  const p = await db.prepare('SELECT * FROM plans WHERE key = ?').get((biz && biz.plan) || 'free');
   return p || { key: 'free', name: 'Gratis', price: 0, days: 0, max_products: 3, ads: 1, design: 0 };
 }
 // Fondo avanzado de la página: hex simple o JSON {type,bg,bg2,bgAngle,bgImage,bgPattern,bgPatternC}
@@ -113,17 +114,17 @@ function cleanNav(n) {
     opacity: num(n.opacity, 0, 100, 100)
   };
 }
-const PLAN_MAX = (biz) => {
-  const p = getPlan(biz);
+const PLAN_MAX = async biz => {
+  const p = await getPlan(biz);
   return p.max_products === -1 ? Infinity : (p.max_products || 0);
 };
 // El plan decide si la tienda DEBE mostrar publicidad cruzada (los que la tienen en su plan, la ven)
-function adsOn(biz) {
-  return getPlan(biz).ads === 1;
+async function adsOn(biz) {
+  return (await getPlan(biz)).ads === 1;
 }
 // El plan decide si el dueño puede personalizar el diseño de su catálogo
-function designAllowed(biz) {
-  return getPlan(biz).design === 1;
+async function designAllowed(biz) {
+  return (await getPlan(biz)).design === 1;
 }
 // Tienda bloqueada por suspensión o plan vencido
 function storeBlock(biz) {
@@ -152,9 +153,9 @@ app.use(express.json({ limit: '60mb' }));
 app.use('/uploads', express.static(UPLOAD_DIR, { dotfiles: 'deny', fallthrough: false }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.get('/health', (req, res) => {
+app.get('/health', async (req, res) => {
   try {
-    db.prepare('SELECT 1').get();
+    await db.prepare('SELECT 1').get();
     res.json({ status: 'ok' });
   } catch (error) {
     res.status(503).json({ status: 'error' });
@@ -167,13 +168,13 @@ scheduleBackups(db, runtime.backupDir);
 
 // ================= RATE LIMIT DE LOGIN (anti fuerza bruta) =================
 const loginAttempts = new Map();
-function loginRateLimit(req, res, next) {
+async function loginRateLimit(req, res, next) {
   const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '?';
   const now = Date.now();
   const rec = loginAttempts.get(ip) || { fails: 0, until: 0 };
   if (now < rec.until) {
     const mins = Math.ceil((rec.until - now) / 60000);
-    return res.render('login', { biz: getBusiness(req.params.slug), error: `Demasiados intentos. Intenta en ${mins} min.` });
+    return res.render('login', { biz: await getBusiness(req.params.slug), error: `Demasiados intentos. Intenta en ${mins} min.` });
   }
   req._rl = { rec, ip, now };
   res.on('finish', () => {
@@ -884,10 +885,10 @@ function getGiroComplementario(giro) {
   return GIROS_COMPLEMENTARIOS[giro] || [];
 }
 
-function pickSponsored(biz, limit) {
+async function pickSponsored(biz, limit) {
   // Publicidad cruzada: solo entran tiendas que el administrador marcó como "anuncio"
   const complementarios = getGiroComplementario(biz.giro);
-  const stores = db.prepare(
+  const stores = await db.prepare(
     `SELECT id, slug, name, giro, color_hex, logo, whatsapp, wa_message FROM businesses
      WHERE id != ? AND active = 1 AND ads_enabled = 1 AND giro != ''
        AND suspended = 0 AND (plan_ends_at = '' OR plan_ends_at >= date('now'))`
@@ -910,7 +911,7 @@ function pickSponsored(biz, limit) {
   const resultado = [];
   const usadas = new Set();
   for (const { s } of puntuados) {
-    const prod = db.prepare(
+    const prod = await db.prepare(
       `SELECT id, name, price, old_price, image FROM products
        WHERE business_id = ? AND active = 1 ORDER BY RANDOM() LIMIT 1`
     ).get(s.id);
@@ -923,8 +924,8 @@ function pickSponsored(biz, limit) {
   return resultado;
 }
 
-function getBusiness(slug) {
-  return db.prepare('SELECT * FROM businesses WHERE slug = ?').get(slug);
+async function getBusiness(slug) {
+  return await db.prepare('SELECT * FROM businesses WHERE slug = ?').get(slug);
 }
 
 // Si la promo tiene fecha de vencimiento y ya pasó, la promo deja de mostrarse.
@@ -949,20 +950,20 @@ function withPromo(p) {
   return p;
 }
 
-function getCatalog(businessId) {
-  const categories = db.prepare(
+async function getCatalog(businessId) {
+  const categories = await db.prepare(
     'SELECT * FROM categories WHERE business_id = ? ORDER BY sort ASC'
   ).all(businessId);
   const catCounts = {};
-  db.prepare('SELECT category_id, COUNT(*) AS c FROM products WHERE business_id = ? AND active = 1 GROUP BY category_id').all(businessId).forEach(r => { catCounts[r.category_id] = r.c; });
+  (await db.prepare('SELECT category_id, COUNT(*) AS c FROM products WHERE business_id = ? AND active = 1 GROUP BY category_id').all(businessId)).forEach(r => { catCounts[r.category_id] = r.c; });
   categories.forEach(c => { c.count = catCounts[c.id] || 0; });
-  const products = db.prepare(
+  const products = (await db.prepare(
     `SELECT p.*, c.name AS category_name FROM products p
      LEFT JOIN categories c ON c.id = p.category_id
      WHERE p.business_id = ? AND p.active = 1
      ORDER BY p.featured DESC, p.sort ASC, p.created_at DESC`
-  ).all(businessId).map(withPromo).map(p => { p.imgs = productImgs(p); p.shortDesc = (p.description || '').replace(/\s+/g, ' ').trim().slice(0, 110); return p; });
-  const pages = db.prepare(
+  ).all(businessId)).map(withPromo).map(p => { p.imgs = productImgs(p); p.shortDesc = (p.description || '').replace(/\s+/g, ' ').trim().slice(0, 110); return p; });
+  const pages = await db.prepare(
     'SELECT id, slug, title, icon, sort FROM pages WHERE business_id = ? AND active = 1 ORDER BY sort ASC, id ASC'
   ).all(businessId);
   return { categories, products, pages };
@@ -993,37 +994,37 @@ function waLink(biz, text) {
 
 // Arma el mensaje del pedido. Si la tienda configuró uno personalizado, usa sus
 // comodines {tienda}, {productos} y {total}; si no, el mensaje por defecto.
-function track(businessId, type, detail) {
-  db.prepare('INSERT INTO tracking (business_id, type, detail) VALUES (?, ?, ?)').run(businessId, type, detail || '');
+async function track(businessId, type, detail) {
+  await db.prepare('INSERT INTO tracking (business_id, type, detail) VALUES (?, ?, ?)').run(businessId, type, detail || '');
 }
 
-function getStats(businessId) {
-  const today = db.prepare("SELECT COUNT(*) AS c FROM tracking WHERE business_id = ? AND type = 'visit' AND date(created_at) = date('now')").get(businessId).c;
-  const week = db.prepare("SELECT COUNT(*) AS c FROM tracking WHERE business_id = ? AND type = 'visit' AND created_at >= datetime('now', '-7 days')").get(businessId).c;
-  const prevWeek = db.prepare("SELECT COUNT(*) AS c FROM tracking WHERE business_id = ? AND type = 'visit' AND created_at >= datetime('now', '-14 days') AND created_at < datetime('now', '-7 days')").get(businessId).c;
-  const total = db.prepare("SELECT COUNT(*) AS c FROM tracking WHERE business_id = ? AND type = 'visit'").get(businessId).c;
-  const waClicks = db.prepare("SELECT COUNT(*) AS c FROM tracking WHERE business_id = ? AND type = 'wa'").get(businessId).c;
-  const orders = db.prepare("SELECT COUNT(*) AS c FROM orders WHERE business_id = ?").get(businessId).c;
-  const paid = db.prepare("SELECT COUNT(*) AS c FROM orders WHERE business_id = ? AND paid = 1").get(businessId).c;
-  const revenue = db.prepare("SELECT COALESCE(SUM(total), 0) AS s FROM orders WHERE business_id = ?").get(businessId).s;
-  const revenueWeek = db.prepare("SELECT COALESCE(SUM(total), 0) AS s FROM orders WHERE business_id = ? AND created_at >= datetime('now', '-7 days')").get(businessId).s;
-  const prevRevenue = db.prepare("SELECT COALESCE(SUM(total), 0) AS s FROM orders WHERE business_id = ? AND created_at >= datetime('now', '-14 days') AND created_at < datetime('now', '-7 days')").get(businessId).s;
-  const topProducts = db.prepare(
+async function getStats(businessId) {
+  const today = (await db.prepare("SELECT COUNT(*) AS c FROM tracking WHERE business_id = ? AND type = 'visit' AND date(created_at) = date('now')").get(businessId)).c;
+  const week = (await db.prepare("SELECT COUNT(*) AS c FROM tracking WHERE business_id = ? AND type = 'visit' AND created_at >= datetime('now', '-7 days')").get(businessId)).c;
+  const prevWeek = (await db.prepare("SELECT COUNT(*) AS c FROM tracking WHERE business_id = ? AND type = 'visit' AND created_at >= datetime('now', '-14 days') AND created_at < datetime('now', '-7 days')").get(businessId)).c;
+  const total = (await db.prepare("SELECT COUNT(*) AS c FROM tracking WHERE business_id = ? AND type = 'visit'").get(businessId)).c;
+  const waClicks = (await db.prepare("SELECT COUNT(*) AS c FROM tracking WHERE business_id = ? AND type = 'wa'").get(businessId)).c;
+  const orders = (await db.prepare("SELECT COUNT(*) AS c FROM orders WHERE business_id = ?").get(businessId)).c;
+  const paid = (await db.prepare("SELECT COUNT(*) AS c FROM orders WHERE business_id = ? AND paid = 1").get(businessId)).c;
+  const revenue = (await db.prepare("SELECT COALESCE(SUM(total), 0) AS s FROM orders WHERE business_id = ?").get(businessId)).s;
+  const revenueWeek = (await db.prepare("SELECT COALESCE(SUM(total), 0) AS s FROM orders WHERE business_id = ? AND created_at >= datetime('now', '-7 days')").get(businessId)).s;
+  const prevRevenue = (await db.prepare("SELECT COALESCE(SUM(total), 0) AS s FROM orders WHERE business_id = ? AND created_at >= datetime('now', '-14 days') AND created_at < datetime('now', '-7 days')").get(businessId)).s;
+  const topProducts = await db.prepare(
     `SELECT detail AS name, COUNT(*) AS c FROM tracking
      WHERE business_id = ? AND type = 'view'
      GROUP BY detail ORDER BY c DESC LIMIT 5`
   ).all(businessId);
-  const topWaProducts = db.prepare(
+  const topWaProducts = await db.prepare(
     `SELECT detail AS name, COUNT(*) AS c FROM tracking
      WHERE business_id = ? AND type = 'wa_product'
      GROUP BY detail ORDER BY c DESC LIMIT 5`
   ).all(businessId);
-  const daily = db.prepare(
+  const daily = await db.prepare(
     `SELECT date(created_at) AS d, COUNT(*) AS c FROM tracking
      WHERE business_id = ? AND type = 'visit' AND created_at >= datetime('now', '-7 days')
      GROUP BY date(created_at) ORDER BY d`
   ).all(businessId);
-  const ordersDaily = db.prepare(
+  const ordersDaily = await db.prepare(
     `SELECT date(created_at) AS d, COUNT(*) AS c, SUM(total) AS s FROM orders
      WHERE business_id = ? AND created_at >= datetime('now', '-7 days')
      GROUP BY date(created_at) ORDER BY d`
@@ -1035,7 +1036,7 @@ function getStats(businessId) {
   const avgOrder = orders > 0 ? (revenue / orders) : 0;
   // Productos más vendidos (contando apariciones en los pedidos)
   const topSellers = {};
-  db.prepare('SELECT items FROM orders WHERE business_id = ?').all(businessId).forEach(o => {
+  (await db.prepare('SELECT items FROM orders WHERE business_id = ?').all(businessId)).forEach(o => {
     String(o.items || '').split(/[\n|]/).forEach(line => {
       const m = line.match(/x\s+(.+?)\s*=\s*[^]*?$/);
       if (m) { const nm = m[1].trim(); if (nm) topSellers[nm] = (topSellers[nm] || 0) + 1; }
@@ -1050,8 +1051,8 @@ function getStats(businessId) {
 }
 
 // ================= LANDING =================
-app.get('/', (req, res) => {
-  const stores = db.prepare('SELECT * FROM businesses WHERE active = 1 ORDER BY created_at DESC LIMIT 12').all();
+app.get('/', async (req, res) => {
+  const stores = await db.prepare('SELECT * FROM businesses WHERE active = 1 ORDER BY created_at DESC LIMIT 12').all();
   res.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
   res.render('landing', { stores, TEMPLATES, COLORS });
 });
@@ -1061,13 +1062,13 @@ app.get('/registrar', (req, res) => {
   res.render('register', { TEMPLATES, COLORS, GIROS, ESTILOS, error: null, ok: null });
 });
 
-app.post('/registrar', rateLimit(10), (req, res) => {
+app.post('/registrar', rateLimit(10), async (req, res) => {
   const { name, slug, whatsapp, description, pin, template, color, giro, giro_custom, estilo } = req.body;
   const cleanSlug = (slug || '').trim().toLowerCase().replace(/[^a-z0-9-]/g, '-');
   if (!name || !cleanSlug || !whatsapp) {
     return res.render('register', { TEMPLATES, COLORS, GIROS, ESTILOS, error: 'Nombre, enlace y WhatsApp son obligatorios.', ok: null });
   }
-  if (getBusiness(cleanSlug)) {
+  if (await getBusiness(cleanSlug)) {
     return res.render('register', { TEMPLATES, COLORS, GIROS, ESTILOS, error: 'Ese enlace ya existe. Elige otro.', ok: null });
   }
   const cleanPin = (pin || '').trim();
@@ -1079,7 +1080,7 @@ app.post('/registrar', rateLimit(10), (req, res) => {
   const giroOk = giro === 'otro' && giro_custom ? giro_custom.trim().toLowerCase() : (GIROS.includes(giro) ? giro : '');
   const tpl = 'constructor';
   const estSel = ESTILOS.some(e => e.id === estilo) ? estilo : (GIRO_STYLE[giroOk] || 'moderno');
-  const r = db.prepare(
+  const r = await db.prepare(
     `INSERT INTO businesses (slug, name, whatsapp, description, pin, template, color, color_hex, color_hex2, giro, estilo, color_mode)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'estilo')`
   ).run(
@@ -1099,29 +1100,29 @@ app.post('/registrar', rateLimit(10), (req, res) => {
 });
 
 // ================= PANEL MAESTRO =================
-app.get('/maestro', (req, res) => {
-  const s = findSession(req.cookies && req.cookies.sid);
+app.get('/maestro', async (req, res) => {
+  const s = await findSession(req.cookies && req.cookies.sid);
   if (s && s.kind === 'maestro') return res.redirect('/maestro/panel');
   res.render('maestro', { error: null, list: null });
 });
 
-app.post('/maestro', (req, res) => {
+app.post('/maestro', async (req, res) => {
   if (req.body.master === MASTER_KEY || verifyPin(req.body.master, MASTER_KEY)) {
-    const token = createSession(null, 'maestro');
+    const token = await createSession(null, 'maestro');
     res.cookie('sid', token, sessionCookie(24 * 60 * 60 * 1000));
     return res.redirect('/maestro/panel');
   }
   res.render('maestro', { error: 'Código maestro incorrecto.', list: null });
 });
 
-function maestroAuth(req, res, next) {
-  const s = findSession(req.cookies && req.cookies.sid);
+async function maestroAuth(req, res, next) {
+  const s = await findSession(req.cookies && req.cookies.sid);
   if (!(s && s.kind === 'maestro')) return res.redirect('/maestro');
   next();
 }
 
-app.get('/maestro/panel', maestroAuth, (req, res) => {
-  const stores = db.prepare(
+app.get('/maestro/panel', maestroAuth, async (req, res) => {
+  const stores = (await db.prepare(
     `SELECT b.*,
        (SELECT COUNT(*) FROM products p WHERE p.business_id = b.id) AS products_count,
        (SELECT COUNT(*) FROM orders o WHERE o.business_id = b.id) AS orders_count,
@@ -1130,39 +1131,39 @@ app.get('/maestro/panel', maestroAuth, (req, res) => {
      FROM businesses b
      LEFT JOIN plans p2 ON p2.key = b.plan
      ORDER BY b.created_at DESC`
-  ).all().map(s => {
+  ).all()).map(s => {
     const today = new Date().toISOString().slice(0, 10);
     s.expired = s.plan_ends_at && s.plan_ends_at !== '' && s.plan_ends_at < today ? 1 : 0;
     s.plan_name = s.plan_name || s.plan || 'free';
     s.plan_price = s.plan_price === null || s.plan_price === undefined ? 0 : s.plan_price;
     return s;
   });
-  const plans = db.prepare('SELECT * FROM plans ORDER BY active DESC, id ASC').all();
+  const plans = await db.prepare('SELECT * FROM plans ORDER BY active DESC, id ASC').all();
   const planUsage = {};
   stores.forEach(s => { planUsage[s.plan] = (planUsage[s.plan] || 0) + 1; });
-  const customTemplates = db.prepare('SELECT * FROM custom_templates WHERE active=1 ORDER BY category, name').all();
+  const customTemplates = await db.prepare('SELECT * FROM custom_templates WHERE active=1 ORDER BY category, name').all();
   res.render('maestro', { error: null, list: stores, plans, planUsage, GIROS, customTemplates });
 });
 
-app.post('/maestro/:id/toggle', maestroAuth, (req, res) => {
-  db.prepare('UPDATE businesses SET active = CASE WHEN active = 1 THEN 0 ELSE 1 END WHERE id = ?').run(req.params.id);
+app.post('/maestro/:id/toggle', maestroAuth, async (req, res) => {
+  await db.prepare('UPDATE businesses SET active = CASE WHEN active = 1 THEN 0 ELSE 1 END WHERE id = ?').run(req.params.id);
   res.redirect('/maestro/panel?ok=' + encodeURIComponent('Tienda activada/desactivada'));
 });
 
-app.post('/maestro/:id/reset-pin', maestroAuth, (req, res) => {
+app.post('/maestro/:id/reset-pin', maestroAuth, async (req, res) => {
   const newPin = String(req.body.new_pin || '');
   if (!/^\d{6,12}$/.test(newPin)) {
     return res.redirect('/maestro/panel?error=' + encodeURIComponent('Escribe un PIN nuevo de 6 a 12 dígitos'));
   }
-  db.prepare('UPDATE businesses SET pin = ? WHERE id = ?').run(hashPin(String(newPin)), req.params.id);
-  db.prepare('DELETE FROM sessions WHERE biz_id = ?').run(req.params.id);
+  await db.prepare('UPDATE businesses SET pin = ? WHERE id = ?').run(hashPin(String(newPin)), req.params.id);
+  await db.prepare('DELETE FROM sessions WHERE biz_id = ?').run(req.params.id);
   res.redirect('/maestro/panel?ok=' + encodeURIComponent('PIN reseteado. Sesiones cerradas.'));
 });
 
-app.post('/maestro/:id/plan', maestroAuth, (req, res) => {
-  const plan = db.prepare('SELECT key FROM plans WHERE key = ? AND active = 1').get(req.body.plan);
+app.post('/maestro/:id/plan', maestroAuth, async (req, res) => {
+  const plan = await db.prepare('SELECT key FROM plans WHERE key = ? AND active = 1').get(req.body.plan);
   if (plan) {
-    db.prepare('UPDATE businesses SET plan = ? WHERE id = ?').run(plan.key, req.params.id);
+    await db.prepare('UPDATE businesses SET plan = ? WHERE id = ?').run(plan.key, req.params.id);
     res.redirect('/maestro/panel?ok=' + encodeURIComponent('Plan actualizado'));
   } else {
     res.redirect('/maestro/panel');
@@ -1170,36 +1171,36 @@ app.post('/maestro/:id/plan', maestroAuth, (req, res) => {
 });
 
 // Precio y fecha de vencimiento del plan de una tienda
-app.post('/maestro/:id/vencimiento', maestroAuth, (req, res) => {
+app.post('/maestro/:id/vencimiento', maestroAuth, async (req, res) => {
   const price = parseFloat(req.body.plan_price);
   const ends = /^\d{4}-\d{2}-\d{2}$/.test((req.body.plan_ends_at || '').trim()) ? req.body.plan_ends_at.trim() : '';
-  db.prepare('UPDATE businesses SET plan_price = ?, plan_ends_at = ? WHERE id = ?').run(isNaN(price) ? 0 : price, ends, req.params.id);
+  await db.prepare('UPDATE businesses SET plan_price = ?, plan_ends_at = ? WHERE id = ?').run(isNaN(price) ? 0 : price, ends, req.params.id);
   res.redirect('/maestro/panel?ok=' + encodeURIComponent('Precio y vencimiento guardados'));
 });
 
-app.post('/maestro/:id/suspender', maestroAuth, (req, res) => {
-  db.prepare('UPDATE businesses SET suspended = 1 WHERE id = ?').run(req.params.id);
+app.post('/maestro/:id/suspender', maestroAuth, async (req, res) => {
+  await db.prepare('UPDATE businesses SET suspended = 1 WHERE id = ?').run(req.params.id);
   res.redirect('/maestro/panel?ok=' + encodeURIComponent('Tienda suspendida'));
 });
 
-app.post('/maestro/:id/reactivar', maestroAuth, (req, res) => {
-  db.prepare('UPDATE businesses SET suspended = 0 WHERE id = ?').run(req.params.id);
+app.post('/maestro/:id/reactivar', maestroAuth, async (req, res) => {
+  await db.prepare('UPDATE businesses SET suspended = 0 WHERE id = ?').run(req.params.id);
   res.redirect('/maestro/panel?ok=' + encodeURIComponent('Tienda reactivada'));
 });
 
 // Anuncio: esta tienda se muestra como publicidad en otros catálogos
-app.post('/maestro/:id/ads', maestroAuth, (req, res) => {
-  db.prepare('UPDATE businesses SET ads_enabled = CASE WHEN ads_enabled = 1 THEN 0 ELSE 1 END WHERE id = ?').run(req.params.id);
+app.post('/maestro/:id/ads', maestroAuth, async (req, res) => {
+  await db.prepare('UPDATE businesses SET ads_enabled = CASE WHEN ads_enabled = 1 THEN 0 ELSE 1 END WHERE id = ?').run(req.params.id);
   res.redirect('/maestro/panel?ok=' + encodeURIComponent('Publicidad actualizada'));
 });
 
 // ================= CREACIÓN DE PLANES (maestro) =================
-app.post('/maestro/plan', maestroAuth, (req, res) => {
+app.post('/maestro/plan', maestroAuth, async (req, res) => {
   const { name, price, days, max_products } = req.body;
   const cleanName = (name || '').trim();
   if (!cleanName) return res.redirect('/maestro/panel');
   const key = 'p' + Date.now();
-  db.prepare(
+  await db.prepare(
     'INSERT INTO plans (key, name, price, days, max_products, ads, design, active) VALUES (?, ?, ?, ?, ?, ?, ?, 1)'
   ).run(
     key,
@@ -1213,74 +1214,88 @@ app.post('/maestro/plan', maestroAuth, (req, res) => {
   res.redirect('/maestro/panel?ok=' + encodeURIComponent('Plan creado'));
 });
 
-app.post('/maestro/plan/:id/eliminar', maestroAuth, (req, res) => {
-  const p = db.prepare('SELECT * FROM plans WHERE id = ?').get(req.params.id);
+app.post('/maestro/plan/:id/eliminar', maestroAuth, async (req, res) => {
+  const p = await db.prepare('SELECT * FROM plans WHERE id = ?').get(req.params.id);
   if (p && p.key !== 'free' && p.key !== 'pro') {
-    const used = db.prepare('SELECT COUNT(*) AS c FROM businesses WHERE plan = ?').get(p.key).c;
+    const used = (await db.prepare('SELECT COUNT(*) AS c FROM businesses WHERE plan = ?').get(p.key)).c;
     if (used === 0) {
-      db.prepare('DELETE FROM plans WHERE id = ?').run(req.params.id);
+      await db.prepare('DELETE FROM plans WHERE id = ?').run(req.params.id);
     }
   }
   res.redirect('/maestro/panel?ok=' + encodeURIComponent('Plan eliminado'));
 });
 
-app.post('/maestro/cerrar', (req, res) => {
-  deleteSession(req.cookies && req.cookies.sid);
+app.post('/maestro/cerrar', async (req, res) => {
+  await deleteSession(req.cookies && req.cookies.sid);
   res.clearCookie('sid', { path: '/' });
   res.redirect('/maestro');
 });
 
 // ================= PLANTILLAS PERSONALIZADAS DEL EQUIPO =================
-app.post('/maestro/plantilla/crear', maestroAuth, (req, res) => {
+app.post('/maestro/plantilla/crear', maestroAuth, async (req, res) => {
   const { name, emoji, description, category, giro } = req.body;
   const cleanName = (name || '').trim().slice(0, 80);
   if (!cleanName) return res.redirect('/maestro/panel?tab=plantillas&err=' + encodeURIComponent('Nombre requerido'));
-  db.prepare('INSERT INTO custom_templates (name, emoji, description, category, giro) VALUES (?,?,?,?,?)').run(
-    cleanName, (emoji || '📄').slice(0, 4), (description || '').trim().slice(0, 200), (category || '').trim(), (giro || '').trim()
+  await db.prepare('INSERT INTO custom_templates (name, emoji, description, category, giro) VALUES (?,?,?,?,?)').run(
+    cleanName,
+    (emoji || '📄').slice(0, 4),
+    (description || '').trim().slice(0, 200),
+    (category || '').trim(),
+    (giro || '').trim()
   );
   res.redirect('/maestro/panel?tab=plantillas&ok=' + encodeURIComponent('Plantilla creada'));
 });
 
-app.post('/maestro/plantilla/:tid/editar', maestroAuth, (req, res) => {
+app.post('/maestro/plantilla/:tid/editar', maestroAuth, async (req, res) => {
   const { name, emoji, description, category, giro } = req.body;
   const cleanName = (name || '').trim().slice(0, 80);
   if (!cleanName) return res.redirect('/maestro/panel?tab=plantillas&err=' + encodeURIComponent('Nombre requerido'));
-  db.prepare('UPDATE custom_templates SET name=?, emoji=?, description=?, category=?, giro=? WHERE id=?').run(
-    cleanName, (emoji || '📄').slice(0, 4), (description || '').trim().slice(0, 200), (category || '').trim(), (giro || '').trim(), req.params.tid
+  await db.prepare('UPDATE custom_templates SET name=?, emoji=?, description=?, category=?, giro=? WHERE id=?').run(
+    cleanName,
+    (emoji || '📄').slice(0, 4),
+    (description || '').trim().slice(0, 200),
+    (category || '').trim(),
+    (giro || '').trim(),
+    req.params.tid
   );
   res.redirect('/maestro/panel?tab=plantillas&ok=' + encodeURIComponent('Plantilla actualizada'));
 });
 
-app.post('/maestro/plantilla/:tid/eliminar', maestroAuth, (req, res) => {
-  db.prepare('DELETE FROM custom_templates WHERE id=?').run(req.params.tid);
+app.post('/maestro/plantilla/:tid/eliminar', maestroAuth, async (req, res) => {
+  await db.prepare('DELETE FROM custom_templates WHERE id=?').run(req.params.tid);
   res.redirect('/maestro/panel?tab=plantillas&ok=' + encodeURIComponent('Plantilla eliminada'));
 });
 
-app.post('/maestro/plantilla/:tid/default', maestroAuth, (req, res) => {
-  const tpl = db.prepare('SELECT id FROM custom_templates WHERE id=? AND active=1').get(req.params.tid);
+app.post('/maestro/plantilla/:tid/default', maestroAuth, async (req, res) => {
+  const tpl = await db.prepare('SELECT id FROM custom_templates WHERE id=? AND active=1').get(req.params.tid);
   if (!tpl) return res.redirect('/maestro/panel?tab=plantillas');
-  db.prepare('UPDATE custom_templates SET is_default = 0').run();
-  db.prepare('UPDATE custom_templates SET is_default = 1 WHERE id = ?').run(req.params.tid);
-  db.prepare("INSERT OR REPLACE INTO site_config (key, value) VALUES ('default_template_id', ?)").run(String(req.params.tid));
+  await db.prepare('UPDATE custom_templates SET is_default = 0').run();
+  await db.prepare('UPDATE custom_templates SET is_default = 1 WHERE id = ?').run(req.params.tid);
+  await db.prepare("INSERT OR REPLACE INTO site_config (key, value) VALUES ('default_template_id', ?)").run(String(req.params.tid));
   res.redirect('/maestro/panel?tab=plantillas&ok=' + encodeURIComponent('Plantilla marcada como predeterminada'));
 });
 
-app.post('/maestro/plantilla/:tid/quitar-default', maestroAuth, (req, res) => {
-  db.prepare('UPDATE custom_templates SET is_default = 0 WHERE id = ?').run(req.params.tid);
-  db.prepare("INSERT OR REPLACE INTO site_config (key, value) VALUES ('default_template_id', '')").run();
+app.post('/maestro/plantilla/:tid/quitar-default', maestroAuth, async (req, res) => {
+  await db.prepare('UPDATE custom_templates SET is_default = 0 WHERE id = ?').run(req.params.tid);
+  await db.prepare("INSERT OR REPLACE INTO site_config (key, value) VALUES ('default_template_id', '')").run();
   res.redirect('/maestro/panel?tab=plantillas&ok=' + encodeURIComponent('Plantilla predeterminada removida'));
 });
 
 // Guardar bloques del constructor como plantilla del equipo (JSON body)
-app.post('/maestro/plantilla/guardar', maestroAuth, (req, res) => {
+app.post('/maestro/plantilla/guardar', maestroAuth, async (req, res) => {
   try {
     const { name, emoji, description, blocks_json, category, giro } = req.body;
     const cleanName = (name || '').trim().slice(0, 80);
     if (!cleanName) return res.json({ ok: false, error: 'Nombre requerido' });
-    const r = db.prepare('INSERT INTO custom_templates (name, emoji, description, category, giro, blocks_json) VALUES (?,?,?,?,?,?)').run(
-      cleanName, (emoji || '📄').slice(0, 4), (description || '').trim().slice(0, 200), (category || '').trim(), (giro || '').trim(), (blocks_json || '[]').slice(0, 500000)
+    const r = await db.prepare('INSERT INTO custom_templates (name, emoji, description, category, giro, blocks_json) VALUES (?,?,?,?,?,?)').run(
+      cleanName,
+      (emoji || '📄').slice(0, 4),
+      (description || '').trim().slice(0, 200),
+      (category || '').trim(),
+      (giro || '').trim(),
+      (blocks_json || '[]').slice(0, 500000)
     );
-    const tpl = db.prepare('SELECT * FROM custom_templates WHERE id=?').get(r.lastInsertRowid);
+    const tpl = await db.prepare('SELECT * FROM custom_templates WHERE id=?').get(r.lastInsertRowid);
     res.json({ ok: true, tpl });
   } catch (e) {
     res.json({ ok: false, error: e.message });
@@ -1288,12 +1303,10 @@ app.post('/maestro/plantilla/guardar', maestroAuth, (req, res) => {
 });
 
 // Actualizar bloques de una plantilla existente (JSON body)
-app.post('/maestro/plantilla/:tid/bloques', maestroAuth, (req, res) => {
+app.post('/maestro/plantilla/:tid/bloques', maestroAuth, async (req, res) => {
   try {
     const { blocks_json } = req.body;
-    db.prepare('UPDATE custom_templates SET blocks_json=? WHERE id=?').run(
-      (blocks_json || '[]').slice(0, 500000), req.params.tid
-    );
+    await db.prepare('UPDATE custom_templates SET blocks_json=? WHERE id=?').run((blocks_json || '[]').slice(0, 500000), req.params.tid);
     res.json({ ok: true });
   } catch (e) {
     res.json({ ok: false, error: e.message });
@@ -1301,8 +1314,8 @@ app.post('/maestro/plantilla/:tid/bloques', maestroAuth, (req, res) => {
 });
 
 // ================= EDITOR DE PLANTILLA DESDE EL MAESTRO =================
-app.get('/maestro/plantilla/:tid/diseno', maestroAuth, (req, res) => {
-  const row = db.prepare('SELECT * FROM custom_templates WHERE id=? AND active=1').get(req.params.tid);
+app.get('/maestro/plantilla/:tid/diseno', maestroAuth, async (req, res) => {
+  const row = await db.prepare('SELECT * FROM custom_templates WHERE id=? AND active=1').get(req.params.tid);
   if (!row) return res.redirect('/maestro/panel?tab=plantillas');
   // Crear un "business virtual" con los datos de la plantilla para alimentar al editor
   const biz = {
@@ -1346,7 +1359,7 @@ app.get('/maestro/plantilla/:tid/diseno', maestroAuth, (req, res) => {
   };
   res.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
   res.render('diseno', {
-    ...configLocals(biz, { esMaestro: true, editingCustomTpl: parseInt(row.id) }),
+    ...(await configLocals(biz, { esMaestro: true, editingCustomTpl: parseInt(row.id) })),
     biz,
     editingCustomTpl: parseInt(row.id),
     money: '$',
@@ -1356,13 +1369,11 @@ app.get('/maestro/plantilla/:tid/diseno', maestroAuth, (req, res) => {
 });
 
 // Guardar bloques de una plantilla del equipo desde el constructor
-app.post('/maestro/plantilla/:tid/diseno', maestroAuth, (req, res) => {
+app.post('/maestro/plantilla/:tid/diseno', maestroAuth, async (req, res) => {
   try {
     const { blocks } = req.body;
     const blocksJson = Array.isArray(blocks) ? JSON.stringify(blocks) : (blocks || '[]');
-    db.prepare('UPDATE custom_templates SET blocks_json=? WHERE id=?').run(
-      blocksJson.slice(0, 500000), req.params.tid
-    );
+    await db.prepare('UPDATE custom_templates SET blocks_json=? WHERE id=?').run(blocksJson.slice(0, 500000), req.params.tid);
     res.json({ ok: true });
   } catch (e) {
     res.json({ ok: false, error: e.message });
@@ -1370,19 +1381,19 @@ app.post('/maestro/plantilla/:tid/diseno', maestroAuth, (req, res) => {
 });
 
 // ================= CATÁLOGO PÚBLICO =================
-app.get('/:slug', (req, res) => {
-  const biz = getBusiness(req.params.slug);
+app.get('/:slug', async (req, res) => {
+  const biz = await getBusiness(req.params.slug);
   if (!biz || !biz.active) return res.status(404).render('404', { message: 'Tienda no encontrada o desactivada' });
   const block = storeBlock(biz);
   if (block.blocked) {
     return res.status(403).render('store-off', { biz, reason: block.reason });
   }
-  const { categories, products, pages } = getCatalog(biz.id);
-  track(biz.id, 'visit', '');
+  const { categories, products, pages } = await getCatalog(biz.id);
+  await track(biz.id, 'visit', '');
 
   let productsFinal = products;
-  if (adsOn(biz) && products.length > 0) {
-    const sponsored = pickSponsored(biz, 6);
+  if ((await adsOn(biz)) && products.length > 0) {
+    const sponsored = await pickSponsored(biz, 6);
     if (sponsored.length) {
       productsFinal = [];
       let idx = 0;
@@ -1408,31 +1419,31 @@ app.get('/:slug', (req, res) => {
   res.locals.money = moneyFor(biz);
   res.locals.currencySymbol = currencyInfo(biz.currency).symbol;
   res.locals.currencyCode = biz.currency;
-  const sponsoredAds = adsOn(biz) ? pickSponsored(biz, 6) : [];
-  app.render('catalog', { biz, categories, products: productsFinal, estilo, theme: getTemplateTheme(biz.template), components: getComponents(biz), pages, seoUrl: BASE_URL ? BASE_URL + '/' + biz.slug : '', money: moneyFor(biz), currencySymbol: currencyInfo(biz.currency).symbol, currencyCode: biz.currency, mascaraCss: MASCARA_CSS, mascaraConfig: { MASCARA_SIZES, SHAPE_DEFS, getShapeClip }, adsEnabled: adsOn(biz), sponsoredAds }, (err, html) => {
+  const sponsoredAds = (await adsOn(biz)) ? await pickSponsored(biz, 6) : [];
+  app.render('catalog', { biz, categories, products: productsFinal, estilo, theme: getTemplateTheme(biz.template), components: getComponents(biz), pages, seoUrl: BASE_URL ? BASE_URL + '/' + biz.slug : '', money: moneyFor(biz), currencySymbol: currencyInfo(biz.currency).symbol, currencyCode: biz.currency, mascaraCss: MASCARA_CSS, mascaraConfig: { MASCARA_SIZES, SHAPE_DEFS, getShapeClip }, adsEnabled: await adsOn(biz), sponsoredAds }, (err, html) => {
     if (err) { console.error('Template render error:', err.stack || err); return res.status(500).send('Error al generar el catálogo: ' + err.message); }
     res.send(finishCatalog(html, biz, pal, estilo));
   });
 });
 
 // Página de un producto individual (para compartir y verlo solo)
-app.get('/:slug/p/:id', (req, res) => {
-  const biz = getBusiness(req.params.slug);
+app.get('/:slug/p/:id', async (req, res) => {
+  const biz = await getBusiness(req.params.slug);
   if (!biz || !biz.active) return res.status(404).render('404', { message: 'Tienda no encontrada o desactivada' });
   const block = storeBlock(biz);
   if (block.blocked) return res.status(403).render('store-off', { biz, reason: block.reason });
-  const p = db.prepare(
+  const p = await db.prepare(
     `SELECT p.*, c.name AS category_name FROM products p LEFT JOIN categories c ON c.id = p.category_id
      WHERE p.id = ? AND p.business_id = ? AND p.active = 1`
   ).get(parseInt(req.params.id) || 0, biz.id);
   if (!p) {
-    const page = db.prepare('SELECT * FROM pages WHERE business_id = ? AND slug = ? AND active = 1').get(biz.id, String(req.params.id));
+    const page = await db.prepare('SELECT * FROM pages WHERE business_id = ? AND slug = ? AND active = 1').get(biz.id, String(req.params.id));
     if (page) {
-      const { categories, products, pages } = getCatalog(biz.id);
+      const { categories, products, pages } = await getCatalog(biz.id);
       const bizOv = { ...biz, blocks: page.blocks || '[]', name: biz.name + ' · ' + page.title };
       const estilo = getEffectiveEstilo(biz);
       const pal = getPalette(biz, estilo);
-      track(biz.id, 'view', 'Página: ' + page.title);
+      await track(biz.id, 'view', 'Página: ' + page.title);
       res.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
       console.log('=== ROUTE HIT: Rendering catalog for:', bizOv.slug);
       console.log('bizOv.blocks:', bizOv.blocks ? 'present' : 'empty');
@@ -1455,12 +1466,12 @@ app.get('/:slug/p/:id', (req, res) => {
   }
   p.imgs = productImgs(p);
   withPromo(p);
-  track(biz.id, 'view', p.name);
+  await track(biz.id, 'view', p.name);
   const estilo = getEffectiveEstilo(biz);
   const pal = getPalette(biz, estilo);
-  const { products } = getCatalog(biz.id);
+  const { products } = await getCatalog(biz.id);
   const related = products.filter(x => x.id !== p.id).slice(0, 8);
-  const ads = adsOn(biz) ? pickSponsored(biz, 4) : [];
+  const ads = (await adsOn(biz)) ? await pickSponsored(biz, 4) : [];
   res.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
   app.render('producto', { biz, product: p, categories: [{ id: p.category_id || 0, name: p.category_name || 'General' }], related, ads, estilo, money: moneyFor(biz), currencySymbol: currencyInfo(biz.currency).symbol, currencyCode: biz.currency }, (err, html) => {
     if (err) return res.status(500).send('Error al generar el producto.');
@@ -1469,8 +1480,8 @@ app.get('/:slug/p/:id', (req, res) => {
 });
 
 // Manifest PWA por tienda (permite instalar el catálogo como app nativa)
-app.get('/:slug/manifest.webmanifest', (req, res) => {
-  const biz = getBusiness(req.params.slug);
+app.get('/:slug/manifest.webmanifest', async (req, res) => {
+  const biz = await getBusiness(req.params.slug);
   if (!biz || !biz.active) return res.status(404).end();
   const pal = getPalette(biz, getEffectiveEstilo(biz));
   const name = biz.name || 'Catálogo';
@@ -1514,7 +1525,7 @@ const PREVIEW_PRODS = [
 ];
 
 // Renderiza la vista previa del catálogo con las opciones elegidas (usada por el dueño y el maestro)
-function previewCatalog(biz, q, res) {
+async function previewCatalog(biz, q, res) {
   if (!biz) return res.status(404).send('Tienda no encontrada');
   const bizOv = {
     ...biz,
@@ -1553,7 +1564,7 @@ function previewCatalog(biz, q, res) {
     fontLink: (FONTS.find(f => f.css === font) || {}).link || base.fontLink
   };
   const pal = getPalette(bizOv, estilo);
-  const { categories, products, pages } = getCatalog(biz.id);
+  const { categories, products, pages } = await getCatalog(biz.id);
   const useDemo = q.demo === '1';
   let cats = categories, prods = products;
   if (useDemo) {
@@ -1573,18 +1584,22 @@ function previewCatalog(biz, q, res) {
   });
 }
 
-app.get('/:slug/admin/preview', requireAuth, (req, res) => {
-  previewCatalog(getBusiness(req.params.slug), req.query, res);
+app.get('/:slug/admin/preview', requireAuth, async (req, res) => {
+  await previewCatalog(await getBusiness(req.params.slug), req.query, res);
 });
 
 // Vista previa de diseño desde el panel maestro
-app.get('/maestro/:id/preview', maestroAuth, (req, res) => {
-  previewCatalog(db.prepare('SELECT * FROM businesses WHERE id = ?').get(req.params.id), req.query, res);
+app.get('/maestro/:id/preview', maestroAuth, async (req, res) => {
+  await previewCatalog(
+    await db.prepare('SELECT * FROM businesses WHERE id = ?').get(req.params.id),
+    req.query,
+    res
+  );
 });
 
 // ================= PEDIDO POR WHATSAPP =================
-app.get('/:slug/pedir', (req, res) => {
-  const biz = getBusiness(req.params.slug);
+app.get('/:slug/pedir', async (req, res) => {
+  const biz = await getBusiness(req.params.slug);
   if (!biz) return res.status(404).json({ error: 'Tienda no encontrada' });
 
   let items = [];
@@ -1592,17 +1607,17 @@ app.get('/:slug/pedir', (req, res) => {
   const customerName = (req.query.nombre || '').toString().trim();
   const customerPhone = (req.query.telefono || '').toString().trim().replace(/[^0-9]/g, '');
   let total = 0;
-  const lines = items.map((it) => {
-    const p = db.prepare('SELECT * FROM products WHERE id = ? AND business_id = ?').get(it.id, biz.id);
+  const lines = (await Promise.all(items.map(async it => {
+    const p = await db.prepare('SELECT * FROM products WHERE id = ? AND business_id = ?').get(it.id, biz.id);
     if (!p) return null;
     const qty = Math.max(1, parseInt(it.qty) || 1);
     const sub = p.price * qty;
     total += sub;
-    track(biz.id, 'view', p.name);
-    track(biz.id, 'wa_product', p.name);
+    await track(biz.id, 'view', p.name);
+    await track(biz.id, 'wa_product', p.name);
     const variant = it.variant ? ` (${it.variant})` : '';
     return `- ${qty} x ${p.name}${variant} = ${currencyInfo(biz.currency).symbol}${sub.toFixed(2)}`;
-  }).filter(Boolean);
+  }))).filter(Boolean);
 
   if (lines.length === 0) return res.redirect('/' + req.params.slug);
 
@@ -1611,52 +1626,52 @@ app.get('/:slug/pedir', (req, res) => {
   if (customerPhone) message += `\nMi teléfono: ${customerPhone}`;
 
   const customerData = customerName ? (customerName + (customerPhone ? ' (' + customerPhone + ')' : '')) : (customerPhone || '');
-  db.prepare(
+  await db.prepare(
     `INSERT INTO orders (business_id, items, total, customer_name, customer_phone, status) VALUES (?, ?, ?, ?, ?, 'nuevo')`
   ).run(biz.id, lines.join(' | '), total, customerData, customerPhone);
-  upsertCustomer(biz.id, customerName, customerPhone);
-  track(biz.id, 'wa', 'pedido');
+  await upsertCustomer(biz.id, customerName, customerPhone);
+  await track(biz.id, 'wa', 'pedido');
 
   res.redirect(waLink(biz, message));
 });
 
 // Pedido multi-tienda (chatbox): registra un pedido por tienda y devuelve sus wa.me
-app.post('/api/pedir', (req, res) => {
+app.post('/api/pedir', async (req, res) => {
   const items = Array.isArray(req.body && req.body.items) ? req.body.items : [];
   const nombre = String((req.body && req.body.nombre) || '').trim();
   const telefono = String((req.body && req.body.telefono) || '').replace(/[^0-9]/g, '');
   const byStore = {};
   for (const it of items) {
     const slug = String((it && it.store) || '').trim();
-    const p = db.prepare('SELECT * FROM products WHERE id = ? AND active = 1').get(parseInt(it && it.id) || 0);
+    const p = await db.prepare('SELECT * FROM products WHERE id = ? AND active = 1').get(parseInt(it && it.id) || 0);
     if (!p || !slug) continue;
-    const b = db.prepare('SELECT * FROM businesses WHERE slug = ? AND active = 1').get(slug);
+    const b = await db.prepare('SELECT * FROM businesses WHERE slug = ? AND active = 1').get(slug);
     if (!b || b.id !== p.business_id) continue;
     const qty = Math.max(1, parseInt(it.qty) || 1);
     (byStore[slug] = byStore[slug] || []).push({ p, qty, variant: String(it.variant || '') });
   }
-  const orders = Object.keys(byStore).map((slug) => {
+  const orders = await Promise.all(Object.keys(byStore).map(async slug => {
     const list = byStore[slug];
-    const b = getBusiness(slug);
+    const b = await getBusiness(slug);
     let total = 0;
-    const lines = list.map((x) => {
+    const lines = await Promise.all(list.map(async x => {
       const sub = x.p.price * x.qty;
       total += sub;
-      track(b.id, 'view', x.p.name);
-      track(b.id, 'wa_product', x.p.name);
+      await track(b.id, 'view', x.p.name);
+      await track(b.id, 'wa_product', x.p.name);
       return `- ${x.qty} x ${x.p.name}${x.variant ? ` (${x.variant})` : ''} = $${sub.toFixed(2)}`;
-    });
+    }));
     if (lines.length) {
       const customerData = nombre ? (nombre + (telefono ? ' (' + telefono + ')' : '')) : (telefono || '');
-      db.prepare(
+      await db.prepare(
         `INSERT INTO orders (business_id, items, total, customer_name, customer_phone, status) VALUES (?, ?, ?, ?, ?, 'nuevo')`
       ).run(b.id, lines.join(' | '), total, customerData, telefono);
-      upsertCustomer(b.id, nombre, telefono);
-      track(b.id, 'wa', 'pedido');
+      await upsertCustomer(b.id, nombre, telefono);
+      await track(b.id, 'wa', 'pedido');
     }
     const message = buildOrderMessage(b.name, lines, total, b.wa_message, currencyInfo(b.currency).symbol);
     return { slug, name: b.name, whatsapp: b.whatsapp, url: waLink(b, message) };
-  });
+  }));
   res.json({ orders });
 });
 
@@ -1678,23 +1693,23 @@ function verifyPin(pin, stored) {
   } catch (e) { return false; }
 }
 // Sesión con token aleatorio (se guarda en la tabla sessions)
-function createSession(bizId, kind, empId) {
+async function createSession(bizId, kind, empId) {
   const token = crypto.randomBytes(32).toString('hex');
   const expiresAt = new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString();
-  db.prepare('INSERT INTO sessions (token, biz_id, kind, emp_id, expires_at) VALUES (?, ?, ?, ?, ?)').run(token, bizId || null, kind || 'owner', empId || null, expiresAt);
+  await db.prepare('INSERT INTO sessions (token, biz_id, kind, emp_id, expires_at) VALUES (?, ?, ?, ?, ?)').run(token, bizId || null, kind || 'owner', empId || null, expiresAt);
   return token;
 }
-function findSession(token) {
+async function findSession(token) {
   if (!token) return null;
-  const sess = db.prepare('SELECT * FROM sessions WHERE token = ?').get(token);
+  const sess = await db.prepare('SELECT * FROM sessions WHERE token = ?').get(token);
   if (sess && sess.expires_at && new Date(sess.expires_at) < new Date()) {
-    db.prepare('DELETE FROM sessions WHERE token = ?').run(token);
+    await db.prepare('DELETE FROM sessions WHERE token = ?').run(token);
     return null;
   }
   return sess;
 }
-function deleteSession(token) {
-  if (token) db.prepare('DELETE FROM sessions WHERE token = ?').run(token);
+async function deleteSession(token) {
+  if (token) await db.prepare('DELETE FROM sessions WHERE token = ?').run(token);
 }
 
 // Permisos disponibles para empleados (granulares por módulo y acción)
@@ -1710,9 +1725,9 @@ const EMPLOYEE_PERMS = [
   { key: 'config', module: 'Configuración', label: 'Editar configuración' }
 ];
 const ALL_PERMS = EMPLOYEE_PERMS.map(p => p.key).concat(['empleados']);
-function permsOf(sess) {
+async function permsOf(sess) {
   if (sess.kind === 'owner') return ALL_PERMS.slice();
-  const emp = sess.emp_id ? db.prepare('SELECT * FROM users WHERE id = ?').get(sess.emp_id) : null;
+  const emp = sess.emp_id ? await db.prepare('SELECT * FROM users WHERE id = ?').get(sess.emp_id) : null;
   if (!emp) return [];
   // Role-based permissions for users table
   if (emp.role) {
@@ -1724,30 +1739,30 @@ function permsOf(sess) {
   try { return JSON.parse(emp.perms || '[]'); } catch (e) { return []; }
 }
 
-function requireAuth(req, res, next) {
-  const biz = getBusiness(req.params.slug);
+async function requireAuth(req, res, next) {
+  const biz = await getBusiness(req.params.slug);
   if (!biz) return res.status(404).render('404', { message: 'Tienda no encontrada' });
   const block = storeBlock(biz);
   if (block.blocked) {
     return res.status(403).render('store-off', { biz, reason: block.reason });
   }
-  const sess = findSession(req.cookies && req.cookies.sid);
+  const sess = await findSession(req.cookies && req.cookies.sid);
   if (sess && sess.biz_id === biz.id && (sess.kind === 'owner' || sess.kind === 'employee')) {
     req.biz = biz;
     req.role = sess.kind;
-    req.perms = permsOf(sess);
+    req.perms = await permsOf(sess);
     if (sess.kind === 'employee') {
-      req.emp = db.prepare('SELECT * FROM users WHERE id = ? AND business_id = ?').get(sess.emp_id, biz.id);
+      req.emp = await db.prepare('SELECT * FROM users WHERE id = ? AND business_id = ?').get(sess.emp_id, biz.id);
       if (!req.emp) return res.redirect('/' + req.params.slug + '/admin');
     }
     res.locals.money = moneyFor(biz);
     res.locals.currencySymbol = currencyInfo(biz.currency).symbol;
     res.locals.currencyCode = biz.currency;
-    res.locals.canDesign = designAllowed(biz);
+    res.locals.canDesign = await designAllowed(biz);
     res.locals.isEmployee = req.role === 'employee';
     res.locals.empName = req.emp ? req.emp.name : '';
     res.locals.perms = req.perms;
-    res.locals.lowStockCount = db.prepare("SELECT COUNT(*) AS c FROM products WHERE business_id = ? AND active = 1 AND (stock IS NULL OR stock <= 5)").get(biz.id).c;
+    res.locals.lowStockCount = (await db.prepare("SELECT COUNT(*) AS c FROM products WHERE business_id = ? AND active = 1 AND (stock IS NULL OR stock <= 5)").get(biz.id)).c;
     return next();
   }
   res.redirect('/' + req.params.slug + '/admin');
@@ -1761,15 +1776,15 @@ function can(perm) {
   };
 }
 
-app.get('/:slug/admin', (req, res) => {
-  const biz = getBusiness(req.params.slug);
+app.get('/:slug/admin', async (req, res) => {
+  const biz = await getBusiness(req.params.slug);
   if (!biz) return res.status(404).render('404', { message: 'Tienda no encontrada' });
   const pal = getPalette(biz, getEffectiveEstilo(biz));
   res.render('login', { biz, error: null, ok: req.query.salir ? 'Sesión cerrada correctamente.' : null, pal });
 });
 
-app.post('/:slug/admin', loginRateLimit, (req, res) => {
-  const biz = getBusiness(req.params.slug);
+app.post('/:slug/admin', loginRateLimit, async (req, res) => {
+  const biz = await getBusiness(req.params.slug);
   if (!biz) return res.status(404).render('404', { message: 'Tienda no encontrada' });
   const pal = getPalette(biz, getEffectiveEstilo(biz));
   const pin = String(req.body.pin || '');
@@ -1778,60 +1793,60 @@ app.post('/:slug/admin', loginRateLimit, (req, res) => {
   if (biz.pin_hash && verifyPin(pin, biz.pin_hash)) {
     ok = true;
     // Migrate: move hash to pin column for consistency
-    db.prepare('UPDATE businesses SET pin = ? WHERE id = ?').run(biz.pin_hash, biz.id);
+    await db.prepare('UPDATE businesses SET pin = ? WHERE id = ?').run(biz.pin_hash, biz.id);
   } else if (biz.pin) {
     ok = verifyPin(pin, biz.pin);
   }
   if (ok) {
-    const token = createSession(biz.id, 'owner');
+    const token = await createSession(biz.id, 'owner');
     res.cookie('sid', token, sessionCookie(1000 * 60 * 60 * 12));
     return res.redirect('/' + req.params.slug + '/admin/panel');
   }
   // 2) Empleado
-  const emps = db.prepare("SELECT * FROM users WHERE business_id = ? AND active = 1").all(biz.id);
+  const emps = await db.prepare("SELECT * FROM users WHERE business_id = ? AND active = 1").all(biz.id);
   const emp = emps.find(e => verifyPin(pin, e.pin));
   if (emp) {
-    const token = createSession(biz.id, 'employee', emp.id);
+    const token = await createSession(biz.id, 'employee', emp.id);
     res.cookie('sid', token, sessionCookie(1000 * 60 * 60 * 12));
     return res.redirect('/' + req.params.slug + '/admin/panel');
   }
   res.render('login', { biz, error: 'PIN incorrecto. Intenta de nuevo.', ok: null, pal });
 });
 
-app.get('/:slug/admin/salir', (req, res) => {
-  deleteSession(req.cookies && req.cookies.sid);
+app.get('/:slug/admin/salir', async (req, res) => {
+  await deleteSession(req.cookies && req.cookies.sid);
   res.clearCookie('sid', { path: '/' });
   res.redirect('/' + req.params.slug + '/admin?salir=1');
 });
 
 // ================= PANEL =================
-function panelData(biz) {
-  const categories = db.prepare('SELECT * FROM categories WHERE business_id = ? ORDER BY sort ASC').all(biz.id);
-  const allProducts = db.prepare(
+async function panelData(biz) {
+  const categories = await db.prepare('SELECT * FROM categories WHERE business_id = ? ORDER BY sort ASC').all(biz.id);
+  const allProducts = (await db.prepare(
     `SELECT p.*, c.name AS category_name FROM products p
      LEFT JOIN categories c ON c.id = p.category_id
      WHERE p.business_id = ? ORDER BY p.active DESC, p.sort ASC, p.id DESC`
-  ).all(biz.id).map(p => {
+  ).all(biz.id)).map(p => {
     p.stock = p.stock === null || p.stock === undefined ? null : p.stock;
     p.variants = parseVariantList(p.variants);
     p.variantCount = variantCount(p.variants);
     return withPromo(p);
   });
-  const orders = db.prepare(
+  const orders = await db.prepare(
     `SELECT * FROM orders WHERE business_id = ? ORDER BY created_at DESC LIMIT 20`
   ).all(biz.id);
   // Cargar historial de abonos para cada pedido
   const payHistStmt = db.prepare('SELECT * FROM payment_history WHERE order_id = ? ORDER BY created_at ASC');
-  orders.forEach(o => { o.payments = payHistStmt.all(o.id); });
+  await Promise.all(orders.map(async o => { o.payments = await payHistStmt.all(o.id); }));
   const pending = orders.filter(o => !o.paid).length;
-  const stats = getStats(biz.id);
-  const planMax = PLAN_MAX(biz);
-  const planInfo = getPlan(biz);
+  const stats = await getStats(biz.id);
+  const planMax = await PLAN_MAX(biz);
+  const planInfo = await getPlan(biz);
   const storeUrl = BASE_URL ? BASE_URL + '/' + biz.slug : '/' + biz.slug;
   const shareUrl = BASE_URL ? BASE_URL + '/' + biz.slug : '';
   const lowStock = allProducts.filter(p => p.stock === null || p.stock <= 5);
-  const priceHistory = db.prepare('SELECT * FROM price_history WHERE business_id = ? ORDER BY id DESC LIMIT 30').all(biz.id);
-  return { categories, allProducts, orders, pending, stats, planMax, planInfo, storeUrl, shareUrl, attributeTemplates: getAttributeTemplates(biz.id), lowStock, priceHistory, canDesign: designAllowed(biz) };
+  const priceHistory = await db.prepare('SELECT * FROM price_history WHERE business_id = ? ORDER BY id DESC LIMIT 30').all(biz.id);
+  return { categories, allProducts, orders, pending, stats, planMax, planInfo, storeUrl, shareUrl, attributeTemplates: await getAttributeTemplates(biz.id), lowStock, priceHistory, canDesign: await designAllowed(biz) };
 }
 
 async function qrFor(biz) {
@@ -1845,14 +1860,14 @@ async function qrFor(biz) {
 
 app.get('/:slug/admin/panel', requireAuth, can('reportes'), async (req, res) => {
   const biz = req.biz;
-  const data = panelData(biz);
+  const data = await panelData(biz);
   data.qrUrl = await qrFor(biz);
   res.render('panel', { biz, ...data, error: null });
 });
 
-app.get('/:slug/admin/productos', requireAuth, can('productos.ver'), (req, res) => {
+app.get('/:slug/admin/productos', requireAuth, can('productos.ver'), async (req, res) => {
   const biz = req.biz;
-  const data = panelData(biz);
+  const data = await panelData(biz);
   res.render('productos', { biz, ...data, error: null });
 });
 
@@ -1879,12 +1894,20 @@ function parsePromo(body) {
 }
 
 // Registra el historial de precios/promos solo si cambió algo relevante.
-function logPriceHistory(bizId, p) {
-  const last = db.prepare('SELECT * FROM price_history WHERE business_id = ? AND product_id = ? ORDER BY id DESC LIMIT 1').get(bizId, p.id);
+async function logPriceHistory(bizId, p) {
+  const last = await db.prepare('SELECT * FROM price_history WHERE business_id = ? AND product_id = ? ORDER BY id DESC LIMIT 1').get(bizId, p.id);
   const same = last && last.price === (p.price || 0) && (last.old_price || null) === (p.old_price || null) && (last.promo_type || '') === (p.promo_type || '') && (last.promo_gift || '') === (p.promo_gift || '');
   if (same) return;
-  db.prepare('INSERT INTO price_history (business_id, product_id, name, price, old_price, promo_type, promo_gift) VALUES (?, ?, ?, ?, ?, ?, ?)')
-    .run(bizId, p.id, p.name, p.price || 0, p.old_price || null, p.promo_type || '', p.promo_gift || '');
+  await db.prepare('INSERT INTO price_history (business_id, product_id, name, price, old_price, promo_type, promo_gift) VALUES (?, ?, ?, ?, ?, ?, ?)')
+    .run(
+    bizId,
+    p.id,
+    p.name,
+    p.price || 0,
+    p.old_price || null,
+    p.promo_type || '',
+    p.promo_gift || ''
+  );
 }
 
 // Normaliza el modelo de variantes a { attrs: [{name, values[]}], images: {comboKey: url} }
@@ -2000,23 +2023,23 @@ function parseAttrValues(v) {
   return s.split(',').map(x => x.trim()).filter(Boolean);
 }
 
-function getAttributeTemplates(bizId) {
-  return db.prepare('SELECT * FROM attribute_templates WHERE business_id = ? ORDER BY name COLLATE NOCASE ASC').all(bizId)
+async function getAttributeTemplates(bizId) {
+  return (await db.prepare('SELECT * FROM attribute_templates WHERE business_id = ? ORDER BY name COLLATE NOCASE ASC').all(bizId))
     .map(t => ({ id: t.id, name: t.name, values: parseAttrValues(t.vals) }));
 }
 
-function upsertAttributeTemplate(bizId, name, values) {
+async function upsertAttributeTemplate(bizId, name, values) {
   const nm = String(name || '').trim();
   if (!nm) return { ok: false, error: 'El nombre del atributo es obligatorio.' };
   const vals = parseAttrValues(values);
   if (!vals.length) return { ok: false, error: 'Agrega al menos un valor (ej: Chica, Mediana, Grande).' };
-  const existing = db.prepare('SELECT * FROM attribute_templates WHERE business_id = ? AND name = ? COLLATE NOCASE').get(bizId, nm);
+  const existing = await db.prepare('SELECT * FROM attribute_templates WHERE business_id = ? AND name = ? COLLATE NOCASE').get(bizId, nm);
   const json = JSON.stringify(vals);
   if (existing) {
-    db.prepare('UPDATE attribute_templates SET vals = ? WHERE id = ?').run(json, existing.id);
+    await db.prepare('UPDATE attribute_templates SET vals = ? WHERE id = ?').run(json, existing.id);
     return { ok: true, id: existing.id, name: nm, values: vals, updated: true };
   }
-  const r = db.prepare('INSERT INTO attribute_templates (business_id, name, vals) VALUES (?, ?, ?)').run(bizId, nm, json);
+  const r = await db.prepare('INSERT INTO attribute_templates (business_id, name, vals) VALUES (?, ?, ?)').run(bizId, nm, json);
   return { ok: true, id: r.lastInsertRowid, name: nm, values: vals, updated: false };
 }
 
@@ -2052,188 +2075,243 @@ function productImgs(p) {
   return list.length ? list : [p.image || '/img/sin-imagen.svg'];
 }
 
-function canAddProduct(biz) {
-  const max = PLAN_MAX(biz);
+async function canAddProduct(biz) {
+  const max = await PLAN_MAX(biz);
   if (max === Infinity) return { ok: true };
-  const count = db.prepare('SELECT COUNT(*) AS c FROM products WHERE business_id = ?').get(biz.id).c;
+  const count = (await db.prepare('SELECT COUNT(*) AS c FROM products WHERE business_id = ?').get(biz.id)).c;
   return count < max ? { ok: true } : { ok: false, message: `Tu plan gratuito permite máximo ${max} productos. Usa 'Carga masiva' o actualiza a Pro.` };
 }
 
-app.post('/:slug/admin/producto', requireAuth, can('productos.crear'), (req, res) => {
+app.post('/:slug/admin/producto', requireAuth, can('productos.crear'), async (req, res) => {
   const biz = req.biz;
-  const check = canAddProduct(biz);
+  const check = await canAddProduct(biz);
   if (!check.ok) {
-    return res.render('productos', { biz, ...panelData(biz), error: check.message });
+    return res.render('productos', { biz, ...(await panelData(biz)), error: check.message });
   }
   const { name, category_id, description, image, stock, variants } = req.body;
-  const renderError = (message) => res.status(400).render('productos', { biz, ...panelData(biz), error: message });
+  const renderError = async message => res.status(400).render('productos', { biz, ...(await panelData(biz)), error: message });
   if (!name || !String(name).trim()) {
-    return renderError('El nombre del producto es obligatorio.');
+    return await renderError('El nombre del producto es obligatorio.');
   }
   const { price, old_price } = parsePrices(req.body);
   const promo = parsePromo(req.body);
   if (price < 0) {
-    return renderError('El precio no puede ser negativo.');
+    return await renderError('El precio no puede ser negativo.');
   }
   if (req.body.price === '' || req.body.price === undefined || req.body.price === null || isNaN(parseFloat(req.body.price))) {
-    return renderError('El precio es obligatorio (usa un número, ej: 25.50).');
+    return await renderError('El precio es obligatorio (usa un número, ej: 25.50).');
   }
   try {
-    db.prepare(
+    await db.prepare(
       `INSERT INTO products (business_id, category_id, name, price, old_price, description, image, galeria, stock, variants, promo_ends_at, featured, promo_type, promo_value, promo_gift, sku, tags, video, specs, barcode, payment_plan)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-    ).run(biz.id, category_id || null, String(name).trim(), price, old_price, description || '', image || '', parseGaleria(req.body.galeria), parseStock(stock), parseVariants(variants), parsePromoEnd(req.body.promo_ends_at), req.body.featured ? 1 : 0, promo.promo_type, promo.promo_value, promo.promo_gift, (req.body.sku || '').toString().trim().slice(0, 60), (req.body.tags || '').toString().trim().slice(0, 300), (req.body.video || '').toString().trim().slice(0, 300), (req.body.specs || '').toString().slice(0, 2000), (req.body.barcode || '').toString().trim().slice(0, 60), buildPaymentPlan(req.body));
-    const created = db.prepare('SELECT * FROM products WHERE business_id = ? ORDER BY id DESC LIMIT 1').get(biz.id);
-    if (created) logPriceHistory(biz.id, created);
+    ).run(
+      biz.id,
+      category_id || null,
+      String(name).trim(),
+      price,
+      old_price,
+      description || '',
+      image || '',
+      parseGaleria(req.body.galeria),
+      parseStock(stock),
+      parseVariants(variants),
+      parsePromoEnd(req.body.promo_ends_at),
+      req.body.featured ? 1 : 0,
+      promo.promo_type,
+      promo.promo_value,
+      promo.promo_gift,
+      (req.body.sku || '').toString().trim().slice(0, 60),
+      (req.body.tags || '').toString().trim().slice(0, 300),
+      (req.body.video || '').toString().trim().slice(0, 300),
+      (req.body.specs || '').toString().slice(0, 2000),
+      (req.body.barcode || '').toString().trim().slice(0, 60),
+      buildPaymentPlan(req.body)
+    );
+    const created = await db.prepare('SELECT * FROM products WHERE business_id = ? ORDER BY id DESC LIMIT 1').get(biz.id);
+    if (created) await logPriceHistory(biz.id, created);
   } catch (err) {
-    return renderError('No se pudo guardar el producto: ' + (err.message || 'error desconocido'));
+    return await renderError('No se pudo guardar el producto: ' + (err.message || 'error desconocido'));
   }
   res.redirect('/' + req.params.slug + '/admin/productos');
 });
 
-app.post('/:slug/admin/producto/:id/eliminar', requireAuth, can('productos.eliminar'), (req, res) => {
-  db.prepare('DELETE FROM products WHERE id = ? AND business_id = ?').run(req.params.id, req.biz.id);
+app.post('/:slug/admin/producto/:id/eliminar', requireAuth, can('productos.eliminar'), async (req, res) => {
+  await db.prepare('DELETE FROM products WHERE id = ? AND business_id = ?').run(req.params.id, req.biz.id);
   res.redirect('/' + req.params.slug + '/admin/productos');
 });
 
-app.post('/:slug/admin/producto/:id/toggle', requireAuth, can('productos.editar'), (req, res) => {
-  db.prepare(
+app.post('/:slug/admin/producto/:id/toggle', requireAuth, can('productos.editar'), async (req, res) => {
+  await db.prepare(
     'UPDATE products SET active = CASE WHEN active = 1 THEN 0 ELSE 1 END WHERE id = ? AND business_id = ?'
   ).run(req.params.id, req.biz.id);
   res.redirect('/' + req.params.slug + '/admin/productos');
 });
 
-app.post('/:slug/admin/producto/:id/featured', requireAuth, can('productos.editar'), (req, res) => {
-  db.prepare(
+app.post('/:slug/admin/producto/:id/featured', requireAuth, can('productos.editar'), async (req, res) => {
+  await db.prepare(
     'UPDATE products SET featured = CASE WHEN featured = 1 THEN 0 ELSE 1 END WHERE id = ? AND business_id = ?'
   ).run(req.params.id, req.biz.id);
   res.redirect('/' + req.params.slug + '/admin/productos');
 });
 
 // Reordena manualmente: mueve un producto arriba o abajo intercambiando sort.
-app.post('/:slug/admin/producto/:id/mover', requireAuth, can('productos.editar'), (req, res) => {
+app.post('/:slug/admin/producto/:id/mover', requireAuth, can('productos.editar'), async (req, res) => {
   const id = parseInt(req.params.id);
   const dir = req.body.dir === 'up' ? -1 : 1;
   const bizId = req.biz.id;
-  const list = db.prepare('SELECT id, sort FROM products WHERE business_id = ? ORDER BY active DESC, sort ASC, id DESC').all(bizId);
+  const list = await db.prepare('SELECT id, sort FROM products WHERE business_id = ? ORDER BY active DESC, sort ASC, id DESC').all(bizId);
   const idx = list.findIndex(x => x.id === id);
   if (idx === -1) return res.redirect('/' + req.params.slug + '/admin/productos');
   const target = list[idx + dir];
   if (!target) return res.redirect('/' + req.params.slug + '/admin/productos');
   const a = list[idx], b = target;
   if (a.sort === b.sort) {
-    db.prepare('UPDATE products SET sort = ? WHERE id = ?').run(a.sort + (dir === -1 ? -1 : 1), a.id);
-    db.prepare('UPDATE products SET sort = ? WHERE id = ?').run(a.sort, b.id);
+    await db.prepare('UPDATE products SET sort = ? WHERE id = ?').run(a.sort + (dir === -1 ? -1 : 1), a.id);
+    await db.prepare('UPDATE products SET sort = ? WHERE id = ?').run(a.sort, b.id);
   } else {
-    db.prepare('UPDATE products SET sort = ? WHERE id = ?').run(b.sort, a.id);
-    db.prepare('UPDATE products SET sort = ? WHERE id = ?').run(a.sort, b.id);
+    await db.prepare('UPDATE products SET sort = ? WHERE id = ?').run(b.sort, a.id);
+    await db.prepare('UPDATE products SET sort = ? WHERE id = ?').run(a.sort, b.id);
   }
   res.redirect('/' + req.params.slug + '/admin/productos');
 });
 
-app.post('/:slug/admin/producto/:id', requireAuth, can('productos.editar'), (req, res) => {
+app.post('/:slug/admin/producto/:id', requireAuth, can('productos.editar'), async (req, res) => {
   const { name, category_id, description, image, stock, variants } = req.body;
   const { price, old_price } = parsePrices(req.body);
   const promo = parsePromo(req.body);
-  const renderError = (message) => res.status(400).render('productos', { biz: req.biz, ...panelData(req.biz), error: message });
+  const renderError = async message => res.status(400).render('productos', { biz: req.biz, ...(await panelData(req.biz)), error: message });
   if (!name || !name.trim()) {
-    return renderError('El nombre del producto es obligatorio.');
+    return await renderError('El nombre del producto es obligatorio.');
   }
   if (req.body.price === '' || req.body.price === undefined || req.body.price === null || isNaN(parseFloat(req.body.price))) {
-    return renderError('El precio es obligatorio (usa un número, ej: 25.50).');
+    return await renderError('El precio es obligatorio (usa un número, ej: 25.50).');
   }
   if (price < 0) {
-    return renderError('El precio no puede ser negativo.');
+    return await renderError('El precio no puede ser negativo.');
   }
   try {
-    db.prepare(
+    await db.prepare(
       `UPDATE products SET name = ?, price = ?, old_price = ?, category_id = ?, description = ?, image = ?, galeria = ?, stock = ?, variants = ?, promo_ends_at = ?, featured = ?, promo_type = ?, promo_value = ?, promo_gift = ?, sku = ?, tags = ?, video = ?, specs = ?, barcode = ?, payment_plan = ?
        WHERE id = ? AND business_id = ?`
-    ).run(name.trim(), price, old_price, category_id || null, description || '', image || '', parseGaleria(req.body.galeria), parseStock(stock), parseVariants(variants), parsePromoEnd(req.body.promo_ends_at), req.body.featured ? 1 : 0, promo.promo_type, promo.promo_value, promo.promo_gift, (req.body.sku || '').toString().trim().slice(0, 60), (req.body.tags || '').toString().trim().slice(0, 300), (req.body.video || '').toString().trim().slice(0, 300), (req.body.specs || '').toString().slice(0, 2000), (req.body.barcode || '').toString().trim().slice(0, 60), buildPaymentPlan(req.body), req.params.id, req.biz.id);
-    const updated = db.prepare('SELECT * FROM products WHERE id = ?').get(req.params.id);
-    if (updated) logPriceHistory(req.biz.id, updated);
+    ).run(
+      name.trim(),
+      price,
+      old_price,
+      category_id || null,
+      description || '',
+      image || '',
+      parseGaleria(req.body.galeria),
+      parseStock(stock),
+      parseVariants(variants),
+      parsePromoEnd(req.body.promo_ends_at),
+      req.body.featured ? 1 : 0,
+      promo.promo_type,
+      promo.promo_value,
+      promo.promo_gift,
+      (req.body.sku || '').toString().trim().slice(0, 60),
+      (req.body.tags || '').toString().trim().slice(0, 300),
+      (req.body.video || '').toString().trim().slice(0, 300),
+      (req.body.specs || '').toString().slice(0, 2000),
+      (req.body.barcode || '').toString().trim().slice(0, 60),
+      buildPaymentPlan(req.body),
+      req.params.id,
+      req.biz.id
+    );
+    const updated = await db.prepare('SELECT * FROM products WHERE id = ?').get(req.params.id);
+    if (updated) await logPriceHistory(req.biz.id, updated);
   } catch (err) {
-    return renderError('No se pudo guardar el producto: ' + (err.message || 'error desconocido'));
+    return await renderError('No se pudo guardar el producto: ' + (err.message || 'error desconocido'));
   }
   res.redirect('/' + req.params.slug + '/admin/productos');
 });
 
-app.post('/:slug/admin/producto/:id/duplicar', requireAuth, can('productos.crear'), (req, res) => {
-  const p = db.prepare('SELECT * FROM products WHERE id = ? AND business_id = ?').get(req.params.id, req.biz.id);
+app.post('/:slug/admin/producto/:id/duplicar', requireAuth, can('productos.crear'), async (req, res) => {
+  const p = await db.prepare('SELECT * FROM products WHERE id = ? AND business_id = ?').get(req.params.id, req.biz.id);
   if (p) {
-    db.prepare(
+    await db.prepare(
       `INSERT INTO products (business_id, category_id, name, price, old_price, description, image, galeria, stock, variants, promo_ends_at, payment_plan)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
-      p.business_id, p.category_id, (p.name || '') + ' (copia)', p.price, p.old_price,
-      p.description || '', p.image || '', p.galeria || '', p.stock, p.variants || '', p.promo_ends_at || '', p.payment_plan || ''
+      p.business_id,
+      p.category_id,
+      (p.name || '') + ' (copia)',
+      p.price,
+      p.old_price,
+      p.description || '',
+      p.image || '',
+      p.galeria || '',
+      p.stock,
+      p.variants || '',
+      p.promo_ends_at || '',
+      p.payment_plan || ''
     );
   }
   res.redirect('/' + req.params.slug + '/admin/productos');
 });
 
 // ================= CRUD CATEGORÍAS (JSON, no recarga el formulario) =================
-app.post('/:slug/admin/categoria', requireAuth, can('productos.editar'), (req, res) => {
+app.post('/:slug/admin/categoria', requireAuth, can('productos.editar'), async (req, res) => {
   const name = (req.body.name || '').trim();
   if (!name) return res.json({ ok: false, error: 'El nombre de la categoría es obligatorio.' });
-  const dup = db.prepare('SELECT * FROM categories WHERE business_id = ? AND name = ? COLLATE NOCASE').get(req.biz.id, name);
+  const dup = await db.prepare('SELECT * FROM categories WHERE business_id = ? AND name = ? COLLATE NOCASE').get(req.biz.id, name);
   if (dup) return res.json({ ok: false, error: 'Esa categoría ya existe.' });
-  const r = db.prepare('INSERT INTO categories (business_id, name) VALUES (?, ?)').run(req.biz.id, name);
+  const r = await db.prepare('INSERT INTO categories (business_id, name) VALUES (?, ?)').run(req.biz.id, name);
   res.json({ ok: true, id: r.lastInsertRowid, name });
 });
 
-app.post('/:slug/admin/categoria/:id/eliminar', requireAuth, can('productos.editar'), (req, res) => {
+app.post('/:slug/admin/categoria/:id/eliminar', requireAuth, can('productos.editar'), async (req, res) => {
   const id = parseInt(req.params.id);
-  const cat = db.prepare('SELECT * FROM categories WHERE id = ? AND business_id = ?').get(id, req.biz.id);
+  const cat = await db.prepare('SELECT * FROM categories WHERE id = ? AND business_id = ?').get(id, req.biz.id);
   if (cat) {
-    db.prepare('UPDATE products SET category_id = NULL WHERE category_id = ?').run(id);
-    db.prepare('DELETE FROM categories WHERE id = ? AND business_id = ?').run(id, req.biz.id);
+    await db.prepare('UPDATE products SET category_id = NULL WHERE category_id = ?').run(id);
+    await db.prepare('DELETE FROM categories WHERE id = ? AND business_id = ?').run(id, req.biz.id);
   }
   res.json({ ok: true });
 });
 
-app.post('/:slug/admin/categoria/:id', requireAuth, can('productos.editar'), (req, res) => {
+app.post('/:slug/admin/categoria/:id', requireAuth, can('productos.editar'), async (req, res) => {
   const id = parseInt(req.params.id);
   const name = (req.body.name || '').trim();
   if (!name) return res.json({ ok: false, error: 'El nombre de la categoría es obligatorio.' });
-  const dup = db.prepare('SELECT * FROM categories WHERE business_id = ? AND name = ? COLLATE NOCASE AND id != ?').get(req.biz.id, name, id);
+  const dup = await db.prepare('SELECT * FROM categories WHERE business_id = ? AND name = ? COLLATE NOCASE AND id != ?').get(req.biz.id, name, id);
   if (dup) return res.json({ ok: false, error: 'Esa categoría ya existe.' });
-  const r = db.prepare('UPDATE categories SET name = ? WHERE id = ? AND business_id = ?').run(name, id, req.biz.id);
+  const r = await db.prepare('UPDATE categories SET name = ? WHERE id = ? AND business_id = ?').run(name, id, req.biz.id);
   res.json({ ok: r.changes > 0, id, name });
 });
 
 // ================= CATÁLOGO DE ATRIBUTOS (JSON, no recarga el formulario) =================
-app.post('/:slug/admin/atributo/guardar', requireAuth, can('productos.editar'), (req, res) => {
-  res.json(upsertAttributeTemplate(req.biz.id, req.body.name, req.body.values));
+app.post('/:slug/admin/atributo/guardar', requireAuth, can('productos.editar'), async (req, res) => {
+  res.json(await upsertAttributeTemplate(req.biz.id, req.body.name, req.body.values));
 });
 
-app.post('/:slug/admin/atributo/:id/eliminar', requireAuth, can('productos.editar'), (req, res) => {
-  db.prepare('DELETE FROM attribute_templates WHERE id = ? AND business_id = ?').run(parseInt(req.params.id), req.biz.id);
+app.post('/:slug/admin/atributo/:id/eliminar', requireAuth, can('productos.editar'), async (req, res) => {
+  await db.prepare('DELETE FROM attribute_templates WHERE id = ? AND business_id = ?').run(parseInt(req.params.id), req.biz.id);
   res.json({ ok: true });
 });
 
-app.post('/:slug/admin/atributo/:id', requireAuth, can('productos.editar'), (req, res) => {
+app.post('/:slug/admin/atributo/:id', requireAuth, can('productos.editar'), async (req, res) => {
   const id = parseInt(req.params.id);
-  const existing = db.prepare('SELECT * FROM attribute_templates WHERE id = ? AND business_id = ?').get(id, req.biz.id);
+  const existing = await db.prepare('SELECT * FROM attribute_templates WHERE id = ? AND business_id = ?').get(id, req.biz.id);
   if (!existing) return res.json({ ok: false, error: 'Atributo no encontrado.' });
   const nm = String(req.body.name || '').trim();
   const vals = parseAttrValues(req.body.values);
   if (!nm) return res.json({ ok: false, error: 'El nombre del atributo es obligatorio.' });
   if (!vals.length) return res.json({ ok: false, error: 'Agrega al menos un valor.' });
-  const dup = db.prepare('SELECT * FROM attribute_templates WHERE business_id = ? AND name = ? COLLATE NOCASE AND id != ?').get(req.biz.id, nm, id);
+  const dup = await db.prepare('SELECT * FROM attribute_templates WHERE business_id = ? AND name = ? COLLATE NOCASE AND id != ?').get(req.biz.id, nm, id);
   if (dup) return res.json({ ok: false, error: 'Ya existe un atributo con ese nombre.' });
-  db.prepare('UPDATE attribute_templates SET name = ?, vals = ? WHERE id = ?').run(nm, JSON.stringify(vals), id);
+  await db.prepare('UPDATE attribute_templates SET name = ?, vals = ? WHERE id = ?').run(nm, JSON.stringify(vals), id);
   res.json({ ok: true, id, name: nm, values: vals });
 });
 
 // ================= PEDIDOS =================
-app.post('/:slug/admin/order/:id/pagado', requireAuth, can('pedidos.gestionar'), (req, res) => {
+app.post('/:slug/admin/order/:id/pagado', requireAuth, can('pedidos.gestionar'), async (req, res) => {
   const abono = parseFloat(req.body.amount_paid) || 0;
   const method = String(req.body.payment_method || 'efectivo').trim();
   const schedule = String(req.body.payment_schedule || 'contado').trim();
   // Combinar método + horario para guardar en payment_method
   const combinedMethod = schedule === 'plazos' ? 'plazos' : method;
-  const order = db.prepare('SELECT * FROM orders WHERE id = ? AND business_id = ?').get(req.params.id, req.biz.id);
+  const order = await db.prepare('SELECT * FROM orders WHERE id = ? AND business_id = ?').get(req.params.id, req.biz.id);
   if (!order) return res.redirect('/' + req.params.slug + '/admin/panel');
   const newPaid = (order.amount_paid || 0) + abono;
   const remaining = Math.max(0, order.total - newPaid);
@@ -2241,29 +2319,37 @@ app.post('/:slug/admin/order/:id/pagado', requireAuth, can('pedidos.gestionar'),
   const isPaid = remaining <= 0 ? 1 : 0;
   // Registrar en historial de abonos
   if (abono > 0) {
-    db.prepare('INSERT INTO payment_history (order_id, business_id, amount, method, note) VALUES (?, ?, ?, ?, ?)').run(order.id, req.biz.id, abono, combinedMethod, req.body.note || '');
+    await db.prepare('INSERT INTO payment_history (order_id, business_id, amount, method, note) VALUES (?, ?, ?, ?, ?)').run(order.id, req.biz.id, abono, combinedMethod, req.body.note || '');
   }
-  db.prepare('UPDATE orders SET paid = ?, status = ?, payment_method = ?, amount_paid = ?, amount_remaining = ? WHERE id = ? AND business_id = ?').run(isPaid, newStatus, combinedMethod, newPaid, remaining, req.params.id, req.biz.id);
+  await db.prepare('UPDATE orders SET paid = ?, status = ?, payment_method = ?, amount_paid = ?, amount_remaining = ? WHERE id = ? AND business_id = ?').run(
+    isPaid,
+    newStatus,
+    combinedMethod,
+    newPaid,
+    remaining,
+    req.params.id,
+    req.biz.id
+  );
   res.redirect('/' + req.params.slug + '/admin/panel');
 });
 
-app.post('/:slug/admin/order/:id/entregado', requireAuth, can('pedidos.gestionar'), (req, res) => {
-  db.prepare('UPDATE orders SET paid = 1, status = ?, amount_paid = total, amount_remaining = 0 WHERE id = ? AND business_id = ?').run('entregado', req.params.id, req.biz.id);
+app.post('/:slug/admin/order/:id/entregado', requireAuth, can('pedidos.gestionar'), async (req, res) => {
+  await db.prepare('UPDATE orders SET paid = 1, status = ?, amount_paid = total, amount_remaining = 0 WHERE id = ? AND business_id = ?').run('entregado', req.params.id, req.biz.id);
   res.redirect('/' + req.params.slug + '/admin/panel');
 });
 
-app.post('/:slug/admin/order/:id/cancelado', requireAuth, can('pedidos.gestionar'), (req, res) => {
-  db.prepare('UPDATE orders SET status = ? WHERE id = ? AND business_id = ?').run('cancelado', req.params.id, req.biz.id);
+app.post('/:slug/admin/order/:id/cancelado', requireAuth, can('pedidos.gestionar'), async (req, res) => {
+  await db.prepare('UPDATE orders SET status = ? WHERE id = ? AND business_id = ?').run('cancelado', req.params.id, req.biz.id);
   res.redirect('/' + req.params.slug + '/admin/panel');
 });
 
-app.post('/:slug/admin/order/:id/eliminar', requireAuth, can('pedidos.gestionar'), (req, res) => {
-  db.prepare('DELETE FROM orders WHERE id = ? AND business_id = ?').run(req.params.id, req.biz.id);
+app.post('/:slug/admin/order/:id/eliminar', requireAuth, can('pedidos.gestionar'), async (req, res) => {
+  await db.prepare('DELETE FROM orders WHERE id = ? AND business_id = ?').run(req.params.id, req.biz.id);
   res.redirect('/' + req.params.slug + '/admin/panel');
 });
 
-app.get('/:slug/admin/reporte', requireAuth, (req, res) => {
-  const orders = db.prepare(
+app.get('/:slug/admin/reporte', requireAuth, async (req, res) => {
+  const orders = await db.prepare(
     `SELECT * FROM orders WHERE business_id = ? ORDER BY created_at DESC`
   ).all(req.biz.id);
   let csv = 'Fecha,Productos,Total,Estado,Pagado,Metodo_pago,Abonado,Pendiente\n';
@@ -2282,11 +2368,11 @@ function variantsText(raw) {
   return vm.attrs.map(a => (a.name || 'Opciones') + ': ' + a.values.join(', ')).join(' | ');
 }
 
-app.get('/:slug/admin/exportar.xlsx', requireAuth, (req, res) => {
+app.get('/:slug/admin/exportar.xlsx', requireAuth, async (req, res) => {
   const biz = req.biz;
   const catName = {};
-  db.prepare('SELECT id, name FROM categories WHERE business_id = ?').all(biz.id).forEach(c => { catName[c.id] = c.name; });
-  const products = db.prepare('SELECT * FROM products WHERE business_id = ? AND active = 1 ORDER BY sort ASC, id ASC').all(biz.id);
+  (await db.prepare('SELECT id, name FROM categories WHERE business_id = ?').all(biz.id)).forEach(c => { catName[c.id] = c.name; });
+  const products = await db.prepare('SELECT * FROM products WHERE business_id = ? AND active = 1 ORDER BY sort ASC, id ASC').all(biz.id);
 
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet('Catálogo');
@@ -2324,31 +2410,31 @@ app.get('/:slug/admin/exportar.xlsx', requireAuth, (req, res) => {
   wb.xlsx.write(res).then(() => res.end());
 });
 
-app.get('/:slug/admin/catalogo-print', requireAuth, (req, res) => {
-  const { products } = getCatalog(req.biz.id);
+app.get('/:slug/admin/catalogo-print', requireAuth, async (req, res) => {
+  const { products } = await getCatalog(req.biz.id);
   res.set('Cache-Control', 'no-store');
   res.render('catalogo-print', { biz: req.biz, products, money: moneyFor(req.biz) });
 });
 
 // ================= CLIENTES (mini-CRM) =================
-function upsertCustomer(bizId, name, phone) {
+async function upsertCustomer(bizId, name, phone) {
   const nm = String(name || '').trim();
   const ph = String(phone || '').replace(/[^0-9]/g, '');
   if (!ph && !nm) return;
   let existing = null;
-  if (ph) existing = db.prepare('SELECT * FROM customers WHERE business_id = ? AND phone = ?').get(bizId, ph);
-  if (!existing && nm) existing = db.prepare('SELECT * FROM customers WHERE business_id = ? AND LOWER(name) = LOWER(?)').get(bizId, nm);
+  if (ph) existing = await db.prepare('SELECT * FROM customers WHERE business_id = ? AND phone = ?').get(bizId, ph);
+  if (!existing && nm) existing = await db.prepare('SELECT * FROM customers WHERE business_id = ? AND LOWER(name) = LOWER(?)').get(bizId, nm);
   if (existing) {
-    if (ph && !existing.phone) db.prepare('UPDATE customers SET phone = ? WHERE id = ?').run(ph, existing.id);
-    if (nm && (!existing.name || existing.name === String(existing.phone || ''))) db.prepare('UPDATE customers SET name = ? WHERE id = ?').run(nm, existing.id);
+    if (ph && !existing.phone) await db.prepare('UPDATE customers SET phone = ? WHERE id = ?').run(ph, existing.id);
+    if (nm && (!existing.name || existing.name === String(existing.phone || ''))) await db.prepare('UPDATE customers SET name = ? WHERE id = ?').run(nm, existing.id);
   } else {
-    db.prepare('INSERT INTO customers (business_id, name, phone) VALUES (?, ?, ?)').run(bizId, nm || ph, ph);
+    await db.prepare('INSERT INTO customers (business_id, name, phone) VALUES (?, ?, ?)').run(bizId, nm || ph, ph);
   }
 }
 
-function clientRows(bizId) {
-  const allOrders = db.prepare('SELECT * FROM orders WHERE business_id = ? ORDER BY created_at DESC').all(bizId);
-  return db.prepare('SELECT * FROM customers WHERE business_id = ? ORDER BY id DESC').all(bizId).map(c => {
+async function clientRows(bizId) {
+  const allOrders = await db.prepare('SELECT * FROM orders WHERE business_id = ? ORDER BY created_at DESC').all(bizId);
+  return (await db.prepare('SELECT * FROM customers WHERE business_id = ? ORDER BY id DESC').all(bizId)).map(c => {
     const phone = (c.phone || '').trim();
     const name = (c.name || '').trim().toLowerCase();
     const ords = allOrders.filter(o => {
@@ -2366,34 +2452,34 @@ function clientRows(bizId) {
   });
 }
 
-app.get('/:slug/admin/clientes', requireAuth, can('clientes'), (req, res) => {
+app.get('/:slug/admin/clientes', requireAuth, can('clientes'), async (req, res) => {
   res.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
-  res.render('clientes', { biz: req.biz, customers: clientRows(req.biz.id), error: null, ok: req.query.ok === '1', money: moneyFor(req.biz) });
+  res.render('clientes', { biz: req.biz, customers: await clientRows(req.biz.id), error: null, ok: req.query.ok === '1', money: moneyFor(req.biz) });
 });
 
-app.post('/:slug/admin/cliente', requireAuth, can('clientes'), (req, res) => {
+app.post('/:slug/admin/cliente', requireAuth, can('clientes'), async (req, res) => {
   const name = String(req.body.name || '').trim();
   const phone = String(req.body.phone || '').replace(/[^0-9]/g, '');
   const notes = String(req.body.notes || '').trim();
   if (!name) return res.redirect('/' + req.params.slug + '/admin/clientes');
-  db.prepare('INSERT INTO customers (business_id, name, phone, notes) VALUES (?, ?, ?, ?)').run(req.biz.id, name, phone, notes);
+  await db.prepare('INSERT INTO customers (business_id, name, phone, notes) VALUES (?, ?, ?, ?)').run(req.biz.id, name, phone, notes);
   res.redirect('/' + req.params.slug + '/admin/clientes?ok=1');
 });
 
-app.post('/:slug/admin/cliente/:id/eliminar', requireAuth, can('clientes'), (req, res) => {
-  db.prepare('DELETE FROM customers WHERE id = ? AND business_id = ?').run(req.params.id, req.biz.id);
+app.post('/:slug/admin/cliente/:id/eliminar', requireAuth, can('clientes'), async (req, res) => {
+  await db.prepare('DELETE FROM customers WHERE id = ? AND business_id = ?').run(req.params.id, req.biz.id);
   res.redirect('/' + req.params.slug + '/admin/clientes');
 });
 
 // Conteo de pedidos nuevos (para la notificación del panel)
-app.get('/:slug/admin/api/new-orders', requireAuth, (req, res) => {
-  const row = db.prepare('SELECT COALESCE(MAX(id), 0) AS lastId FROM orders WHERE business_id = ?').get(req.biz.id);
+app.get('/:slug/admin/api/new-orders', requireAuth, async (req, res) => {
+  const row = await db.prepare('SELECT COALESCE(MAX(id), 0) AS lastId FROM orders WHERE business_id = ?').get(req.biz.id);
   res.json({ lastId: row.lastId });
 });
 
 // Conteo de productos con stock bajo/agotado (para el aviso del menú)
-app.get('/:slug/admin/api/low-stock', requireAuth, (req, res) => {
-  const c = db.prepare('SELECT COUNT(*) AS c FROM products WHERE business_id = ? AND active = 1 AND (stock IS NULL OR stock <= 5)').get(req.biz.id).c;
+app.get('/:slug/admin/api/low-stock', requireAuth, async (req, res) => {
+  const c = (await db.prepare('SELECT COUNT(*) AS c FROM products WHERE business_id = ? AND active = 1 AND (stock IS NULL OR stock <= 5)').get(req.biz.id)).c;
   res.json({ count: c });
 });
 
@@ -2574,14 +2660,14 @@ function getImportSession(req, res) {
   return session;
 }
 
-app.get('/:slug/admin/importar', requireAuth, (req, res) => {
-  const categories = db.prepare('SELECT * FROM categories WHERE business_id = ? ORDER BY sort ASC').all(req.biz.id);
+app.get('/:slug/admin/importar', requireAuth, async (req, res) => {
+  const categories = await db.prepare('SELECT * FROM categories WHERE business_id = ? ORDER BY sort ASC').all(req.biz.id);
   res.render('importar', { biz: req.biz, categories, resultado: null });
 });
 
 app.get('/:slug/admin/plantilla', requireAuth, async (req, res) => {
   const biz = req.biz;
-  const categories = db.prepare('SELECT * FROM categories WHERE business_id = ? ORDER BY sort ASC').all(biz.id);
+  const categories = await db.prepare('SELECT * FROM categories WHERE business_id = ? ORDER BY sort ASC').all(biz.id);
 
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet('Productos');
@@ -2635,7 +2721,7 @@ app.get('/:slug/admin/plantilla', requireAuth, async (req, res) => {
 // Paso 1: subir su propio archivo y mostrar vista previa con mapeo
 app.post('/:slug/admin/importar/vista-previa', requireAuth, uploadExcel.single('archivo'), verifyBodyCsrf, async (req, res) => {
   const biz = req.biz;
-  const categories = db.prepare('SELECT * FROM categories WHERE business_id = ? ORDER BY sort ASC').all(biz.id);
+  const categories = await db.prepare('SELECT * FROM categories WHERE business_id = ? ORDER BY sort ASC').all(biz.id);
 
   if (!req.file) {
     return res.render('importar', { biz, categories, resultado: { ok: 0, errores: ['No se recibió ningún archivo. Sube un .xlsx o .csv.'] } });
@@ -2670,7 +2756,7 @@ app.post('/:slug/admin/importar/vista-previa', requireAuth, uploadExcel.single('
 // Paso 2: aplicar mapeo e importar
 app.post('/:slug/admin/importar/ejecutar', requireAuth, async (req, res) => {
   const biz = req.biz;
-  const categories = db.prepare('SELECT * FROM categories WHERE business_id = ? ORDER BY sort ASC').all(biz.id);
+  const categories = await db.prepare('SELECT * FROM categories WHERE business_id = ? ORDER BY sort ASC').all(biz.id);
   const catByName = {};
   categories.forEach(c => { catByName[c.name.toLowerCase().trim()] = c.id; });
 
@@ -2703,9 +2789,9 @@ app.post('/:slug/admin/importar/ejecutar', requireAuth, async (req, res) => {
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
   );
 
-  const planMax = PLAN_MAX(biz);
+  const planMax = await PLAN_MAX(biz);
   let ok = 0;
-  rows.forEach((row, i) => {
+  for (const [i, row] of rows.entries()) {
     const fila = i + 2;
     const get = (field) => fieldToCol[field] !== undefined ? row[headers[fieldToCol[field]]] : '';
 
@@ -2720,15 +2806,15 @@ app.post('/:slug/admin/importar/ejecutar', requireAuth, async (req, res) => {
     const stock = stockRaw === '' ? null : parseInt(stockRaw, 10);
     const variantesRaw = (get('variantes') || '').toString();
 
-    if (!nombre) { errores.push(`Fila ${fila}: falta el nombre.`); return; }
-    if (isNaN(precio) || precio <= 0) { errores.push(`Fila ${fila} ("${nombre}"): el precio debe ser un número mayor a 0.`); return; }
-    if (categoria && !catByName[categoria.toLowerCase()]) { errores.push(`Fila ${fila} ("${nombre}"): la categoría "${categoria}" no existe. Crea la categoría primero o déjala vacía.`); return; }
-    if (precioAntes !== null && (isNaN(precioAntes) || precioAntes <= precio)) { errores.push(`Fila ${fila} ("${nombre}"): el precio_antes debe ser mayor al precio.`); return; }
-    if (imagen && !/^https?:\/\//.test(imagen) && !imagen.startsWith('/uploads/')) { errores.push(`Fila ${fila} ("${nombre}"): la imagen debe ser una URL (http…) o una ruta /uploads/…`); return; }
-    if (stock !== null && (isNaN(stock) || stock < 0)) { errores.push(`Fila ${fila} ("${nombre}"): el stock debe ser un número entero mayor o igual a 0.`); return; }
-    if (planMax !== Infinity && ok >= planMax) { errores.push(`Fila ${fila} ("${nombre}"): superaste el límite de ${planMax} productos de tu plan gratuito.`); return; }
+    if (!nombre) { errores.push(`Fila ${fila}: falta el nombre.`); continue; }
+    if (isNaN(precio) || precio <= 0) { errores.push(`Fila ${fila} ("${nombre}"): el precio debe ser un número mayor a 0.`); continue; }
+    if (categoria && !catByName[categoria.toLowerCase()]) { errores.push(`Fila ${fila} ("${nombre}"): la categoría "${categoria}" no existe. Crea la categoría primero o déjala vacía.`); continue; }
+    if (precioAntes !== null && (isNaN(precioAntes) || precioAntes <= precio)) { errores.push(`Fila ${fila} ("${nombre}"): el precio_antes debe ser mayor al precio.`); continue; }
+    if (imagen && !/^https?:\/\//.test(imagen) && !imagen.startsWith('/uploads/')) { errores.push(`Fila ${fila} ("${nombre}"): la imagen debe ser una URL (http…) o una ruta /uploads/…`); continue; }
+    if (stock !== null && (isNaN(stock) || stock < 0)) { errores.push(`Fila ${fila} ("${nombre}"): el stock debe ser un número entero mayor o igual a 0.`); continue; }
+    if (planMax !== Infinity && ok >= planMax) { errores.push(`Fila ${fila} ("${nombre}"): superaste el límite de ${planMax} productos de tu plan gratuito.`); continue; }
 
-    insert.run(
+    await insert.run(
       biz.id,
       categoria ? catByName[categoria.toLowerCase()] : null,
       nombre,
@@ -2740,7 +2826,7 @@ app.post('/:slug/admin/importar/ejecutar', requireAuth, async (req, res) => {
       parseVariants(variantesRaw)
     );
     ok++;
-  });
+  }
 
   // Recordar el mapeo para la próxima vez que suba un archivo parecido
   if (ok > 0 || errores.length === 0) {
@@ -2749,7 +2835,7 @@ app.post('/:slug/admin/importar/ejecutar', requireAuth, async (req, res) => {
       const field = Object.keys(fieldToCol).find(f => fieldToCol[f] === i);
       if (field) save[normalizeKey(h)] = field;
     });
-    db.prepare('UPDATE businesses SET import_map = ? WHERE id = ?').run(JSON.stringify(save), biz.id);
+    await db.prepare('UPDATE businesses SET import_map = ? WHERE id = ?').run(JSON.stringify(save), biz.id);
   }
 
   delete importSessions[req.body.token];
@@ -2758,7 +2844,7 @@ app.post('/:slug/admin/importar/ejecutar', requireAuth, async (req, res) => {
 
 // ================= CONFIGURACIÓN =================
 // Locals para la página de configuración (todos los formularios de esa página la usan)
-function configLocals(biz, opts) {
+async function configLocals(biz, opts) {
   let girosList = [];
   try { girosList = JSON.parse(biz.giros || '[]'); } catch (e) { girosList = []; }
   if (!Array.isArray(girosList)) girosList = [];
@@ -2770,8 +2856,8 @@ function configLocals(biz, opts) {
   } catch (e) {}
   let blocksList = [];
   try { const b = JSON.parse(biz.blocks || '[]'); if (Array.isArray(b)) blocksList = b; } catch (e) {}
-  const cats = db.prepare('SELECT id, name FROM categories WHERE business_id = ? ORDER BY sort ASC, name ASC').all(biz.id);
-  const previewProducts = db.prepare('SELECT p.id, p.name, p.price, p.old_price, p.image, p.featured, p.category_id, c.name AS category_name FROM products p LEFT JOIN categories c ON c.id = p.category_id WHERE p.business_id = ? AND p.active = 1 ORDER BY p.featured DESC, p.sort ASC, p.created_at DESC LIMIT 60').all(biz.id);
+  const cats = await db.prepare('SELECT id, name FROM categories WHERE business_id = ? ORDER BY sort ASC, name ASC').all(biz.id);
+  const previewProducts = await db.prepare('SELECT p.id, p.name, p.price, p.old_price, p.image, p.featured, p.category_id, c.name AS category_name FROM products p LEFT JOIN categories c ON c.id = p.category_id WHERE p.business_id = ? AND p.active = 1 ORDER BY p.featured DESC, p.sort ASC, p.created_at DESC LIMIT 60').all(biz.id);
   const baseEstilo = getEffectiveEstilo(biz);
   const theme = getTemplateTheme(biz.template);
   const diseno = theme
@@ -2786,7 +2872,7 @@ function configLocals(biz, opts) {
     diseno,
     TPL_META,
     TPL_CASOS,
-    customTemplates: db.prepare('SELECT * FROM custom_templates WHERE active=1 ORDER BY category, name').all(),
+    customTemplates: await db.prepare('SELECT * FROM custom_templates WHERE active=1 ORDER BY category, name').all(),
     template: biz.template || '',
     theme: theme,
     girosList,
@@ -2799,14 +2885,14 @@ function configLocals(biz, opts) {
     pal,
     esMaestro: !!(opts && opts.esMaestro),
     editingCustomTpl: (opts && opts.editingCustomTpl) || null,
-    canDesign: !!(opts && opts.esMaestro) || designAllowed(biz),
+    canDesign: !!(opts && opts.esMaestro) || (await designAllowed(biz)),
     error: (opts && opts.error) || null,
     ok: (opts && opts.ok) || null
   };
 }
 
 // Aplica el guardado de la configuración (datos y/o diseño) a una tienda
-function applyConfig(biz, body) {
+async function applyConfig(biz, body) {
   const { name, whatsapp, description, template, color, color_hex, color_hex2, color_mode, grid_cols, logo, banner, giro, estilo, bg, card, text, muted, border, radius, font, accent, accent2, header, header_text, page_bg } = body;
   const waMessage = Object.prototype.hasOwnProperty.call(body, 'wa_message') ? (body.wa_message || '').toString().slice(0, 1000) : biz.wa_message;
   const currency = CURRENCY_MAP[body.currency] ? body.currency : biz.currency;
@@ -2995,7 +3081,7 @@ function applyConfig(biz, body) {
     instagram: String(body.redes_instagram || '').trim().slice(0, 300),
     tiktok: String(body.redes_tiktok || '').trim().slice(0, 300)
   });
-  db.prepare(
+  await db.prepare(
     `UPDATE businesses SET name = ?, whatsapp = ?, description = ?, template = ?, color = ?, color_hex = ?, color_hex2 = ?, color_mode = ?, grid_cols = ?, logo = ?, banner = ?, giro = ?, giros = ?, estilo = ?, bg = ?, card = ?, text = ?, muted = ?, border = ?, radius = ?, font = ?, accent = ?, accent2 = ?, header = ?, header_text = ?, wa_message = ?, currency = ?, sections = ?, demo = ?, horario = ?, horario_msg = ?, blocks = ?, page_bg = ?, redes = ? WHERE id = ?`
   ).run(
     name || biz.name,
@@ -3036,60 +3122,60 @@ function applyConfig(biz, body) {
   );
   // Modo fácil: guarda el preset elegido y crea las páginas sugeridas
   if (Object.prototype.hasOwnProperty.call(body, 'giro_preset')) {
-    db.prepare('UPDATE businesses SET giro_preset = ?, onboarding_done = 1 WHERE id = ?').run(String(body.giro_preset || '').slice(0, 60), biz.id);
+    await db.prepare('UPDATE businesses SET giro_preset = ?, onboarding_done = 1 WHERE id = ?').run(String(body.giro_preset || '').slice(0, 60), biz.id);
   }
   if (Object.prototype.hasOwnProperty.call(body, 'paginas_sugeridas')) {
     let pags = [];
     try { pags = JSON.parse(body.paginas_sugeridas || '[]'); } catch (e) { pags = []; }
     db.crearPaginasSugeridas(biz.id, pags);
   }
-  return getBusiness(biz.slug);
+  return await getBusiness(biz.slug);
 }
 
-app.get('/:slug/admin/config', requireAuth, can('config'), (req, res) => {
+app.get('/:slug/admin/config', requireAuth, can('config'), async (req, res) => {
   res.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
-  res.render('config', configLocals(req.biz, {}));
+  res.render('config', await configLocals(req.biz, {}));
 });
 
-app.post('/:slug/admin/config', requireAuth, can('config'), (req, res) => {
-  const biz = applyConfig(req.biz, req.body);
-  res.render('config', configLocals(biz, { ok: 'Configuración guardada' }));
+app.post('/:slug/admin/config', requireAuth, can('config'), async (req, res) => {
+  const biz = await applyConfig(req.biz, req.body);
+  res.render('config', await configLocals(biz, { ok: 'Configuración guardada' }));
 });
 
 // ================= CONSTRUCTOR DE DISEÑO (apartado propio) =================
-app.get('/:slug/admin/diseno', requireAuth, can('diseno'), (req, res) => {
+app.get('/:slug/admin/diseno', requireAuth, can('diseno'), async (req, res) => {
   res.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
-  res.render('diseno', { ...configLocals(req.biz, {}), active: 'diseno', money: moneyFor(req.biz), currencySymbol: currencyInfo(req.biz.currency).symbol, mascaraConfig: { MASCARA_SIZES, SHAPE_DEFS, getShapeClip: getShapeClip.toString(), MASCARA_CSS: MASCARA_CSS.replace(/\n\s*/g,'') } });
+  res.render('diseno', { ...(await configLocals(req.biz, {})), active: 'diseno', money: moneyFor(req.biz), currencySymbol: currencyInfo(req.biz.currency).symbol, mascaraConfig: { MASCARA_SIZES, SHAPE_DEFS, getShapeClip: getShapeClip.toString(), MASCARA_CSS: MASCARA_CSS.replace(/\n\s*/g,'') } });
 });
 
 // ================= PLANES (el dueño ve y elige su plan) =================
-app.get('/:slug/admin/planes', requireAuth, (req, res) => {
+app.get('/:slug/admin/planes', requireAuth, async (req, res) => {
   if (req.role !== 'owner') return res.redirect('/' + req.params.slug + '/admin/panel');
   res.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
-  const plans = db.prepare('SELECT * FROM plans WHERE active = 1 ORDER BY price ASC').all();
-  const current = getPlan(req.biz);
+  const plans = await db.prepare('SELECT * FROM plans WHERE active = 1 ORDER BY price ASC').all();
+  const current = await getPlan(req.biz);
   res.render('planes', { biz: req.biz, plans, current, ok: req.query.ok === '1' });
 });
 
-app.post('/:slug/admin/plan', requireAuth, (req, res) => {
+app.post('/:slug/admin/plan', requireAuth, async (req, res) => {
   if (req.role !== 'owner') return res.redirect('/' + req.params.slug + '/admin/panel');
-  const plan = db.prepare('SELECT * FROM plans WHERE key = ? AND active = 1').get(req.body.plan);
+  const plan = await db.prepare('SELECT * FROM plans WHERE key = ? AND active = 1').get(req.body.plan);
   if (!plan) return res.redirect('/' + req.params.slug + '/admin/planes');
   const ends = plan.days > 0 ? new Date(Date.now() + plan.days * 86400000).toISOString().slice(0, 10) : '';
-  db.prepare('UPDATE businesses SET plan = ?, plan_price = ?, plan_ends_at = ? WHERE id = ?').run(plan.key, plan.price, ends, req.biz.id);
+  await db.prepare('UPDATE businesses SET plan = ?, plan_price = ?, plan_ends_at = ? WHERE id = ?').run(plan.key, plan.price, ends, req.biz.id);
   res.redirect('/' + req.params.slug + '/admin/planes?ok=1');
 });
 
 // ================= EMPLEADOS =================
-function getEmployees(bizId) {
-  return db.prepare('SELECT id, name, perms, created_at FROM employees WHERE business_id = ? ORDER BY id').all(bizId)
+async function getEmployees(bizId) {
+  return (await db.prepare('SELECT id, name, perms, created_at FROM employees WHERE business_id = ? ORDER BY id').all(bizId))
     .map(e => { try { e.perms = JSON.parse(e.perms || '[]'); } catch (err) { e.perms = []; } return e; });
 }
 // Devuelve true si ese PIN ya lo usa el dueño u otro empleado
-function pinInUse(biz, pin, excludeEmpId) {
+async function pinInUse(biz, pin, excludeEmpId) {
   if (!pin) return false;
   if (biz.pin_hash && verifyPin(pin, biz.pin_hash)) return true;
-  const emps = db.prepare("SELECT pin FROM users WHERE business_id = ? AND role != ?").all(biz.id, "visualizador");
+  const emps = await db.prepare("SELECT pin FROM users WHERE business_id = ? AND role != ?").all(biz.id, "visualizador");
   return emps.some(e => verifyPin(pin, e.pin));
 }
 function parsePerms(body) {
@@ -3099,55 +3185,55 @@ function parsePerms(body) {
   return raw.flatMap(x => String(x).split(',')).map(s => s.trim()).filter(p => EMPLOYEE_PERMS.some(x => x.key === p));
 }
 
-app.get('/:slug/admin/empleados', requireAuth, can('empleados'), (req, res) => {
+app.get('/:slug/admin/empleados', requireAuth, can('empleados'), async (req, res) => {
   res.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
-  res.render('empleados', { biz: req.biz, employees: getEmployees(req.biz.id), EMPLOYEE_PERMS, error: null, ok: req.query.ok === '1', formName: '', formPerms: [], formId: '' });
+  res.render('empleados', { biz: req.biz, employees: await getEmployees(req.biz.id), EMPLOYEE_PERMS, error: null, ok: req.query.ok === '1', formName: '', formPerms: [], formId: '' });
 });
 
-app.post('/:slug/admin/empleado', requireAuth, can('empleados'), (req, res) => {
+app.post('/:slug/admin/empleado', requireAuth, can('empleados'), async (req, res) => {
   const name = String(req.body.name || '').trim();
   const pin = String(req.body.pin || '');
   const perms = parsePerms(req.body);
-  const renderErr = (msg) => res.render('empleados', { biz: req.biz, employees: getEmployees(req.biz.id), EMPLOYEE_PERMS, error: msg, ok: false, formName: name, formPerms: perms, formId: '' });
-  if (!name || !/^\d{4,12}$/.test(pin)) return renderErr('Escribe el nombre y un PIN de 4 a 12 dígitos.');
-  if (pinInUse(req.biz, pin)) return renderErr('Ese PIN ya lo usa el dueño u otro empleado. Elige otro.');
-  db.prepare('INSERT INTO employees (business_id, name, pin_hash, perms) VALUES (?, ?, ?, ?)').run(req.biz.id, name, hashPin(pin), JSON.stringify(perms));
+  const renderErr = async msg => res.render('empleados', { biz: req.biz, employees: await getEmployees(req.biz.id), EMPLOYEE_PERMS, error: msg, ok: false, formName: name, formPerms: perms, formId: '' });
+  if (!name || !/^\d{4,12}$/.test(pin)) return await renderErr('Escribe el nombre y un PIN de 4 a 12 dígitos.');
+  if (await pinInUse(req.biz, pin)) return await renderErr('Ese PIN ya lo usa el dueño u otro empleado. Elige otro.');
+  await db.prepare('INSERT INTO employees (business_id, name, pin_hash, perms) VALUES (?, ?, ?, ?)').run(req.biz.id, name, hashPin(pin), JSON.stringify(perms));
   res.redirect('/' + req.params.slug + '/admin/empleados?ok=1');
 });
 
 // Editar empleado (nombre y permisos; PIN opcional)
-app.post('/:slug/admin/empleado/:id', requireAuth, can('empleados'), (req, res) => {
-  const emp = db.prepare('SELECT * FROM employees WHERE id = ? AND business_id = ?').get(req.params.id, req.biz.id);
+app.post('/:slug/admin/empleado/:id', requireAuth, can('empleados'), async (req, res) => {
+  const emp = await db.prepare('SELECT * FROM employees WHERE id = ? AND business_id = ?').get(req.params.id, req.biz.id);
   if (!emp) return res.redirect('/' + req.params.slug + '/admin/empleados');
   const name = String(req.body.name || '').trim();
   const perms = parsePerms(req.body);
-  const renderErr = (msg) => res.render('empleados', { biz: req.biz, employees: getEmployees(req.biz.id), EMPLOYEE_PERMS, error: msg, ok: false, formName: name, formPerms: perms, formId: emp.id });
-  if (!name) return renderErr('Escribe el nombre.');
+  const renderErr = async msg => res.render('empleados', { biz: req.biz, employees: await getEmployees(req.biz.id), EMPLOYEE_PERMS, error: msg, ok: false, formName: name, formPerms: perms, formId: emp.id });
+  if (!name) return await renderErr('Escribe el nombre.');
   const pin = String(req.body.pin || '');
   if (pin) {
-    if (!/^\d{4,12}$/.test(pin)) return renderErr('El PIN debe tener de 4 a 12 dígitos.');
-    if (pinInUse(req.biz, pin, emp.id)) return renderErr('Ese PIN ya lo usa el dueño u otro empleado.');
-    db.prepare('UPDATE employees SET name = ?, perms = ?, pin_hash = ? WHERE id = ?').run(name, JSON.stringify(perms), hashPin(pin), emp.id);
+    if (!/^\d{4,12}$/.test(pin)) return await renderErr('El PIN debe tener de 4 a 12 dígitos.');
+    if (await pinInUse(req.biz, pin, emp.id)) return await renderErr('Ese PIN ya lo usa el dueño u otro empleado.');
+    await db.prepare('UPDATE employees SET name = ?, perms = ?, pin_hash = ? WHERE id = ?').run(name, JSON.stringify(perms), hashPin(pin), emp.id);
   } else {
-    db.prepare('UPDATE employees SET name = ?, perms = ? WHERE id = ?').run(name, JSON.stringify(perms), emp.id);
+    await db.prepare('UPDATE employees SET name = ?, perms = ? WHERE id = ?').run(name, JSON.stringify(perms), emp.id);
   }
   res.redirect('/' + req.params.slug + '/admin/empleados?ok=1');
 });
 
 // Resetear el PIN de un empleado
-app.post('/:slug/admin/empleado/:id/reset-pin', requireAuth, can('empleados'), (req, res) => {
-  const emp = db.prepare('SELECT * FROM employees WHERE id = ? AND business_id = ?').get(req.params.id, req.biz.id);
+app.post('/:slug/admin/empleado/:id/reset-pin', requireAuth, can('empleados'), async (req, res) => {
+  const emp = await db.prepare('SELECT * FROM employees WHERE id = ? AND business_id = ?').get(req.params.id, req.biz.id);
   if (!emp) return res.redirect('/' + req.params.slug + '/admin/empleados');
   const pin = String(req.body.pin || '');
-  const renderErr = (msg) => res.render('empleados', { biz: req.biz, employees: getEmployees(req.biz.id), EMPLOYEE_PERMS, error: msg, ok: false, formName: '', formPerms: [], formId: emp.id });
-  if (!/^\d{4,12}$/.test(pin)) return renderErr('El nuevo PIN debe tener de 4 a 12 dígitos.');
-  if (pinInUse(req.biz, pin, emp.id)) return renderErr('Ese PIN ya lo usa el dueño u otro empleado.');
-  db.prepare('UPDATE employees SET pin_hash = ? WHERE id = ?').run(hashPin(pin), emp.id);
+  const renderErr = async msg => res.render('empleados', { biz: req.biz, employees: await getEmployees(req.biz.id), EMPLOYEE_PERMS, error: msg, ok: false, formName: '', formPerms: [], formId: emp.id });
+  if (!/^\d{4,12}$/.test(pin)) return await renderErr('El nuevo PIN debe tener de 4 a 12 dígitos.');
+  if (await pinInUse(req.biz, pin, emp.id)) return await renderErr('Ese PIN ya lo usa el dueño u otro empleado.');
+  await db.prepare('UPDATE employees SET pin_hash = ? WHERE id = ?').run(hashPin(pin), emp.id);
   res.redirect('/' + req.params.slug + '/admin/empleados?ok=1');
 });
 
-app.post('/:slug/admin/empleado/:id/eliminar', requireAuth, can('empleados'), (req, res) => {
-  db.prepare('DELETE FROM employees WHERE id = ? AND business_id = ?').run(req.params.id, req.biz.id);
+app.post('/:slug/admin/empleado/:id/eliminar', requireAuth, can('empleados'), async (req, res) => {
+  await db.prepare('DELETE FROM employees WHERE id = ? AND business_id = ?').run(req.params.id, req.biz.id);
   res.redirect('/' + req.params.slug + '/admin/empleados');
 });
 
@@ -3186,132 +3272,148 @@ function poMessage(supName, items, total) {
 }
 function moneyRaw(n) { return '$' + (Number(n || 0).toFixed(2)); }
 
-app.get('/:slug/admin/proveedores', requireAuth, can('config'), (req, res) => {
+app.get('/:slug/admin/proveedores', requireAuth, can('config'), async (req, res) => {
   res.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
-  const suppliers = db.prepare('SELECT * FROM suppliers WHERE business_id = ? ORDER BY name').all(req.biz.id);
-  const products = db.prepare('SELECT id, name, sku, stock, variants FROM products WHERE business_id = ? AND active = 1 ORDER BY name').all(req.biz.id)
+  const suppliers = await db.prepare('SELECT * FROM suppliers WHERE business_id = ? ORDER BY name').all(req.biz.id);
+  const products = (await db.prepare('SELECT id, name, sku, stock, variants FROM products WHERE business_id = ? AND active = 1 ORDER BY name').all(req.biz.id))
     .map(p => { p.variantOpts = combosOf(p.variants); return p; });
-  const pos = db.prepare('SELECT po.*, s.name AS supplier_name, s.phone AS supplier_phone FROM purchase_orders po LEFT JOIN suppliers s ON s.id = po.supplier_id WHERE po.business_id = ? ORDER BY po.id DESC LIMIT 40').all(req.biz.id)
+  const pos = (await db.prepare('SELECT po.*, s.name AS supplier_name, s.phone AS supplier_phone FROM purchase_orders po LEFT JOIN suppliers s ON s.id = po.supplier_id WHERE po.business_id = ? ORDER BY po.id DESC LIMIT 40').all(req.biz.id))
     .map(po => { po.items = parsePoItems(po.items); po.msg = encodeURIComponent(poMessage(po.supplier_name, po.items, po.total)); return po; });
   res.render('proveedores', { biz: req.biz, suppliers, products, pos, error: null, ok: req.query.ok === '1', money: moneyFor(req.biz) });
 });
 
-app.post('/:slug/admin/proveedor', requireAuth, can('config'), (req, res) => {
+app.post('/:slug/admin/proveedor', requireAuth, can('config'), async (req, res) => {
   const name = String(req.body.name || '').trim();
   const phone = String(req.body.phone || '').trim();
   const notes = String(req.body.notes || '').trim();
   if (!name) return res.redirect('/' + req.params.slug + '/admin/proveedores');
-  db.prepare('INSERT INTO suppliers (business_id, name, phone, notes) VALUES (?, ?, ?, ?)').run(req.biz.id, name, phone, notes);
+  await db.prepare('INSERT INTO suppliers (business_id, name, phone, notes) VALUES (?, ?, ?, ?)').run(req.biz.id, name, phone, notes);
   res.redirect('/' + req.params.slug + '/admin/proveedores?ok=1');
 });
 
-app.post('/:slug/admin/proveedor/:id/eliminar', requireAuth, can('config'), (req, res) => {
-  db.prepare('DELETE FROM suppliers WHERE id = ? AND business_id = ?').run(req.params.id, req.biz.id);
+app.post('/:slug/admin/proveedor/:id/eliminar', requireAuth, can('config'), async (req, res) => {
+  await db.prepare('DELETE FROM suppliers WHERE id = ? AND business_id = ?').run(req.params.id, req.biz.id);
   res.redirect('/' + req.params.slug + '/admin/proveedores');
 });
 
-app.post('/:slug/admin/compra', requireAuth, can('config'), (req, res) => {
+app.post('/:slug/admin/compra', requireAuth, can('config'), async (req, res) => {
   const supplier_id = parseInt(req.body.supplier_id) || null;
   const items = parsePoItems(req.body.items);
   if (!items.length) return res.redirect('/' + req.params.slug + '/admin/proveedores');
   const total = items.reduce((s, it) => s + (it.cost * it.qty), 0);
-  db.prepare('INSERT INTO purchase_orders (business_id, supplier_id, items, total) VALUES (?, ?, ?, ?)').run(req.biz.id, supplier_id, JSON.stringify(items), total);
+  await db.prepare('INSERT INTO purchase_orders (business_id, supplier_id, items, total) VALUES (?, ?, ?, ?)').run(req.biz.id, supplier_id, JSON.stringify(items), total);
   res.redirect('/' + req.params.slug + '/admin/proveedores?ok=1');
 });
 
 // Marcar recibido: suma el stock a los productos referenciados (o a su combinación)
-app.post('/:slug/admin/compra/:id/recibido', requireAuth, can('config'), (req, res) => {
-  const po = db.prepare('SELECT * FROM purchase_orders WHERE id = ? AND business_id = ?').get(req.params.id, req.biz.id);
+app.post('/:slug/admin/compra/:id/recibido', requireAuth, can('config'), async (req, res) => {
+  const po = await db.prepare('SELECT * FROM purchase_orders WHERE id = ? AND business_id = ?').get(req.params.id, req.biz.id);
   if (po && !po.received) {
     const items = parsePoItems(po.items);
-    items.forEach(it => {
-      if (!it.product_id) return;
+    for (const it of items) {
+      if (!it.product_id) continue;
       if (it.variant) {
-        const p = db.prepare('SELECT variants FROM products WHERE id = ? AND business_id = ?').get(it.product_id, req.biz.id);
+        const p = await db.prepare('SELECT variants FROM products WHERE id = ? AND business_id = ?').get(it.product_id, req.biz.id);
         if (p) {
           const model = parseVariantList(p.variants);
           const key = it.variant.split(' / ').join('|');
           model.stock = model.stock || {};
           model.stock[key] = (model.stock[key] || 0) + it.qty;
-          db.prepare('UPDATE products SET variants = ? WHERE id = ?').run(JSON.stringify(model), it.product_id);
+          await db.prepare('UPDATE products SET variants = ? WHERE id = ?').run(JSON.stringify(model), it.product_id);
         }
       } else {
-        db.prepare('UPDATE products SET stock = COALESCE(stock, 0) + ? WHERE id = ? AND business_id = ?').run(it.qty, it.product_id, req.biz.id);
+        await db.prepare('UPDATE products SET stock = COALESCE(stock, 0) + ? WHERE id = ? AND business_id = ?').run(it.qty, it.product_id, req.biz.id);
       }
-    });
-    db.prepare('UPDATE purchase_orders SET received = 1 WHERE id = ?').run(po.id);
+    }
+    await db.prepare('UPDATE purchase_orders SET received = 1 WHERE id = ?').run(po.id);
   }
   res.redirect('/' + req.params.slug + '/admin/proveedores');
 });
 
-app.post('/:slug/admin/compra/:id/eliminar', requireAuth, can('config'), (req, res) => {
-  db.prepare('DELETE FROM purchase_orders WHERE id = ? AND business_id = ?').run(req.params.id, req.biz.id);
+app.post('/:slug/admin/compra/:id/eliminar', requireAuth, can('config'), async (req, res) => {
+  await db.prepare('DELETE FROM purchase_orders WHERE id = ? AND business_id = ?').run(req.params.id, req.biz.id);
   res.redirect('/' + req.params.slug + '/admin/proveedores');
 });
 
 // ================= CONFIGURACIÓN DE DISEÑO (panel maestro) =================
-app.get('/maestro/:id/config', maestroAuth, (req, res) => {
-  const biz = db.prepare('SELECT * FROM businesses WHERE id = ?').get(req.params.id);
+app.get('/maestro/:id/config', maestroAuth, async (req, res) => {
+  const biz = await db.prepare('SELECT * FROM businesses WHERE id = ?').get(req.params.id);
   if (!biz) return res.redirect('/maestro/panel');
   res.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
-  res.render('config', configLocals(biz, { esMaestro: true }));
+  res.render('config', await configLocals(biz, { esMaestro: true }));
 });
 
-app.post('/maestro/:id/config', maestroAuth, (req, res) => {
-  const biz = db.prepare('SELECT * FROM businesses WHERE id = ?').get(req.params.id);
+app.post('/maestro/:id/config', maestroAuth, async (req, res) => {
+  const biz = await db.prepare('SELECT * FROM businesses WHERE id = ?').get(req.params.id);
   if (!biz) return res.redirect('/maestro/panel');
-  const updated = applyConfig(biz, req.body);
-  res.render('config', configLocals(updated, { esMaestro: true, ok: 'Configuración guardada' }));
+  const updated = await applyConfig(biz, req.body);
+  res.render('config', await configLocals(updated, { esMaestro: true, ok: 'Configuración guardada' }));
 });
 
-app.get('/maestro/:id/diseno', maestroAuth, (req, res) => {
-  const biz = db.prepare('SELECT * FROM businesses WHERE id = ?').get(req.params.id);
+app.get('/maestro/:id/diseno', maestroAuth, async (req, res) => {
+  const biz = await db.prepare('SELECT * FROM businesses WHERE id = ?').get(req.params.id);
   if (!biz) return res.redirect('/maestro/panel');
   res.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
-  res.render('diseno', { ...configLocals(biz, { esMaestro: true }), money: moneyFor(biz), currencySymbol: currencyInfo(biz.currency).symbol, mascaraConfig: { MASCARA_SIZES, SHAPE_DEFS, getShapeClip: getShapeClip.toString(), MASCARA_CSS: MASCARA_CSS.replace(/\n\s*/g,'') } });
+  res.render('diseno', { ...(await configLocals(biz, { esMaestro: true })), money: moneyFor(biz), currencySymbol: currencyInfo(biz.currency).symbol, mascaraConfig: { MASCARA_SIZES, SHAPE_DEFS, getShapeClip: getShapeClip.toString(), MASCARA_CSS: MASCARA_CSS.replace(/\n\s*/g,'') } });
 });
 
 // Cambiar PIN (con el actual)
-app.post('/:slug/admin/cambiar-pin', requireAuth, (req, res) => {
+app.post('/:slug/admin/cambiar-pin', requireAuth, async (req, res) => {
   const { pin_actual, pin_nuevo, pin_repite } = req.body;
   const biz = req.biz;
   const actualOk = biz.pin_hash && verifyPin(String(pin_actual || ''), biz.pin_hash);
   if (!actualOk) {
-    return res.render('config', configLocals(biz, { error: 'El PIN actual no coincide.' }));
+    return res.render('config', await configLocals(biz, { error: 'El PIN actual no coincide.' }));
   }
   if (!pin_nuevo || !/^\d{6,12}$/.test(String(pin_nuevo)) || pin_nuevo !== pin_repite) {
-    return res.render('config', configLocals(biz, { error: 'El PIN nuevo debe tener de 6 a 12 dígitos y coincidir.' }));
+    return res.render('config', await configLocals(biz, { error: 'El PIN nuevo debe tener de 6 a 12 dígitos y coincidir.' }));
   }
-  db.prepare('UPDATE businesses SET pin_hash = ?, pin = \'\' WHERE id = ?').run(hashPin(String(pin_nuevo)), biz.id);
-  db.prepare('DELETE FROM sessions WHERE biz_id = ? AND token != ?').run(biz.id, req.cookies.sid || '');
-  res.render('config', configLocals(getBusiness(biz.slug), { ok: 'PIN actualizado correctamente. Las demás sesiones fueron cerradas.' }));
+  await db.prepare('UPDATE businesses SET pin_hash = ?, pin = \'\' WHERE id = ?').run(hashPin(String(pin_nuevo)), biz.id);
+  await db.prepare('DELETE FROM sessions WHERE biz_id = ? AND token != ?').run(biz.id, req.cookies.sid || '');
+  res.render('config', await configLocals(
+    await getBusiness(biz.slug),
+    { ok: 'PIN actualizado correctamente. Las demás sesiones fueron cerradas.' }
+  ));
 });
 
 // Resetear PIN (solo con código maestro)
-app.post('/:slug/admin/resetear-pin', (req, res) => {
-  const biz = getBusiness(req.params.slug);
+app.post('/:slug/admin/resetear-pin', async (req, res) => {
+  const biz = await getBusiness(req.params.slug);
   if (!biz) return res.status(404).render('404', { message: 'Tienda no encontrada' });
   const { master } = req.body;
   if (master !== MASTER_KEY) {
-    return res.render('config', configLocals(biz, { error: 'Código maestro incorrecto. No se puede resetear el PIN.' }));
+    return res.render('config', await configLocals(biz, { error: 'Código maestro incorrecto. No se puede resetear el PIN.' }));
   }
   const newPin = String(crypto.randomInt(100000, 1000000));
-  db.prepare('UPDATE businesses SET pin_hash = ?, pin = \'\' WHERE id = ?').run(hashPin(newPin), biz.id);
-  db.prepare('DELETE FROM sessions WHERE biz_id = ?').run(biz.id);
-  res.render('config', configLocals(getBusiness(biz.slug), { ok: `PIN temporal: ${newPin}. Guárdalo y cámbialo ahora. Todas las sesiones fueron cerradas.` }));
+  await db.prepare('UPDATE businesses SET pin_hash = ?, pin = \'\' WHERE id = ?').run(hashPin(newPin), biz.id);
+  await db.prepare('DELETE FROM sessions WHERE biz_id = ?').run(biz.id);
+  res.render('config', await configLocals(
+    await getBusiness(biz.slug),
+    { ok: `PIN temporal: ${newPin}. Guárdalo y cámbialo ahora. Todas las sesiones fueron cerradas.` }
+  ));
 });
 
 const PORT = process.env.PORT || 3000;
-if (require.main === module) app.listen(PORT, () => {
-  db.prepare("DELETE FROM sessions WHERE expires_at IS NOT NULL AND expires_at < datetime('now')").run();
-  setInterval(() => {
-    db.prepare("DELETE FROM sessions WHERE expires_at IS NOT NULL AND expires_at < datetime('now')").run();
+async function start() {
+  await db.healthcheck();
+  await db.prepare("DELETE FROM sessions WHERE expires_at IS NOT NULL AND expires_at < datetime('now')").run();
+  const cleanup = setInterval(async () => {
+    await db.prepare("DELETE FROM sessions WHERE expires_at IS NOT NULL AND expires_at < datetime('now')").run();
   }, 60 * 60 * 1000);
-  console.log(`Nessik corriendo en http://localhost:${PORT}`);
-  console.log(`Landing:      http://localhost:${PORT}/`);
-  console.log(`Registrar:    http://localhost:${PORT}/registrar`);
-  console.log(`Demo tienda:  http://localhost:${PORT}/ferreteria-demo`);
-  if (process.env.SEED_DEMO === 'true') console.log(`Panel demo:   http://localhost:${PORT}/ferreteria-demo/admin`);
-});
+  cleanup.unref();
+  return app.listen(PORT, () => {
+    console.log(`Nessik corriendo en http://localhost:${PORT}`);
+    console.log(`Landing:      http://localhost:${PORT}/`);
+    console.log(`Registrar:    http://localhost:${PORT}/registrar`);
+    console.log(`Demo tienda:  http://localhost:${PORT}/ferreteria-demo`);
+  });
+}
 
-module.exports = { app, parseSheet };
+if (require.main === module) {
+  start().catch((error) => {
+    console.error('No se pudo iniciar Catálogo Digital:', error.message);
+    process.exitCode = 1;
+  });
+}
+
+module.exports = { app, parseSheet, start };
