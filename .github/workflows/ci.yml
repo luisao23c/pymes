@@ -8,6 +8,21 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    services:
+      mariadb:
+        image: mariadb:11.4
+        env:
+          MARIADB_DATABASE: nessik_catalogo_test
+          MARIADB_USER: nessik_test
+          MARIADB_PASSWORD: nessik_test_password
+          MARIADB_ROOT_PASSWORD: root_test_password
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
     steps:
       - name: Descargar código
         uses: actions/checkout@v4
@@ -20,3 +35,10 @@ jobs:
         run: npm ci
       - name: Revisar sintaxis y ejecutar pruebas
         run: npm run check
+        env:
+          MARIADB_TEST: "1"
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: nessik_catalogo_test
+          DB_USER: nessik_test
+          DB_PASSWORD: nessik_test_password
