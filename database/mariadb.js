@@ -18,6 +18,7 @@ const pool = mariadb.createPool({
 
 function normalizeSql(sql) {
   return String(sql)
+    .replace(/(?<!`)\bkey\b(?!`)/gi, '`key`')
     .replace(/\bINSERT\s+OR\s+IGNORE\b/gi, 'INSERT IGNORE')
     .replace(/\bINSERT\s+OR\s+REPLACE\b/gi, 'REPLACE')
     .replace(/\bRANDOM\(\)/gi, 'RAND()')
