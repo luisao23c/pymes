@@ -1,4 +1,4 @@
-# Product
+# Catálogo Digital por Nessik
 
 <!-- impeccable:product-schema 1 -->
 
@@ -14,6 +14,10 @@ web
 ## Product Purpose
 
 Permitir a pymes tener un catálogo digital profesional con pedidos directos por WhatsApp, sin necesidad de carrito de pago ni conocimientos técnicos. El dueño crea su tienda en minutos y comparte el enlace con clientes.
+
+**Producto:** Catálogo Digital.
+
+**Empresa y marca creadora:** Nessik (`nessik.net`).
 
 ## Positioning
 
@@ -41,7 +45,10 @@ WhatsApp-first catálogo para La Laguna, México. El cliente browsea productos y
 
 ## Brand Commitments
 
-[Inferido] Sin identidad visual establecida. El nombre del producto varía entre "Catálogo Digital", "Freebuff" y "CatáManager" (según package.json). Estilo actual: functional, no premium. El usuario ha pedido repetidamente un diseño "premium" y más atractivo.
+- El nombre del producto es siempre **Catálogo Digital**.
+- **Nessik** es la empresa creadora y firma el producto como “Catálogo Digital por Nessik”.
+- Ningún nombre interno o de herramientas de desarrollo debe mostrarse al cliente.
+- La experiencia visual debe sentirse profesional, cercana y simple para negocios locales.
 
 ## Evidence on Hand
 
