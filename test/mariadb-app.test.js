@@ -38,6 +38,8 @@ test('sirve landing, catálogo y producto usando MariaDB', { skip: process.env.M
 
   const { app } = require('../server');
   const db = require('../database/mariadb');
+  await db.prepare('INSERT INTO sessions (token, biz_id, kind, expires_at) VALUES (?, ?, ?, ?)')
+    .run('test-session', business.lastInsertRowid, 'owner', new Date(Date.now() + 3600000).toISOString());
   const server = app.listen(0);
   await new Promise((resolve) => server.once('listening', resolve));
   const base = `http://127.0.0.1:${server.address().port}`;
@@ -49,6 +51,26 @@ test('sirve landing, catálogo y producto usando MariaDB', { skip: process.env.M
     }
     const catalog = await (await fetch(base + '/ferreteria-prueba')).text();
     assert.match(catalog, /Martillo profesional/);
+
+    for (const route of ['/ferreteria-prueba/admin/panel', '/ferreteria-prueba/admin/productos']) {
+      const response = await fetch(base + route, { headers: { cookie: 'sid=test-session' } });
+      assert.equal(response.status, 200, `${route}: ${await response.text()}`);
+    }
+
+    const orderResponse = await fetch(base + '/api/pedir', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        nombre: 'Cliente Prueba', telefono: '8710000000',
+        items: [{ store: 'ferreteria-prueba', id: product.lastInsertRowid, qty: 2 }]
+      })
+    });
+    const orderText = await orderResponse.text();
+    assert.equal(orderResponse.status, 200, orderText);
+    const payload = JSON.parse(orderText);
+    assert.equal(payload.orders.length, 1);
+    assert.equal((await db.prepare('SELECT COUNT(*) AS total FROM orders WHERE business_id = ?').get(business.lastInsertRowid)).total, 1);
+    assert.equal((await db.prepare('SELECT COUNT(*) AS total FROM customers WHERE business_id = ?').get(business.lastInsertRowid)).total, 1);
   } finally {
     await new Promise((resolve) => server.close(resolve));
     await db.close();
