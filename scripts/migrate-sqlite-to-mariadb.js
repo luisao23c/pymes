@@ -19,7 +19,8 @@ function mariaType(column) {
   if (column.pk && type.includes('INT')) return 'BIGINT NOT NULL AUTO_INCREMENT';
   if (column.pk) return 'VARCHAR(191) NOT NULL';
   if (/^(created_at|published_at|expires_at)$/.test(column.name)) return 'DATETIME';
-  if (/_ends_at$/.test(column.name)) return 'DATE';
+  // Estas fechas admiten cadena vacía en la aplicación existente.
+  if (/_ends_at$/.test(column.name)) return 'VARCHAR(32)';
   if (type.includes('INT')) return 'BIGINT';
   if (type.includes('REAL') || type.includes('FLOA') || type.includes('DOUB') || type.includes('NUM')) return 'DECIMAL(18,4)';
   if (type.includes('BLOB')) return 'LONGBLOB';
