@@ -35,6 +35,7 @@ test('sirve landing, catálogo y producto usando MariaDB', { skip: process.env.M
     cwd: path.resolve(__dirname, '..'), env, encoding: 'utf8'
   });
   assert.equal(migration.status, 0, migration.stderr);
+  console.error('mariadb-app: migración completada');
 
   const { app } = require('../server');
   const db = require('../database/mariadb');
@@ -42,6 +43,7 @@ test('sirve landing, catálogo y producto usando MariaDB', { skip: process.env.M
     .run('test-session', business.lastInsertRowid, 'owner', new Date(Date.now() + 3600000).toISOString());
   const server = app.listen(0);
   await new Promise((resolve) => server.once('listening', resolve));
+  console.error('mariadb-app: servidor iniciado');
   const base = `http://127.0.0.1:${server.address().port}`;
 
   try {
@@ -51,11 +53,13 @@ test('sirve landing, catálogo y producto usando MariaDB', { skip: process.env.M
     }
     const catalog = await (await fetch(base + '/ferreteria-prueba', { signal: AbortSignal.timeout(10000) })).text();
     assert.match(catalog, /Martillo profesional/);
+    console.error('mariadb-app: catálogo público validado');
 
     for (const route of ['/ferreteria-prueba/admin/panel', '/ferreteria-prueba/admin/productos']) {
       const response = await fetch(base + route, { headers: { cookie: 'sid=test-session' }, signal: AbortSignal.timeout(10000) });
       assert.equal(response.status, 200, `${route}: ${await response.text()}`);
     }
+    console.error('mariadb-app: panel validado');
 
     const orderResponse = await fetch(base + '/api/pedir', {
       method: 'POST',
@@ -72,10 +76,12 @@ test('sirve landing, catálogo y producto usando MariaDB', { skip: process.env.M
     assert.equal(payload.orders.length, 1);
     assert.equal((await db.prepare('SELECT COUNT(*) AS total FROM orders WHERE business_id = ?').get(business.lastInsertRowid)).total, 1);
     assert.equal((await db.prepare('SELECT COUNT(*) AS total FROM customers WHERE business_id = ?').get(business.lastInsertRowid)).total, 1);
+    console.error('mariadb-app: pedido validado');
   } finally {
     if (typeof server.closeAllConnections === 'function') server.closeAllConnections();
     await new Promise((resolve) => server.close(resolve));
     await db.close();
+    console.error('mariadb-app: recursos cerrados');
     fs.rmSync(tempDir, { recursive: true, force: true });
   }
 });
