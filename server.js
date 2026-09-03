@@ -1,6 +1,8 @@
 const express = require('express');
-const db = require('./db');
 const path = require('path');
+const { createRuntimeConfig } = require('./config/runtime');
+const runtime = createRuntimeConfig(__dirname);
+const db = require('./db');
 const { MASCARA_SIZES, SHAPE_DEFS, getShapeClip, MASCARA_CSS, EDITOR_ONLY_CSS } = require('./lib/mascara');
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
@@ -9,22 +11,19 @@ const XLSX = require('xlsx');
 const ExcelJS = require('exceljs');
 const QRCode = require('qrcode');
 const { TPL_THEMES, TPL_META, TPL_CASOS } = require('./templates-data');
+const { buildOrderMessage } = require('./lib/order-message');
+const { buildPaymentPlan } = require('./lib/payment-plan');
+const { createUploaders } = require('./middleware/uploads');
+const { cookieParser, createCsrfProtection, createRateLimiter, verifyBodyCsrf } = require('./middleware/security');
+const { scheduleBackups } = require('./services/backup');
 const app = express();
-
-// Carga variables de entorno desde .env (si existe), sin dependencias externas
-try {
-  const fsEnv = require('fs');
-  const envPath = path.join(__dirname, '.env');
-  if (fsEnv.existsSync(envPath)) {
-    fsEnv.readFileSync(envPath, 'utf8').split(/\r?\n/).forEach(line => {
-      const m = line.match(/^\s*([\w.]+)\s*=\s*(.*)\s*$/);
-      if (m && !process.env[m[1]]) process.env[m[1]] = m[2].replace(/^["']|["']$/g, '');
-    });
-  }
-} catch (e) {}
-
-const MASTER_KEY = process.env.MASTER_KEY || crypto.randomBytes(12).toString('hex');
-const BASE_URL = process.env.BASE_URL || '';
+const IS_PRODUCTION = runtime.isProduction;
+const MASTER_KEY = runtime.masterKey;
+const BASE_URL = runtime.baseUrl;
+const UPLOAD_DIR = runtime.uploadDir;
+const sessionCookie = runtime.sessionCookie;
+const { upload, uploadExcel, uploadVideo, uploadFile } = createUploaders(UPLOAD_DIR);
+const rateLimit = createRateLimiter();
 
 // ================= PLANES (configurables desde el panel maestro) =================
 function getPlan(biz) {
@@ -152,6 +151,7 @@ app.locals.safeJson = function (v) {
 };
 app.use(express.urlencoded({ extended: true, limit: '60mb' }));
 app.use(express.json({ limit: '60mb' }));
+app.use('/uploads', express.static(UPLOAD_DIR, { dotfiles: 'deny', fallthrough: false }));
 app.use(express.static(path.join(__dirname, 'public')));
 // === RATE LIMITER ===
 var _rateLimit = {};
@@ -178,135 +178,18 @@ setInterval(function() {
 }, 300000);
 
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, path.join(__dirname, 'public', 'uploads')),
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase();
-    const allowed = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
-    const safeExt = allowed.includes(ext) ? ext : '.png';
-    cb(null, Date.now() + '-' + crypto.randomBytes(4).toString('hex') + safeExt);
-  }
-});
-const upload = multer({
-  storage,
-  limits: { fileSize: 5 * 1024 * 1024 },
-  fileFilter: (req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase();
-    const allowed = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
-    const okMime = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(file.mimetype);
-    cb(null, allowed.includes(ext) && okMime);
-  }
-});
-
-const uploadExcel = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 },
-  fileFilter: (req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase();
-    const allowed = ['.xlsx', '.xls', '.csv'];
-    cb(null, allowed.includes(ext));
-  }
-});
-
-const videoStorage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, path.join(__dirname, 'public', 'uploads')),
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase();
-    const allowed = ['.mp4', '.webm', '.mov', '.m4v', '.ogg'];
-    const safeExt = allowed.includes(ext) ? ext : '.mp4';
-    cb(null, 'vid-' + Date.now() + '-' + crypto.randomBytes(4).toString('hex') + safeExt);
-  }
-});
-const uploadVideo = multer({
-  storage: videoStorage,
-  limits: { fileSize: 100 * 1024 * 1024 },
-  fileFilter: (req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase();
-    const allowed = ['.mp4', '.webm', '.mov', '.m4v', '.ogg'];
-    const okMime = ['video/mp4', 'video/webm', 'video/quicktime', 'video/x-m4v', 'video/ogg'].includes(file.mimetype);
-    cb(null, allowed.includes(ext) && okMime);
-  }
-});
-
-const fileStorage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, path.join(__dirname, 'public', 'uploads')),
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase();
-    const allowed = ['.mp3', '.wav', '.ogg', '.m4a', '.aac', '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.zip', '.txt', '.csv', '.json'];
-    const safeExt = allowed.includes(ext) ? ext : '.bin';
-    cb(null, 'file-' + Date.now() + '-' + crypto.randomBytes(4).toString('hex') + safeExt);
-  }
-});
-const uploadFile = multer({
-  storage: fileStorage,
-  limits: { fileSize: 50 * 1024 * 1024 },
-  fileFilter: (req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase();
-    const allowed = ['.mp3', '.wav', '.ogg', '.m4a', '.aac', '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.zip', '.txt', '.csv', '.json'];
-    cb(null, allowed.includes(ext));
-  }
-});
-
-app.use((req, res, next) => {
-  const raw = req.headers.cookie || '';
-  const out = {};
-  raw.split(';').forEach((pair) => {
-    const idx = pair.indexOf('=');
-    if (idx > -1) out[pair.slice(0, idx).trim()] = pair.slice(idx + 1).trim();
-  });
-  req.cookies = out;
-  next();
-});
-
-// ================= CSRF (doble-envío de cookie + token oculto) =================
-app.use((req, res, next) => {
-  if (!req.cookies.csrf) {
-    req.cookies.csrf = crypto.randomBytes(24).toString('hex');
-    res.cookie('csrf', req.cookies.csrf, { httpOnly: false, sameSite: 'lax', path: '/' });
-  }
-  res.locals.csrf = req.cookies.csrf;
-  next();
-});
-app.use((req, res, next) => {
-  if (req.method !== 'POST') return next();
-  const p = req.path;
-  if (p === '/registrar' || p === '/maestro' || p === '/maestro/cerrar') return next();
-  if (p.endsWith('/admin') || p.endsWith('/resetear-pin')) return next(); // logins / reseteo público
-  if (!/^\/[^/]+\/admin(\/|$)/.test(p) && !/^\/maestro\//.test(p)) return next();
-  // Multipart: el body aún no está parseado aquí; se valida en la ruta tras multer (ver verifyBodyCsrf)
-  if (req.is('multipart/form-data')) return next();
-  const t = (req.body && req.body._csrf) || req.get('x-csrf-token') || '';
-  if (!t || t !== req.cookies.csrf) {
-    return res.status(403).send('Solicitud rechazada: token de seguridad inválido. Recarga la página e intenta de nuevo.');
-  }
-  next();
-});
-
-// Valida CSRF en peticiones multipart, una vez que multer ya parseó el body
-function verifyBodyCsrf(req, res, next) {
-  const t = (req.body && req.body._csrf) || req.get('x-csrf-token') || '';
-  if (!t || t !== req.cookies.csrf) {
-    return res.status(403).send('Solicitud rechazada: token de seguridad inválido. Recarga la página e intenta de nuevo.');
-  }
-  next();
-}
-
-// ================= BACKUP AUTOMÁTICO DIARIO =================
-const fs = require('fs');
-const backupsDir = path.join(__dirname, 'backups');
-if (!fs.existsSync(backupsDir)) fs.mkdirSync(backupsDir, { recursive: true });
-function hacerBackup() {
+app.get('/health', (req, res) => {
   try {
-    const date = new Date().toISOString().slice(0, 10);
-    const dest = path.join(backupsDir, `data-${date}.db`);
-    fs.copyFileSync(path.join(__dirname, 'data.db'), dest);
-    console.log(`Backup creado: ${dest}`);
-  } catch (e) {
-    console.error('Error al crear backup:', e.message);
+    db.prepare('SELECT 1').get();
+    res.json({ status: 'ok' });
+  } catch (error) {
+    res.status(503).json({ status: 'error' });
   }
-}
-setTimeout(hacerBackup, 1000 * 60 * 5); // 5 min tras iniciar
-setInterval(hacerBackup, 1000 * 60 * 60 * 24); // luego cada 24h
+});
+if (IS_PRODUCTION) app.set('trust proxy', 1);
+app.use(cookieParser);
+app.use(createCsrfProtection(IS_PRODUCTION));
+scheduleBackups(db, runtime.backupDir);
 
 // ================= RATE LIMIT DE LOGIN (anti fuerza bruta) =================
 const loginAttempts = new Map();
@@ -1136,20 +1019,6 @@ function waLink(biz, text) {
 
 // Arma el mensaje del pedido. Si la tienda configuró uno personalizado, usa sus
 // comodines {tienda}, {productos} y {total}; si no, el mensaje por defecto.
-function buildOrderMessage(storeName, lines, total, template, sym) {
-  const lista = lines.join('\n');
-  const cur = sym || '$';
-  const totalStr = cur + total.toFixed(2);
-  const custom = (template && String(template).trim()) ? String(template).trim() : '';
-  if (custom) {
-    return custom
-      .replace(/\{tienda\}/g, storeName)
-      .replace(/\{productos\}/g, lista)
-      .replace(/\{total\}/g, totalStr);
-  }
-  return `Hola ${storeName}! 👋 Quiero pedir:\n\n${lista}\n\nTotal: ${totalStr}\n\n¿Me confirmas disponibilidad y envío?`;
-}
-
 function track(businessId, type, detail) {
   db.prepare('INSERT INTO tracking (business_id, type, detail) VALUES (?, ?, ?)').run(businessId, type, detail || '');
 }
@@ -1204,6 +1073,1457 @@ function getStats(businessId) {
     weekDelta: pct(week, prevWeek), revenueDelta: pct(revenueWeek, prevRevenue),
     topProducts, topWaProducts, topSellers: topSellersArr, daily, ordersDaily, conv, clickRate, orderRate
   };
+}
+
+// ================= LANDING =================
+app.get('/', (req, res) => {
+  const stores = db.prepare('SELECT * FROM businesses WHERE active = 1 ORDER BY created_at DESC LIMIT 12').all();
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+  res.render('landing', { stores, TEMPLATES, COLORS });
+});
+
+// ================= REGISTRO DE TIENDA =================
+app.get('/registrar', (req, res) => {
+  res.render('register', { TEMPLATES, COLORS, GIROS, ESTILOS, error: null, ok: null });
+});
+
+app.post('/registrar', rateLimit(10), (req, res) => {
+  const { name, slug, whatsapp, description, pin, template, color, giro, giro_custom, estilo } = req.body;
+  const cleanSlug = (slug || '').trim().toLowerCase().replace(/[^a-z0-9-]/g, '-');
+  if (!name || !cleanSlug || !whatsapp) {
+    return res.render('register', { TEMPLATES, COLORS, GIROS, ESTILOS, error: 'Nombre, enlace y WhatsApp son obligatorios.', ok: null });
+  }
+  if (getBusiness(cleanSlug)) {
+    return res.render('register', { TEMPLATES, COLORS, GIROS, ESTILOS, error: 'Ese enlace ya existe. Elige otro.', ok: null });
+  }
+  const cleanPin = (pin || '').trim();
+  if (cleanPin.length < 6 || !/^\d+$/.test(cleanPin)) {
+    return res.render('register', { TEMPLATES, COLORS, GIROS, ESTILOS, error: 'El PIN debe tener al menos 6 dígitos numéricos.', ok: null });
+  }
+  const hashedPin = hashPin(cleanPin);
+  const colorObj = getColor(color);
+  const giroOk = giro === 'otro' && giro_custom ? giro_custom.trim().toLowerCase() : (GIROS.includes(giro) ? giro : '');
+  const tpl = 'constructor';
+  const estSel = ESTILOS.some(e => e.id === estilo) ? estilo : (GIRO_STYLE[giroOk] || 'moderno');
+  const r = db.prepare(
+    `INSERT INTO businesses (slug, name, whatsapp, description, pin, template, color, color_hex, color_hex2, giro, estilo, color_mode)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'estilo')`
+  ).run(
+    cleanSlug,
+    name.trim(),
+    whatsapp.trim().replace(/[^0-9]/g, ''),
+    description || '',
+    hashPin(cleanPin),
+    tpl,
+    colorObj.id,
+    colorObj.c1,
+    colorObj.c2,
+    giroOk,
+    estSel
+  );
+  res.render('register', { TEMPLATES, COLORS, GIROS, ESTILOS, error: null, ok: cleanSlug });
+});
+
+// ================= PANEL MAESTRO =================
+app.get('/maestro', (req, res) => {
+  const s = findSession(req.cookies && req.cookies.sid);
+  if (s && s.kind === 'maestro') return res.redirect('/maestro/panel');
+  res.render('maestro', { error: null, list: null });
+});
+
+app.post('/maestro', (req, res) => {
+  if (req.body.master === MASTER_KEY || verifyPin(req.body.master, MASTER_KEY)) {
+    const token = createSession(null, 'maestro');
+    res.cookie('sid', token, sessionCookie(24 * 60 * 60 * 1000));
+    return res.redirect('/maestro/panel');
+  }
+  res.render('maestro', { error: 'Código maestro incorrecto.', list: null });
+});
+
+function maestroAuth(req, res, next) {
+  const s = findSession(req.cookies && req.cookies.sid);
+  if (!(s && s.kind === 'maestro')) return res.redirect('/maestro');
+  next();
+}
+
+app.get('/maestro/panel', maestroAuth, (req, res) => {
+  const stores = db.prepare(
+    `SELECT b.*,
+       (SELECT COUNT(*) FROM products p WHERE p.business_id = b.id) AS products_count,
+       (SELECT COUNT(*) FROM orders o WHERE o.business_id = b.id) AS orders_count,
+       (SELECT COUNT(*) FROM tracking t WHERE t.business_id = b.id AND t.type = 'visit') AS visits_count,
+       p2.name AS plan_name, p2.max_products AS plan_max, p2.price AS plan_price, p2.ads AS plan_ads
+     FROM businesses b
+     LEFT JOIN plans p2 ON p2.key = b.plan
+     ORDER BY b.created_at DESC`
+  ).all().map(s => {
+    const today = new Date().toISOString().slice(0, 10);
+    s.expired = s.plan_ends_at && s.plan_ends_at !== '' && s.plan_ends_at < today ? 1 : 0;
+    s.plan_name = s.plan_name || s.plan || 'free';
+    s.plan_price = s.plan_price === null || s.plan_price === undefined ? 0 : s.plan_price;
+    return s;
+  });
+  const plans = db.prepare('SELECT * FROM plans ORDER BY active DESC, id ASC').all();
+  const planUsage = {};
+  stores.forEach(s => { planUsage[s.plan] = (planUsage[s.plan] || 0) + 1; });
+  const customTemplates = db.prepare('SELECT * FROM custom_templates WHERE active=1 ORDER BY category, name').all();
+  res.render('maestro', { error: null, list: stores, plans, planUsage, GIROS, customTemplates });
+});
+
+app.post('/maestro/:id/toggle', maestroAuth, (req, res) => {
+  db.prepare('UPDATE businesses SET active = CASE WHEN active = 1 THEN 0 ELSE 1 END WHERE id = ?').run(req.params.id);
+  res.redirect('/maestro/panel?ok=' + encodeURIComponent('Tienda activada/desactivada'));
+});
+
+app.post('/maestro/:id/reset-pin', maestroAuth, (req, res) => {
+  const newPin = String(req.body.new_pin || '');
+  if (!/^\d{6,12}$/.test(newPin)) {
+    return res.redirect('/maestro/panel?error=' + encodeURIComponent('Escribe un PIN nuevo de 6 a 12 dígitos'));
+  }
+  db.prepare('UPDATE businesses SET pin = ? WHERE id = ?').run(hashPin(String(newPin)), req.params.id);
+  db.prepare('DELETE FROM sessions WHERE biz_id = ?').run(req.params.id);
+  res.redirect('/maestro/panel?ok=' + encodeURIComponent('PIN reseteado. Sesiones cerradas.'));
+});
+
+app.post('/maestro/:id/plan', maestroAuth, (req, res) => {
+  const plan = db.prepare('SELECT key FROM plans WHERE key = ? AND active = 1').get(req.body.plan);
+  if (plan) {
+    db.prepare('UPDATE businesses SET plan = ? WHERE id = ?').run(plan.key, req.params.id);
+    res.redirect('/maestro/panel?ok=' + encodeURIComponent('Plan actualizado'));
+  } else {
+    res.redirect('/maestro/panel');
+  }
+});
+
+// Precio y fecha de vencimiento del plan de una tienda
+app.post('/maestro/:id/vencimiento', maestroAuth, (req, res) => {
+  const price = parseFloat(req.body.plan_price);
+  const ends = /^\d{4}-\d{2}-\d{2}$/.test((req.body.plan_ends_at || '').trim()) ? req.body.plan_ends_at.trim() : '';
+  db.prepare('UPDATE businesses SET plan_price = ?, plan_ends_at = ? WHERE id = ?').run(isNaN(price) ? 0 : price, ends, req.params.id);
+  res.redirect('/maestro/panel?ok=' + encodeURIComponent('Precio y vencimiento guardados'));
+});
+
+app.post('/maestro/:id/suspender', maestroAuth, (req, res) => {
+  db.prepare('UPDATE businesses SET suspended = 1 WHERE id = ?').run(req.params.id);
+  res.redirect('/maestro/panel?ok=' + encodeURIComponent('Tienda suspendida'));
+});
+
+app.post('/maestro/:id/reactivar', maestroAuth, (req, res) => {
+  db.prepare('UPDATE businesses SET suspended = 0 WHERE id = ?').run(req.params.id);
+  res.redirect('/maestro/panel?ok=' + encodeURIComponent('Tienda reactivada'));
+});
+
+// Anuncio: esta tienda se muestra como publicidad en otros catálogos
+app.post('/maestro/:id/ads', maestroAuth, (req, res) => {
+  db.prepare('UPDATE businesses SET ads_enabled = CASE WHEN ads_enabled = 1 THEN 0 ELSE 1 END WHERE id = ?').run(req.params.id);
+  res.redirect('/maestro/panel?ok=' + encodeURIComponent('Publicidad actualizada'));
+});
+
+// ================= CREACIÓN DE PLANES (maestro) =================
+app.post('/maestro/plan', maestroAuth, (req, res) => {
+  const { name, price, days, max_products } = req.body;
+  const cleanName = (name || '').trim();
+  if (!cleanName) return res.redirect('/maestro/panel');
+  const key = 'p' + Date.now();
+  db.prepare(
+    'INSERT INTO plans (key, name, price, days, max_products, ads, design, active) VALUES (?, ?, ?, ?, ?, ?, ?, 1)'
+  ).run(
+    key,
+    cleanName,
+    Math.max(0, parseFloat(price) || 0),
+    Math.max(0, parseInt(days) || 0),
+    parseInt(max_products) === -1 ? -1 : Math.max(0, parseInt(max_products) || 0),
+    req.body.ads === 'on' ? 1 : 0,
+    req.body.design === 'on' ? 1 : 0
+  );
+  res.redirect('/maestro/panel?ok=' + encodeURIComponent('Plan creado'));
+});
+
+app.post('/maestro/plan/:id/eliminar', maestroAuth, (req, res) => {
+  const p = db.prepare('SELECT * FROM plans WHERE id = ?').get(req.params.id);
+  if (p && p.key !== 'free' && p.key !== 'pro') {
+    const used = db.prepare('SELECT COUNT(*) AS c FROM businesses WHERE plan = ?').get(p.key).c;
+    if (used === 0) {
+      db.prepare('DELETE FROM plans WHERE id = ?').run(req.params.id);
+    }
+  }
+  res.redirect('/maestro/panel?ok=' + encodeURIComponent('Plan eliminado'));
+});
+
+app.post('/maestro/cerrar', (req, res) => {
+  deleteSession(req.cookies && req.cookies.sid);
+  res.clearCookie('sid', { path: '/' });
+  res.redirect('/maestro');
+});
+
+// ================= PLANTILLAS PERSONALIZADAS DEL EQUIPO =================
+app.post('/maestro/plantilla/crear', maestroAuth, (req, res) => {
+  const { name, emoji, description, category, giro } = req.body;
+  const cleanName = (name || '').trim().slice(0, 80);
+  if (!cleanName) return res.redirect('/maestro/panel?tab=plantillas&err=' + encodeURIComponent('Nombre requerido'));
+  db.prepare('INSERT INTO custom_templates (name, emoji, description, category, giro) VALUES (?,?,?,?,?)').run(
+    cleanName, (emoji || '📄').slice(0, 4), (description || '').trim().slice(0, 200), (category || '').trim(), (giro || '').trim()
+  );
+  res.redirect('/maestro/panel?tab=plantillas&ok=' + encodeURIComponent('Plantilla creada'));
+});
+
+app.post('/maestro/plantilla/:tid/editar', maestroAuth, (req, res) => {
+  const { name, emoji, description, category, giro } = req.body;
+  const cleanName = (name || '').trim().slice(0, 80);
+  if (!cleanName) return res.redirect('/maestro/panel?tab=plantillas&err=' + encodeURIComponent('Nombre requerido'));
+  db.prepare('UPDATE custom_templates SET name=?, emoji=?, description=?, category=?, giro=? WHERE id=?').run(
+    cleanName, (emoji || '📄').slice(0, 4), (description || '').trim().slice(0, 200), (category || '').trim(), (giro || '').trim(), req.params.tid
+  );
+  res.redirect('/maestro/panel?tab=plantillas&ok=' + encodeURIComponent('Plantilla actualizada'));
+});
+
+app.post('/maestro/plantilla/:tid/eliminar', maestroAuth, (req, res) => {
+  db.prepare('DELETE FROM custom_templates WHERE id=?').run(req.params.tid);
+  res.redirect('/maestro/panel?tab=plantillas&ok=' + encodeURIComponent('Plantilla eliminada'));
+});
+
+app.post('/maestro/plantilla/:tid/default', maestroAuth, (req, res) => {
+  const tpl = db.prepare('SELECT id FROM custom_templates WHERE id=? AND active=1').get(req.params.tid);
+  if (!tpl) return res.redirect('/maestro/panel?tab=plantillas');
+  db.prepare('UPDATE custom_templates SET is_default = 0').run();
+  db.prepare('UPDATE custom_templates SET is_default = 1 WHERE id = ?').run(req.params.tid);
+  db.prepare("INSERT OR REPLACE INTO site_config (key, value) VALUES ('default_template_id', ?)").run(String(req.params.tid));
+  res.redirect('/maestro/panel?tab=plantillas&ok=' + encodeURIComponent('Plantilla marcada como predeterminada'));
+});
+
+app.post('/maestro/plantilla/:tid/quitar-default', maestroAuth, (req, res) => {
+  db.prepare('UPDATE custom_templates SET is_default = 0 WHERE id = ?').run(req.params.tid);
+  db.prepare("INSERT OR REPLACE INTO site_config (key, value) VALUES ('default_template_id', '')").run();
+  res.redirect('/maestro/panel?tab=plantillas&ok=' + encodeURIComponent('Plantilla predeterminada removida'));
+});
+
+// Guardar bloques del constructor como plantilla del equipo (JSON body)
+app.post('/maestro/plantilla/guardar', maestroAuth, (req, res) => {
+  try {
+    const { name, emoji, description, blocks_json, category, giro } = req.body;
+    const cleanName = (name || '').trim().slice(0, 80);
+    if (!cleanName) return res.json({ ok: false, error: 'Nombre requerido' });
+    const r = db.prepare('INSERT INTO custom_templates (name, emoji, description, category, giro, blocks_json) VALUES (?,?,?,?,?,?)').run(
+      cleanName, (emoji || '📄').slice(0, 4), (description || '').trim().slice(0, 200), (category || '').trim(), (giro || '').trim(), (blocks_json || '[]').slice(0, 500000)
+    );
+    const tpl = db.prepare('SELECT * FROM custom_templates WHERE id=?').get(r.lastInsertRowid);
+    res.json({ ok: true, tpl });
+  } catch (e) {
+    res.json({ ok: false, error: e.message });
+  }
+});
+
+// Actualizar bloques de una plantilla existente (JSON body)
+app.post('/maestro/plantilla/:tid/bloques', maestroAuth, (req, res) => {
+  try {
+    const { blocks_json } = req.body;
+    db.prepare('UPDATE custom_templates SET blocks_json=? WHERE id=?').run(
+      (blocks_json || '[]').slice(0, 500000), req.params.tid
+    );
+    res.json({ ok: true });
+  } catch (e) {
+    res.json({ ok: false, error: e.message });
+  }
+});
+
+// ================= EDITOR DE PLANTILLA DESDE EL MAESTRO =================
+app.get('/maestro/plantilla/:tid/diseno', maestroAuth, (req, res) => {
+  const row = db.prepare('SELECT * FROM custom_templates WHERE id=? AND active=1').get(req.params.tid);
+  if (!row) return res.redirect('/maestro/panel?tab=plantillas');
+  // Crear un "business virtual" con los datos de la plantilla para alimentar al editor
+  const biz = {
+    id: -(parseInt(row.id) || 0),  // id negativo para distinguir de businesses reales
+    slug: 'plantilla-' + row.id,
+    name: row.name,
+    description: row.description || '',
+    logo: '',
+    banner: '',
+    whatsapp: '',
+    giro: row.giro || '',
+    giros: row.giro ? JSON.stringify([row.giro]) : '[]',
+    template: '',
+    style: 'moderno',
+    color: 'blue',
+    color_hex: '#2563eb',
+    color_hex2: '',
+    color_mode: 'degradado',
+    bg: '',
+    card: '',
+    text: '',
+    muted: '',
+    border: '',
+    radius: '',
+    font: '',
+    accent: '',
+    accent2: '',
+    header: '',
+    header_text: '',
+    sections: '{}',
+    blocks: row.blocks_json || '[]',
+    horario: '[]',
+    horario_msg: '',
+    grid_cols: 3,
+    wa_message: '',
+    currency: 'MXN',
+    show_network: 0,
+    page_bg: '',
+    active: 1,
+    created_at: row.created_at
+  };
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+  res.render('diseno', {
+    ...configLocals(biz, { esMaestro: true, editingCustomTpl: parseInt(row.id) }),
+    biz,
+    editingCustomTpl: parseInt(row.id),
+    money: '$',
+    currencySymbol: '$',
+    mascaraConfig: { MASCARA_SIZES, SHAPE_DEFS, getShapeClip: getShapeClip.toString(), MASCARA_CSS: MASCARA_CSS.replace(/\n\s*/g,'') }
+  });
+});
+
+// Guardar bloques de una plantilla del equipo desde el constructor
+app.post('/maestro/plantilla/:tid/diseno', maestroAuth, (req, res) => {
+  try {
+    const { blocks } = req.body;
+    const blocksJson = Array.isArray(blocks) ? JSON.stringify(blocks) : (blocks || '[]');
+    db.prepare('UPDATE custom_templates SET blocks_json=? WHERE id=?').run(
+      blocksJson.slice(0, 500000), req.params.tid
+    );
+    res.json({ ok: true });
+  } catch (e) {
+    res.json({ ok: false, error: e.message });
+  }
+});
+
+// ================= CATÁLOGO PÚBLICO =================
+app.get('/:slug', (req, res) => {
+  const biz = getBusiness(req.params.slug);
+  if (!biz || !biz.active) return res.status(404).render('404', { message: 'Tienda no encontrada o desactivada' });
+  const block = storeBlock(biz);
+  if (block.blocked) {
+    return res.status(403).render('store-off', { biz, reason: block.reason });
+  }
+  const { categories, products, pages } = getCatalog(biz.id);
+  track(biz.id, 'visit', '');
+
+  let productsFinal = products;
+  if (adsOn(biz) && products.length > 0) {
+    const sponsored = pickSponsored(biz, 6);
+    if (sponsored.length) {
+      productsFinal = [];
+      let idx = 0;
+      let spIdx = 0;
+      products.forEach((p) => {
+        productsFinal.push(p);
+        idx++;
+        if (idx % 5 === 0 && spIdx < sponsored.length) {
+          productsFinal.push({ isAd: true, ad: sponsored[spIdx] });
+          spIdx++;
+        }
+      });
+      while (spIdx < sponsored.length) {
+        productsFinal.push({ isAd: true, ad: sponsored[spIdx] });
+        spIdx++;
+      }
+    }
+  }
+
+  const estilo = getEffectiveEstilo(biz);
+  const pal = getPalette(biz, estilo);
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+  res.locals.money = moneyFor(biz);
+  res.locals.currencySymbol = currencyInfo(biz.currency).symbol;
+  res.locals.currencyCode = biz.currency;
+  const sponsoredAds = adsOn(biz) ? pickSponsored(biz, 6) : [];
+  app.render('catalog', { biz, categories, products: productsFinal, estilo, theme: getTemplateTheme(biz.template), components: getComponents(biz), pages, seoUrl: BASE_URL ? BASE_URL + '/' + biz.slug : '', money: moneyFor(biz), currencySymbol: currencyInfo(biz.currency).symbol, currencyCode: biz.currency, mascaraCss: MASCARA_CSS, mascaraConfig: { MASCARA_SIZES, SHAPE_DEFS, getShapeClip }, adsEnabled: adsOn(biz), sponsoredAds }, (err, html) => {
+    if (err) { console.error('Template render error:', err.stack || err); return res.status(500).send('Error al generar el catálogo: ' + err.message); }
+    res.send(finishCatalog(html, biz, pal, estilo));
+  });
+});
+
+// Página de un producto individual (para compartir y verlo solo)
+app.get('/:slug/p/:id', (req, res) => {
+  const biz = getBusiness(req.params.slug);
+  if (!biz || !biz.active) return res.status(404).render('404', { message: 'Tienda no encontrada o desactivada' });
+  const block = storeBlock(biz);
+  if (block.blocked) return res.status(403).render('store-off', { biz, reason: block.reason });
+  const p = db.prepare(
+    `SELECT p.*, c.name AS category_name FROM products p LEFT JOIN categories c ON c.id = p.category_id
+     WHERE p.id = ? AND p.business_id = ? AND p.active = 1`
+  ).get(parseInt(req.params.id) || 0, biz.id);
+  if (!p) {
+    const page = db.prepare('SELECT * FROM pages WHERE business_id = ? AND slug = ? AND active = 1').get(biz.id, String(req.params.id));
+    if (page) {
+      const { categories, products, pages } = getCatalog(biz.id);
+      const bizOv = { ...biz, blocks: page.blocks || '[]', name: biz.name + ' · ' + page.title };
+      const estilo = getEffectiveEstilo(biz);
+      const pal = getPalette(biz, estilo);
+      track(biz.id, 'view', 'Página: ' + page.title);
+      res.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+      console.log('=== ROUTE HIT: Rendering catalog for:', bizOv.slug);
+      console.log('bizOv.blocks:', bizOv.blocks ? 'present' : 'empty');
+      app.render('catalog', { biz: bizOv, categories, products, estilo, theme: getTemplateTheme(biz.template), components: getComponents(bizOv), pages, seoUrl: BASE_URL ? BASE_URL + '/' + biz.slug : '', money: moneyFor(biz), currencySymbol: currencyInfo(biz.currency).symbol, currencyCode: biz.currency, mascaraCss: MASCARA_CSS, mascaraConfig: { MASCARA_SIZES, SHAPE_DEFS, getShapeClip } }, (err, html) => {
+        if (err) { console.error('Template render error:', err.stack || err); return res.status(500).send('Error al generar la página: ' + err.message); }
+        console.log('Template rendered, length:', html ? html.length : 0);
+        console.log('Calling finishCatalog...');
+        try {
+          const result = finishCatalog(html, bizOv, pal, estilo);
+          console.log('finishCatalog returned:', result ? 'OK len=' + result.length : 'empty');
+          res.send(result);
+        } catch (e) {
+          console.error('finishCatalog error:', e.stack || e);
+          return res.status(500).send('Error en finishCatalog: ' + e.message);
+        }
+      });
+      return;
+    }
+    return res.redirect('/' + biz.slug);
+  }
+  p.imgs = productImgs(p);
+  withPromo(p);
+  track(biz.id, 'view', p.name);
+  const estilo = getEffectiveEstilo(biz);
+  const pal = getPalette(biz, estilo);
+  const { products } = getCatalog(biz.id);
+  const related = products.filter(x => x.id !== p.id).slice(0, 8);
+  const ads = adsOn(biz) ? pickSponsored(biz, 4) : [];
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+  app.render('producto', { biz, product: p, categories: [{ id: p.category_id || 0, name: p.category_name || 'General' }], related, ads, estilo, money: moneyFor(biz), currencySymbol: currencyInfo(biz.currency).symbol, currencyCode: biz.currency }, (err, html) => {
+    if (err) return res.status(500).send('Error al generar el producto.');
+    res.send(paintCatalog(html, biz, pal, estilo));
+  });
+});
+
+// Manifest PWA por tienda (permite instalar el catálogo como app nativa)
+app.get('/:slug/manifest.webmanifest', (req, res) => {
+  const biz = getBusiness(req.params.slug);
+  if (!biz || !biz.active) return res.status(404).end();
+  const pal = getPalette(biz, getEffectiveEstilo(biz));
+  const name = biz.name || 'Catálogo';
+  res.set('Content-Type', 'application/manifest+json');
+  res.set('Cache-Control', 'no-store');
+  res.json({
+    name,
+    short_name: name.slice(0, 12),
+    description: biz.description || ('Catálogo de ' + name),
+    id: '/' + biz.slug,
+    start_url: '/' + biz.slug,
+    scope: '/' + biz.slug,
+    display: 'standalone',
+    orientation: 'portrait',
+    background_color: '#ffffff',
+    theme_color: pal.accent || '#2563eb',
+    lang: 'es',
+    icons: [
+      { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+      { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+      { src: '/icons/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }
+    ]
+  });
+});
+
+// ================= PREVIEW DE DISEÑO (panel admin) =================
+// Renderiza el catálogo tal como quedaría con las opciones elegidas en el editor.
+// Si la tienda aún no tiene productos, muestra productos de ejemplo para visualizar.
+const PREVIEW_CATS = [
+  { id: 1, name: 'Herramientas', sort: 1 },
+  { id: 2, name: 'Pintura', sort: 2 },
+  { id: 3, name: 'Plomería', sort: 3 }
+];
+const PREVIEW_PRODS = [
+  { id: 1, category_id: 1, name: 'Martillo de uña 16oz', price: 189, old_price: 219, image: 'https://images.unsplash.com/photo-1572981779307-38b8cabb2407?w=400', galeria: '["https://images.unsplash.com/photo-1572981779307-38b8cabb2407?w=800","https://images.unsplash.com/photo-1517816743773-6e0fd518b4a6?w=400"]', description: 'Mango de fibra, cabeza forjada.', variants: '', featured: 1, category_name: 'Herramientas' },
+  { id: 2, category_id: 1, name: 'Cinta métrica 5m', price: 129, old_price: null, image: 'https://images.unsplash.com/photo-1504148455328-c376907d081c?w=400', galeria: '["https://images.unsplash.com/photo-1504148455328-c376907d081c?w=800"]', description: 'Con freno y clip de bolsillo.', variants: '', featured: 0, category_name: 'Herramientas' },
+  { id: 3, category_id: 2, name: 'Pintura vinílica blanca 19L', price: 899, old_price: null, image: 'https://images.unsplash.com/photo-1562259949-e8e7689d7828?w=400', galeria: '[]', description: 'Cubriente, lavable, interior/exterior.', variants: '["Blanca","Marfil"]', featured: 1, category_name: 'Pintura' },
+  { id: 4, category_id: 2, name: 'Brocha 3 pulgadas', price: 69, old_price: null, image: 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=400', galeria: '[]', description: 'Cerda sintética, durabilidad alta.', variants: '', featured: 0, category_name: 'Pintura' },
+  { id: 5, category_id: 3, name: 'Tubo PVC 1/2 pulgada 6m', price: 149, old_price: null, image: 'https://images.unsplash.com/photo-1585704032915-c3400ca199e7?w=400', galeria: '["https://images.unsplash.com/photo-1585704032915-c3400ca199e7?w=800"]', description: 'Cédula 40, uso hidráulico.', variants: '', featured: 0, category_name: 'Plomería' },
+  { id: 6, category_id: 3, name: 'Llave de paso 1/2', price: 119, old_price: 149, image: 'https://images.unsplash.com/photo-1586864387734-d2ce3a8efa9e?w=400', galeria: '["https://images.unsplash.com/photo-1586864387734-d2ce3a8efa9e?w=800"]', description: 'Latón pulido, rosca estándar.', variants: '', featured: 0, category_name: 'Plomería' }
+];
+
+// Renderiza la vista previa del catálogo con las opciones elegidas (usada por el dueño y el maestro)
+function previewCatalog(biz, q, res) {
+  if (!biz) return res.status(404).send('Tienda no encontrada');
+  const bizOv = {
+    ...biz,
+    template: TEMPLATES.includes(q.template) ? q.template : biz.template,
+    color: COLORS.some(c => c.id === q.color) ? q.color : biz.color,
+    color_hex: /^#[0-9a-fA-F]{6}$/.test(q.color_hex || '') ? q.color_hex : biz.color_hex,
+    color_hex2: /^#[0-9a-fA-F]{6}$/.test(q.color_hex2 || '') ? q.color_hex2 : biz.color_hex2,
+    color_mode: ['estilo', 'solido', 'degradado'].includes(q.color_mode) ? q.color_mode : biz.color_mode,
+    grid_cols: [2, 3, 4].includes(Number(q.grid_cols)) ? Number(q.grid_cols) : biz.grid_cols,
+    accent: /^#[0-9a-fA-F]{6}$/.test(q.accent || '') ? q.accent : biz.accent,
+    accent2: /^#[0-9a-fA-F]{6}$/.test(q.accent2 || '') ? q.accent2 : biz.accent2,
+    header: Object.prototype.hasOwnProperty.call(q, 'header') ? String(q.header || '').trim() : biz.header,
+    header_text: Object.prototype.hasOwnProperty.call(q, 'header_text') ? String(q.header_text || '').trim() : biz.header_text,
+    page_bg: /^#[0-9a-fA-F]{6}$/.test(q.page_bg || '') ? q.page_bg : biz.page_bg,
+    logo: (q.logo || '').trim() || biz.logo,
+    banner: (q.banner || '').trim() || biz.banner,
+    sections: Object.prototype.hasOwnProperty.call(q, 'sections') ? String(q.sections) : biz.sections,
+    blocks: Object.prototype.hasOwnProperty.call(q, 'blocks') ? String(q.blocks) : biz.blocks
+  };
+  const base = getEstilo(ESTILOS.some(e => e.id === q.estilo) ? q.estilo : biz.estilo);
+  const eff = getEffectiveEstilo(biz);
+  const font = (q.font && FONTS.some(f => f.css === q.font)) ? q.font : base.font;
+  const pick = (v, d) => (v && String(v).trim()) ? v : d;
+  const estilo = {
+    ...base,
+    bg: pick(q.bg, base.bg),
+    card: pick(q.card, base.card),
+    text: pick(q.text, base.text),
+    muted: pick(q.muted, base.muted),
+    border: pick(q.border, base.border),
+    radius: pick(q.radius, base.radius),
+    header: pick(q.header, base.header),
+    headerText: pick(q.header_text, base.headerText),
+    headerSet: !!(q.header && String(q.header).trim()) || eff.headerSet,
+    font,
+    fontLink: (FONTS.find(f => f.css === font) || {}).link || base.fontLink
+  };
+  const pal = getPalette(bizOv, estilo);
+  const { categories, products, pages } = getCatalog(biz.id);
+  const useDemo = q.demo === '1';
+  let cats = categories, prods = products;
+  if (useDemo) {
+    const dc = demoCatalog(biz, q.demo_content);
+    cats = dc.categories; prods = dc.products;
+    if (dc.name && dc.name !== biz.name) bizOv.name = dc.name;
+    if (dc.description && dc.description !== biz.description) bizOv.description = dc.description;
+  } else if (categories.length === 0) {
+    cats = PREVIEW_CATS;
+    prods = PREVIEW_PRODS;
+  }
+  prods = prods.map(p => { p.imgs = productImgs(p); return p; });
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+  app.render('catalog', { biz: bizOv, categories: cats, products: prods, estilo, theme: getTemplateTheme(bizOv.template), components: q.edit === '1' ? parseComponents(bizOv) : getComponents(bizOv), pages, editMode: q.edit === '1', seoUrl: '', money: moneyFor(biz), currencySymbol: currencyInfo(biz.currency).symbol, currencyCode: biz.currency, mascaraCss: MASCARA_CSS, mascaraConfig: { MASCARA_SIZES, SHAPE_DEFS, getShapeClip } }, (err, html) => {
+    if (err) return res.status(500).send('Error al generar la vista previa.');
+    res.send(finishCatalog(html, bizOv, pal, estilo));
+  });
+}
+
+app.get('/:slug/admin/preview', requireAuth, (req, res) => {
+  previewCatalog(getBusiness(req.params.slug), req.query, res);
+});
+
+// Vista previa de diseño desde el panel maestro
+app.get('/maestro/:id/preview', maestroAuth, (req, res) => {
+  previewCatalog(db.prepare('SELECT * FROM businesses WHERE id = ?').get(req.params.id), req.query, res);
+});
+
+// ================= PEDIDO POR WHATSAPP =================
+app.get('/:slug/pedir', (req, res) => {
+  const biz = getBusiness(req.params.slug);
+  if (!biz) return res.status(404).json({ error: 'Tienda no encontrada' });
+
+  let items = [];
+  try { items = JSON.parse(req.query.items || '[]'); } catch (e) { items = []; }
+  const customerName = (req.query.nombre || '').toString().trim();
+  const customerPhone = (req.query.telefono || '').toString().trim().replace(/[^0-9]/g, '');
+  let total = 0;
+  const lines = items.map((it) => {
+    const p = db.prepare('SELECT * FROM products WHERE id = ? AND business_id = ?').get(it.id, biz.id);
+    if (!p) return null;
+    const qty = Math.max(1, parseInt(it.qty) || 1);
+    const sub = p.price * qty;
+    total += sub;
+    track(biz.id, 'view', p.name);
+    track(biz.id, 'wa_product', p.name);
+    const variant = it.variant ? ` (${it.variant})` : '';
+    return `- ${qty} x ${p.name}${variant} = ${currencyInfo(biz.currency).symbol}${sub.toFixed(2)}`;
+  }).filter(Boolean);
+
+  if (lines.length === 0) return res.redirect('/' + req.params.slug);
+
+  let message = buildOrderMessage(biz.name, lines, total, biz.wa_message, currencyInfo(biz.currency).symbol);
+  if (customerName) message += `\n\nMi nombre: ${customerName}`;
+  if (customerPhone) message += `\nMi teléfono: ${customerPhone}`;
+
+  const customerData = customerName ? (customerName + (customerPhone ? ' (' + customerPhone + ')' : '')) : (customerPhone || '');
+  db.prepare(
+    `INSERT INTO orders (business_id, items, total, customer_name, customer_phone, status) VALUES (?, ?, ?, ?, ?, 'nuevo')`
+  ).run(biz.id, lines.join(' | '), total, customerData, customerPhone);
+  upsertCustomer(biz.id, customerName, customerPhone);
+  track(biz.id, 'wa', 'pedido');
+
+  res.redirect(waLink(biz, message));
+});
+
+// Pedido multi-tienda (chatbox): registra un pedido por tienda y devuelve sus wa.me
+app.post('/api/pedir', (req, res) => {
+  const items = Array.isArray(req.body && req.body.items) ? req.body.items : [];
+  const nombre = String((req.body && req.body.nombre) || '').trim();
+  const telefono = String((req.body && req.body.telefono) || '').replace(/[^0-9]/g, '');
+  const byStore = {};
+  for (const it of items) {
+    const slug = String((it && it.store) || '').trim();
+    const p = db.prepare('SELECT * FROM products WHERE id = ? AND active = 1').get(parseInt(it && it.id) || 0);
+    if (!p || !slug) continue;
+    const b = db.prepare('SELECT * FROM businesses WHERE slug = ? AND active = 1').get(slug);
+    if (!b || b.id !== p.business_id) continue;
+    const qty = Math.max(1, parseInt(it.qty) || 1);
+    (byStore[slug] = byStore[slug] || []).push({ p, qty, variant: String(it.variant || '') });
+  }
+  const orders = Object.keys(byStore).map((slug) => {
+    const list = byStore[slug];
+    const b = getBusiness(slug);
+    let total = 0;
+    const lines = list.map((x) => {
+      const sub = x.p.price * x.qty;
+      total += sub;
+      track(b.id, 'view', x.p.name);
+      track(b.id, 'wa_product', x.p.name);
+      return `- ${x.qty} x ${x.p.name}${x.variant ? ` (${x.variant})` : ''} = $${sub.toFixed(2)}`;
+    });
+    if (lines.length) {
+      const customerData = nombre ? (nombre + (telefono ? ' (' + telefono + ')' : '')) : (telefono || '');
+      db.prepare(
+        `INSERT INTO orders (business_id, items, total, customer_name, customer_phone, status) VALUES (?, ?, ?, ?, ?, 'nuevo')`
+      ).run(b.id, lines.join(' | '), total, customerData, telefono);
+      upsertCustomer(b.id, nombre, telefono);
+      track(b.id, 'wa', 'pedido');
+    }
+    const message = buildOrderMessage(b.name, lines, total, b.wa_message, currencyInfo(b.currency).symbol);
+    return { slug, name: b.name, whatsapp: b.whatsapp, url: waLink(b, message) };
+  });
+  res.json({ orders });
+});
+
+// ================= AUTENTICACIÓN DEL DUEÑO =================
+// Hash de PIN con scrypt (sal + hash hex)
+function hashPin(pin) {
+  const salt = crypto.randomBytes(16).toString('hex');
+  const hash = crypto.scryptSync(String(pin), salt, 64).toString('hex');
+  return salt + ':' + hash;
+}
+function verifyPin(pin, stored) {
+  if (!stored || typeof stored !== 'string') return false;
+  const parts = stored.split(':');
+  if (parts.length !== 2) return false;
+  const [salt, hash] = parts;
+  try {
+    const test = crypto.scryptSync(String(pin), salt, 64);
+    return crypto.timingSafeEqual(Buffer.from(hash, 'hex'), test);
+  } catch (e) { return false; }
+}
+// Sesión con token aleatorio (se guarda en la tabla sessions)
+function createSession(bizId, kind, empId) {
+  const token = crypto.randomBytes(32).toString('hex');
+  const expiresAt = new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString();
+  db.prepare('INSERT INTO sessions (token, biz_id, kind, emp_id, expires_at) VALUES (?, ?, ?, ?, ?)').run(token, bizId || null, kind || 'owner', empId || null, expiresAt);
+  return token;
+}
+function findSession(token) {
+  if (!token) return null;
+  const sess = db.prepare('SELECT * FROM sessions WHERE token = ?').get(token);
+  if (sess && sess.expires_at && new Date(sess.expires_at) < new Date()) {
+    db.prepare('DELETE FROM sessions WHERE token = ?').run(token);
+    return null;
+  }
+  return sess;
+}
+function deleteSession(token) {
+  if (token) db.prepare('DELETE FROM sessions WHERE token = ?').run(token);
+}
+
+// Permisos disponibles para empleados (granulares por módulo y acción)
+const EMPLOYEE_PERMS = [
+  { key: 'productos.ver', module: 'Productos', label: 'Ver productos' },
+  { key: 'productos.crear', module: 'Productos', label: 'Crear productos' },
+  { key: 'productos.editar', module: 'Productos', label: 'Editar productos' },
+  { key: 'productos.eliminar', module: 'Productos', label: 'Eliminar productos' },
+  { key: 'pedidos.gestionar', module: 'Pedidos', label: 'Gestionar pedidos (entregar/cancelar)' },
+  { key: 'clientes', module: 'Clientes', label: 'Ver y gestionar clientes' },
+  { key: 'reportes', module: 'Panel', label: 'Ver panel y reportes' },
+  { key: 'diseno', module: 'Diseño', label: 'Editar diseño' },
+  { key: 'config', module: 'Configuración', label: 'Editar configuración' }
+];
+const ALL_PERMS = EMPLOYEE_PERMS.map(p => p.key).concat(['empleados']);
+function permsOf(sess) {
+  if (sess.kind === 'owner') return ALL_PERMS.slice();
+  const emp = sess.emp_id ? db.prepare('SELECT * FROM users WHERE id = ?').get(sess.emp_id) : null;
+  if (!emp) return [];
+  // Role-based permissions for users table
+  if (emp.role) {
+    if (emp.role === 'admin') return ALL_PERMS.slice();
+    if (emp.role === 'visualizador') return ['reportes'];
+    // empleado gets basic perms
+    return ['productos.ver', 'productos.crear', 'productos.editar', 'reportes'];
+  }
+  try { return JSON.parse(emp.perms || '[]'); } catch (e) { return []; }
+}
+
+function requireAuth(req, res, next) {
+  const biz = getBusiness(req.params.slug);
+  if (!biz) return res.status(404).render('404', { message: 'Tienda no encontrada' });
+  const block = storeBlock(biz);
+  if (block.blocked) {
+    return res.status(403).render('store-off', { biz, reason: block.reason });
+  }
+  const sess = findSession(req.cookies && req.cookies.sid);
+  if (sess && sess.biz_id === biz.id && (sess.kind === 'owner' || sess.kind === 'employee')) {
+    req.biz = biz;
+    req.role = sess.kind;
+    req.perms = permsOf(sess);
+    if (sess.kind === 'employee') {
+      req.emp = db.prepare('SELECT * FROM users WHERE id = ? AND business_id = ?').get(sess.emp_id, biz.id);
+      if (!req.emp) return res.redirect('/' + req.params.slug + '/admin');
+    }
+    res.locals.money = moneyFor(biz);
+    res.locals.currencySymbol = currencyInfo(biz.currency).symbol;
+    res.locals.currencyCode = biz.currency;
+    res.locals.canDesign = designAllowed(biz);
+    res.locals.isEmployee = req.role === 'employee';
+    res.locals.empName = req.emp ? req.emp.name : '';
+    res.locals.perms = req.perms;
+    res.locals.lowStockCount = db.prepare("SELECT COUNT(*) AS c FROM products WHERE business_id = ? AND active = 1 AND (stock IS NULL OR stock <= 5)").get(biz.id).c;
+    return next();
+  }
+  res.redirect('/' + req.params.slug + '/admin');
+}
+
+// Middleware: exige un permiso concreto (los dueños siempre pasan)
+function can(perm) {
+  return (req, res, next) => {
+    if (!req.perms || req.perms.includes(perm)) return next();
+    res.status(403).send('No tienes permiso para ver esto.');
+  };
+}
+
+app.get('/:slug/admin', (req, res) => {
+  const biz = getBusiness(req.params.slug);
+  if (!biz) return res.status(404).render('404', { message: 'Tienda no encontrada' });
+  const pal = getPalette(biz, getEffectiveEstilo(biz));
+  res.render('login', { biz, error: null, ok: req.query.salir ? 'Sesión cerrada correctamente.' : null, pal });
+});
+
+app.post('/:slug/admin', loginRateLimit, (req, res) => {
+  const biz = getBusiness(req.params.slug);
+  if (!biz) return res.status(404).render('404', { message: 'Tienda no encontrada' });
+  const pal = getPalette(biz, getEffectiveEstilo(biz));
+  const pin = String(req.body.pin || '');
+  // 1) Dueño
+  let ok = false;
+  if (biz.pin_hash && verifyPin(pin, biz.pin_hash)) {
+    ok = true;
+    // Migrate: move hash to pin column for consistency
+    db.prepare('UPDATE businesses SET pin = ? WHERE id = ?').run(biz.pin_hash, biz.id);
+  } else if (biz.pin) {
+    ok = verifyPin(pin, biz.pin);
+  }
+  if (ok) {
+    const token = createSession(biz.id, 'owner');
+    res.cookie('sid', token, sessionCookie(1000 * 60 * 60 * 12));
+    return res.redirect('/' + req.params.slug + '/admin/panel');
+  }
+  // 2) Empleado
+  const emps = db.prepare("SELECT * FROM users WHERE business_id = ? AND active = 1").all(biz.id);
+  const emp = emps.find(e => verifyPin(pin, e.pin));
+  if (emp) {
+    const token = createSession(biz.id, 'employee', emp.id);
+    res.cookie('sid', token, sessionCookie(1000 * 60 * 60 * 12));
+    return res.redirect('/' + req.params.slug + '/admin/panel');
+  }
+  res.render('login', { biz, error: 'PIN incorrecto. Intenta de nuevo.', ok: null, pal });
+});
+
+app.get('/:slug/admin/salir', (req, res) => {
+  deleteSession(req.cookies && req.cookies.sid);
+  res.clearCookie('sid', { path: '/' });
+  res.redirect('/' + req.params.slug + '/admin?salir=1');
+});
+
+// ================= PANEL =================
+function panelData(biz) {
+  const categories = db.prepare('SELECT * FROM categories WHERE business_id = ? ORDER BY sort ASC').all(biz.id);
+  const allProducts = db.prepare(
+    `SELECT p.*, c.name AS category_name FROM products p
+     LEFT JOIN categories c ON c.id = p.category_id
+     WHERE p.business_id = ? ORDER BY p.active DESC, p.sort ASC, p.id DESC`
+  ).all(biz.id).map(p => {
+    p.stock = p.stock === null || p.stock === undefined ? null : p.stock;
+    p.variants = parseVariantList(p.variants);
+    p.variantCount = variantCount(p.variants);
+    return withPromo(p);
+  });
+  const orders = db.prepare(
+    `SELECT * FROM orders WHERE business_id = ? ORDER BY created_at DESC LIMIT 20`
+  ).all(biz.id);
+  // Cargar historial de abonos para cada pedido
+  const payHistStmt = db.prepare('SELECT * FROM payment_history WHERE order_id = ? ORDER BY created_at ASC');
+  orders.forEach(o => { o.payments = payHistStmt.all(o.id); });
+  const pending = orders.filter(o => !o.paid).length;
+  const stats = getStats(biz.id);
+  const planMax = PLAN_MAX(biz);
+  const planInfo = getPlan(biz);
+  const storeUrl = BASE_URL ? BASE_URL + '/' + biz.slug : '/' + biz.slug;
+  const shareUrl = BASE_URL ? BASE_URL + '/' + biz.slug : '';
+  const lowStock = allProducts.filter(p => p.stock === null || p.stock <= 5);
+  const priceHistory = db.prepare('SELECT * FROM price_history WHERE business_id = ? ORDER BY id DESC LIMIT 30').all(biz.id);
+  return { categories, allProducts, orders, pending, stats, planMax, planInfo, storeUrl, shareUrl, attributeTemplates: getAttributeTemplates(biz.id), lowStock, priceHistory, canDesign: designAllowed(biz) };
+}
+
+async function qrFor(biz) {
+  const url = BASE_URL ? BASE_URL + '/' + biz.slug : '/' + biz.slug;
+  try {
+    return await QRCode.toDataURL(url, { width: 300, margin: 1 });
+  } catch (e) {
+    return '';
+  }
+}
+
+app.get('/:slug/admin/panel', requireAuth, can('reportes'), async (req, res) => {
+  const biz = req.biz;
+  const data = panelData(biz);
+  data.qrUrl = await qrFor(biz);
+  res.render('panel', { biz, ...data, error: null });
+});
+
+app.get('/:slug/admin/productos', requireAuth, can('productos.ver'), (req, res) => {
+  const biz = req.biz;
+  const data = panelData(biz);
+  res.render('productos', { biz, ...data, error: null });
+});
+
+// ================= CRUD PRODUCTOS =================
+function parsePrices(body) {
+  const price = parseFloat(body.price) || 0;
+  let old_price = null;
+  if (body.old_price && body.old_price !== '') {
+    old_price = parseFloat(body.old_price) || null;
+    if (old_price !== null && old_price <= price) old_price = null;
+  }
+  return { price, old_price };
+}
+
+// Normaliza la promoción: tipo + valor + regalo. Devuelve campos listos para guardar.
+function parsePromo(body) {
+  const types = ['descuento', 'porcentaje', '2x1', '3x2', 'regalo'];
+  const promo_type = types.includes(body.promo_type) ? body.promo_type : '';
+  const promo_value = promo_type === 'porcentaje' ? Math.min(99, Math.max(1, parseFloat(body.promo_value) || 0)) : 0;
+  const promo_gift = promo_type === 'regalo' ? String(body.promo_gift || '').slice(0, 120) : '';
+  // 'descuento' se apoya en old_price (no requiere valor extra)
+  if (promo_type === 'descuento' && !body.old_price) return { promo_type: '', promo_value: 0, promo_gift: '' };
+  return { promo_type, promo_value, promo_gift };
+}
+
+// Registra el historial de precios/promos solo si cambió algo relevante.
+function logPriceHistory(bizId, p) {
+  const last = db.prepare('SELECT * FROM price_history WHERE business_id = ? AND product_id = ? ORDER BY id DESC LIMIT 1').get(bizId, p.id);
+  const same = last && last.price === (p.price || 0) && (last.old_price || null) === (p.old_price || null) && (last.promo_type || '') === (p.promo_type || '') && (last.promo_gift || '') === (p.promo_gift || '');
+  if (same) return;
+  db.prepare('INSERT INTO price_history (business_id, product_id, name, price, old_price, promo_type, promo_gift) VALUES (?, ?, ?, ?, ?, ?, ?)')
+    .run(bizId, p.id, p.name, p.price || 0, p.old_price || null, p.promo_type || '', p.promo_gift || '');
+}
+
+// Normaliza el modelo de variantes a { attrs: [{name, values[]}], images: {comboKey: url} }
+// - Nuevo formato: { attrs: [{name, values}], images: { "Talla|Color": url } }
+// - Legado: array de strings o de {name, image} → un solo atributo
+function parseVariantModel(v) {
+  const empty = { attrs: [], images: {}, stock: {}, prices: {}, skus: {}, barcodes: {} };
+  if (!v) return empty;
+  let raw = v;
+  if (typeof v === 'string') {
+    const s = v.trim();
+    if (!s) return empty;
+    if (s[0] === '[' || s[0] === '{') { try { raw = JSON.parse(s); } catch (e) { raw = s; } }
+    else raw = s;
+  }
+  if (raw == null) return empty;
+
+  // Formato nuevo { attrs, images, stock, prices }
+  if (!Array.isArray(raw) && raw && Array.isArray(raw.attrs)) {
+    const attrs = raw.attrs.map(a => ({
+      name: String((a && a.name) || '').trim(),
+      values: Array.isArray(a && a.values) ? a.values.map(x => String(x).trim()).filter(Boolean) : []
+    })).filter(a => a.name && a.values.length);
+    const images = (raw.images && typeof raw.images === 'object') ? raw.images : {};
+    const stock = (raw.stock && typeof raw.stock === 'object') ? raw.stock : {};
+    const prices = (raw.prices && typeof raw.prices === 'object') ? raw.prices : {};
+    const skus = (raw.skus && typeof raw.skus === 'object') ? raw.skus : {};
+    const barcodes = (raw.barcodes && typeof raw.barcodes === 'object') ? raw.barcodes : {};
+    return { attrs, images, stock, prices, skus, barcodes };
+  }
+
+  // Legado: array de strings o de {name, image}
+  if (Array.isArray(raw)) {
+    const values = [];
+    const images = {};
+    raw.forEach(x => {
+      if (typeof x === 'string') { const n = x.trim(); if (n && values.indexOf(n) === -1) values.push(n); }
+      else if (x && typeof x === 'object') {
+        const n = String(x.name || '').trim();
+        if (!n) return;
+        if (values.indexOf(n) === -1) values.push(n);
+        if (x.image) images[n] = String(x.image).trim();
+      }
+    });
+    if (!values.length) return empty;
+    return { attrs: [{ name: '', values }], images, stock: {}, prices: {}, skus: {}, barcodes: {} };
+  }
+
+  // Legado: string separado por comas
+  if (typeof raw === 'string') {
+    const values = raw.split(',').map(s => s.trim()).filter(Boolean);
+    if (!values.length) return empty;
+    return { attrs: [{ name: '', values }], images: {}, stock: {}, prices: {}, skus: {}, barcodes: {} };
+  }
+
+  return empty;
+}
+
+// Guardado: valida/normaliza y devuelve el JSON canónico
+function parseVariants(v) {
+  const model = parseVariantModel(v);
+  return model.attrs.length ? JSON.stringify(model) : '';
+}
+
+// Parsear payment_plan (viene como JSON o string legacy)
+function parsePaymentPlan(raw) {
+  if (!raw) return null;
+  try { const o = JSON.parse(raw); if (o && o.amount && o.freq) return o; } catch (e) {}
+  return null;
+}
+
+// Formatear plan de pago para mostrar al cliente
+function formatPaymentPlan(plan) {
+  if (!plan) return '';
+  const freqLabel = { diario: 'diarios', semanal: 'semanales', quincenal: 'quincenales', mensual: 'mensuales' };
+  const f = freqLabel[plan.freq] || plan.freq;
+  let txt = 'Abonos de $' + Number(plan.amount).toFixed(2) + ' ' + f;
+  if (plan.num) txt += ' (' + plan.num + ' pagos)';
+  return txt;
+}
+
+// Lectura: modelo canónico { attrs, images }
+function parseVariantList(v) {
+  return parseVariantModel(v);
+}
+
+// Cuántas combinaciones tiene un modelo de variantes
+function variantCount(model) {
+  const m = model || { attrs: [] };
+  if (!m.attrs || !m.attrs.length) return 0;
+  return m.attrs.reduce((n, a) => n * ((a.values && a.values.length) || 1), 1);
+}
+
+function parseVariantsArray(v) {
+  if (!v) return [];
+  try {
+    const arr = JSON.parse(v);
+    return Array.isArray(arr) ? arr : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+// ============ Catálogo de atributos por tienda (plantillas reutilizables) ============
+function parseAttrValues(v) {
+  if (!v) return [];
+  if (Array.isArray(v)) return v.map(s => String(s).trim()).filter(Boolean);
+  const s = String(v).trim();
+  if (!s) return [];
+  if (s.startsWith('[')) {
+    try { const a = JSON.parse(s); if (Array.isArray(a)) return a.map(x => String(x).trim()).filter(Boolean); } catch (e) {}
+  }
+  return s.split(',').map(x => x.trim()).filter(Boolean);
+}
+
+function getAttributeTemplates(bizId) {
+  return db.prepare('SELECT * FROM attribute_templates WHERE business_id = ? ORDER BY name COLLATE NOCASE ASC').all(bizId)
+    .map(t => ({ id: t.id, name: t.name, values: parseAttrValues(t.vals) }));
+}
+
+function upsertAttributeTemplate(bizId, name, values) {
+  const nm = String(name || '').trim();
+  if (!nm) return { ok: false, error: 'El nombre del atributo es obligatorio.' };
+  const vals = parseAttrValues(values);
+  if (!vals.length) return { ok: false, error: 'Agrega al menos un valor (ej: Chica, Mediana, Grande).' };
+  const existing = db.prepare('SELECT * FROM attribute_templates WHERE business_id = ? AND name = ? COLLATE NOCASE').get(bizId, nm);
+  const json = JSON.stringify(vals);
+  if (existing) {
+    db.prepare('UPDATE attribute_templates SET vals = ? WHERE id = ?').run(json, existing.id);
+    return { ok: true, id: existing.id, name: nm, values: vals, updated: true };
+  }
+  const r = db.prepare('INSERT INTO attribute_templates (business_id, name, vals) VALUES (?, ?, ?)').run(bizId, nm, json);
+  return { ok: true, id: r.lastInsertRowid, name: nm, values: vals, updated: false };
+}
+
+function parseStock(v) {
+  if (v === '' || v === null || v === undefined) return null;
+  const n = parseInt(v);
+  return isNaN(n) ? null : n;
+}
+
+function parsePromoEnd(v) {
+  if (!v) return '';
+  const s = String(v).trim();
+  return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : '';
+}
+
+function parseGaleria(v) {
+  if (!v || !String(v).trim()) return '';
+  const raw = String(v).trim();
+  let parts = [];
+  if (raw.startsWith('[')) {
+    try {
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr)) parts = arr.map(s => String(s).trim()).filter(Boolean);
+    } catch (e) { parts = []; }
+  }
+  if (!parts.length) parts = raw.split(',').map(s => s.trim()).filter(Boolean);
+  return parts.length ? JSON.stringify(parts) : '';
+}
+
+// Lista de imágenes de un producto: la principal + las de la galería
+function productImgs(p) {
+  const list = [p.image || '', ...parseVariantsArray(p.galeria || '')].map(s => String(s || '').trim()).filter(Boolean);
+  return list.length ? list : [p.image || '/img/sin-imagen.svg'];
+}
+
+function canAddProduct(biz) {
+  const max = PLAN_MAX(biz);
+  if (max === Infinity) return { ok: true };
+  const count = db.prepare('SELECT COUNT(*) AS c FROM products WHERE business_id = ?').get(biz.id).c;
+  return count < max ? { ok: true } : { ok: false, message: `Tu plan gratuito permite máximo ${max} productos. Usa 'Carga masiva' o actualiza a Pro.` };
+}
+
+app.post('/:slug/admin/producto', requireAuth, can('productos.crear'), (req, res) => {
+  const biz = req.biz;
+  const check = canAddProduct(biz);
+  if (!check.ok) {
+    return res.render('productos', { biz, ...panelData(biz), error: check.message });
+  }
+  const { name, category_id, description, image, stock, variants } = req.body;
+  const renderError = (message) => res.status(400).render('productos', { biz, ...panelData(biz), error: message });
+  if (!name || !String(name).trim()) {
+    return renderError('El nombre del producto es obligatorio.');
+  }
+  const { price, old_price } = parsePrices(req.body);
+  const promo = parsePromo(req.body);
+  if (price < 0) {
+    return renderError('El precio no puede ser negativo.');
+  }
+  if (req.body.price === '' || req.body.price === undefined || req.body.price === null || isNaN(parseFloat(req.body.price))) {
+    return renderError('El precio es obligatorio (usa un número, ej: 25.50).');
+  }
+  try {
+    db.prepare(
+      `INSERT INTO products (business_id, category_id, name, price, old_price, description, image, galeria, stock, variants, promo_ends_at, featured, promo_type, promo_value, promo_gift, sku, tags, video, specs, barcode, payment_plan)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).run(biz.id, category_id || null, String(name).trim(), price, old_price, description || '', image || '', parseGaleria(req.body.galeria), parseStock(stock), parseVariants(variants), parsePromoEnd(req.body.promo_ends_at), req.body.featured ? 1 : 0, promo.promo_type, promo.promo_value, promo.promo_gift, (req.body.sku || '').toString().trim().slice(0, 60), (req.body.tags || '').toString().trim().slice(0, 300), (req.body.video || '').toString().trim().slice(0, 300), (req.body.specs || '').toString().slice(0, 2000), (req.body.barcode || '').toString().trim().slice(0, 60), buildPaymentPlan(req.body));
+    const created = db.prepare('SELECT * FROM products WHERE business_id = ? ORDER BY id DESC LIMIT 1').get(biz.id);
+    if (created) logPriceHistory(biz.id, created);
+  } catch (err) {
+    return renderError('No se pudo guardar el producto: ' + (err.message || 'error desconocido'));
+  }
+  res.redirect('/' + req.params.slug + '/admin/productos');
+});
+
+app.post('/:slug/admin/producto/:id/eliminar', requireAuth, can('productos.eliminar'), (req, res) => {
+  db.prepare('DELETE FROM products WHERE id = ? AND business_id = ?').run(req.params.id, req.biz.id);
+  res.redirect('/' + req.params.slug + '/admin/productos');
+});
+
+app.post('/:slug/admin/producto/:id/toggle', requireAuth, can('productos.editar'), (req, res) => {
+  db.prepare(
+    'UPDATE products SET active = CASE WHEN active = 1 THEN 0 ELSE 1 END WHERE id = ? AND business_id = ?'
+  ).run(req.params.id, req.biz.id);
+  res.redirect('/' + req.params.slug + '/admin/productos');
+});
+
+app.post('/:slug/admin/producto/:id/featured', requireAuth, can('productos.editar'), (req, res) => {
+  db.prepare(
+    'UPDATE products SET featured = CASE WHEN featured = 1 THEN 0 ELSE 1 END WHERE id = ? AND business_id = ?'
+  ).run(req.params.id, req.biz.id);
+  res.redirect('/' + req.params.slug + '/admin/productos');
+});
+
+// Reordena manualmente: mueve un producto arriba o abajo intercambiando sort.
+app.post('/:slug/admin/producto/:id/mover', requireAuth, can('productos.editar'), (req, res) => {
+  const id = parseInt(req.params.id);
+  const dir = req.body.dir === 'up' ? -1 : 1;
+  const bizId = req.biz.id;
+  const list = db.prepare('SELECT id, sort FROM products WHERE business_id = ? ORDER BY active DESC, sort ASC, id DESC').all(bizId);
+  const idx = list.findIndex(x => x.id === id);
+  if (idx === -1) return res.redirect('/' + req.params.slug + '/admin/productos');
+  const target = list[idx + dir];
+  if (!target) return res.redirect('/' + req.params.slug + '/admin/productos');
+  const a = list[idx], b = target;
+  if (a.sort === b.sort) {
+    db.prepare('UPDATE products SET sort = ? WHERE id = ?').run(a.sort + (dir === -1 ? -1 : 1), a.id);
+    db.prepare('UPDATE products SET sort = ? WHERE id = ?').run(a.sort, b.id);
+  } else {
+    db.prepare('UPDATE products SET sort = ? WHERE id = ?').run(b.sort, a.id);
+    db.prepare('UPDATE products SET sort = ? WHERE id = ?').run(a.sort, b.id);
+  }
+  res.redirect('/' + req.params.slug + '/admin/productos');
+});
+
+app.post('/:slug/admin/producto/:id', requireAuth, can('productos.editar'), (req, res) => {
+  const { name, category_id, description, image, stock, variants } = req.body;
+  const { price, old_price } = parsePrices(req.body);
+  const promo = parsePromo(req.body);
+  const renderError = (message) => res.status(400).render('productos', { biz: req.biz, ...panelData(req.biz), error: message });
+  if (!name || !name.trim()) {
+    return renderError('El nombre del producto es obligatorio.');
+  }
+  if (req.body.price === '' || req.body.price === undefined || req.body.price === null || isNaN(parseFloat(req.body.price))) {
+    return renderError('El precio es obligatorio (usa un número, ej: 25.50).');
+  }
+  if (price < 0) {
+    return renderError('El precio no puede ser negativo.');
+  }
+  try {
+    db.prepare(
+      `UPDATE products SET name = ?, price = ?, old_price = ?, category_id = ?, description = ?, image = ?, galeria = ?, stock = ?, variants = ?, promo_ends_at = ?, featured = ?, promo_type = ?, promo_value = ?, promo_gift = ?, sku = ?, tags = ?, video = ?, specs = ?, barcode = ?, payment_plan = ?
+       WHERE id = ? AND business_id = ?`
+    ).run(name.trim(), price, old_price, category_id || null, description || '', image || '', parseGaleria(req.body.galeria), parseStock(stock), parseVariants(variants), parsePromoEnd(req.body.promo_ends_at), req.body.featured ? 1 : 0, promo.promo_type, promo.promo_value, promo.promo_gift, (req.body.sku || '').toString().trim().slice(0, 60), (req.body.tags || '').toString().trim().slice(0, 300), (req.body.video || '').toString().trim().slice(0, 300), (req.body.specs || '').toString().slice(0, 2000), (req.body.barcode || '').toString().trim().slice(0, 60), buildPaymentPlan(req.body), req.params.id, req.biz.id);
+    const updated = db.prepare('SELECT * FROM products WHERE id = ?').get(req.params.id);
+    if (updated) logPriceHistory(req.biz.id, updated);
+  } catch (err) {
+    return renderError('No se pudo guardar el producto: ' + (err.message || 'error desconocido'));
+  }
+  res.redirect('/' + req.params.slug + '/admin/productos');
+});
+
+app.post('/:slug/admin/producto/:id/duplicar', requireAuth, can('productos.crear'), (req, res) => {
+  const p = db.prepare('SELECT * FROM products WHERE id = ? AND business_id = ?').get(req.params.id, req.biz.id);
+  if (p) {
+    db.prepare(
+      `INSERT INTO products (business_id, category_id, name, price, old_price, description, image, galeria, stock, variants, promo_ends_at, payment_plan)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).run(
+      p.business_id, p.category_id, (p.name || '') + ' (copia)', p.price, p.old_price,
+      p.description || '', p.image || '', p.galeria || '', p.stock, p.variants || '', p.promo_ends_at || '', p.payment_plan || ''
+    );
+  }
+  res.redirect('/' + req.params.slug + '/admin/productos');
+});
+
+// ================= CRUD CATEGORÍAS (JSON, no recarga el formulario) =================
+app.post('/:slug/admin/categoria', requireAuth, can('productos.editar'), (req, res) => {
+  const name = (req.body.name || '').trim();
+  if (!name) return res.json({ ok: false, error: 'El nombre de la categoría es obligatorio.' });
+  const dup = db.prepare('SELECT * FROM categories WHERE business_id = ? AND name = ? COLLATE NOCASE').get(req.biz.id, name);
+  if (dup) return res.json({ ok: false, error: 'Esa categoría ya existe.' });
+  const r = db.prepare('INSERT INTO categories (business_id, name) VALUES (?, ?)').run(req.biz.id, name);
+  res.json({ ok: true, id: r.lastInsertRowid, name });
+});
+
+app.post('/:slug/admin/categoria/:id/eliminar', requireAuth, can('productos.editar'), (req, res) => {
+  const id = parseInt(req.params.id);
+  const cat = db.prepare('SELECT * FROM categories WHERE id = ? AND business_id = ?').get(id, req.biz.id);
+  if (cat) {
+    db.prepare('UPDATE products SET category_id = NULL WHERE category_id = ?').run(id);
+    db.prepare('DELETE FROM categories WHERE id = ? AND business_id = ?').run(id, req.biz.id);
+  }
+  res.json({ ok: true });
+});
+
+app.post('/:slug/admin/categoria/:id', requireAuth, can('productos.editar'), (req, res) => {
+  const id = parseInt(req.params.id);
+  const name = (req.body.name || '').trim();
+  if (!name) return res.json({ ok: false, error: 'El nombre de la categoría es obligatorio.' });
+  const dup = db.prepare('SELECT * FROM categories WHERE business_id = ? AND name = ? COLLATE NOCASE AND id != ?').get(req.biz.id, name, id);
+  if (dup) return res.json({ ok: false, error: 'Esa categoría ya existe.' });
+  const r = db.prepare('UPDATE categories SET name = ? WHERE id = ? AND business_id = ?').run(name, id, req.biz.id);
+  res.json({ ok: r.changes > 0, id, name });
+});
+
+// ================= CATÁLOGO DE ATRIBUTOS (JSON, no recarga el formulario) =================
+app.post('/:slug/admin/atributo/guardar', requireAuth, can('productos.editar'), (req, res) => {
+  res.json(upsertAttributeTemplate(req.biz.id, req.body.name, req.body.values));
+});
+
+app.post('/:slug/admin/atributo/:id/eliminar', requireAuth, can('productos.editar'), (req, res) => {
+  db.prepare('DELETE FROM attribute_templates WHERE id = ? AND business_id = ?').run(parseInt(req.params.id), req.biz.id);
+  res.json({ ok: true });
+});
+
+app.post('/:slug/admin/atributo/:id', requireAuth, can('productos.editar'), (req, res) => {
+  const id = parseInt(req.params.id);
+  const existing = db.prepare('SELECT * FROM attribute_templates WHERE id = ? AND business_id = ?').get(id, req.biz.id);
+  if (!existing) return res.json({ ok: false, error: 'Atributo no encontrado.' });
+  const nm = String(req.body.name || '').trim();
+  const vals = parseAttrValues(req.body.values);
+  if (!nm) return res.json({ ok: false, error: 'El nombre del atributo es obligatorio.' });
+  if (!vals.length) return res.json({ ok: false, error: 'Agrega al menos un valor.' });
+  const dup = db.prepare('SELECT * FROM attribute_templates WHERE business_id = ? AND name = ? COLLATE NOCASE AND id != ?').get(req.biz.id, nm, id);
+  if (dup) return res.json({ ok: false, error: 'Ya existe un atributo con ese nombre.' });
+  db.prepare('UPDATE attribute_templates SET name = ?, vals = ? WHERE id = ?').run(nm, JSON.stringify(vals), id);
+  res.json({ ok: true, id, name: nm, values: vals });
+});
+
+// ================= PEDIDOS =================
+app.post('/:slug/admin/order/:id/pagado', requireAuth, can('pedidos.gestionar'), (req, res) => {
+  const abono = parseFloat(req.body.amount_paid) || 0;
+  const method = String(req.body.payment_method || 'efectivo').trim();
+  const schedule = String(req.body.payment_schedule || 'contado').trim();
+  // Combinar método + horario para guardar en payment_method
+  const combinedMethod = schedule === 'plazos' ? 'plazos' : method;
+  const order = db.prepare('SELECT * FROM orders WHERE id = ? AND business_id = ?').get(req.params.id, req.biz.id);
+  if (!order) return res.redirect('/' + req.params.slug + '/admin/panel');
+  const newPaid = (order.amount_paid || 0) + abono;
+  const remaining = Math.max(0, order.total - newPaid);
+  const newStatus = remaining <= 0 ? 'pagado' : 'parcial';
+  const isPaid = remaining <= 0 ? 1 : 0;
+  // Registrar en historial de abonos
+  if (abono > 0) {
+    db.prepare('INSERT INTO payment_history (order_id, business_id, amount, method, note) VALUES (?, ?, ?, ?, ?)').run(order.id, req.biz.id, abono, combinedMethod, req.body.note || '');
+  }
+  db.prepare('UPDATE orders SET paid = ?, status = ?, payment_method = ?, amount_paid = ?, amount_remaining = ? WHERE id = ? AND business_id = ?').run(isPaid, newStatus, combinedMethod, newPaid, remaining, req.params.id, req.biz.id);
+  res.redirect('/' + req.params.slug + '/admin/panel');
+});
+
+app.post('/:slug/admin/order/:id/entregado', requireAuth, can('pedidos.gestionar'), (req, res) => {
+  db.prepare('UPDATE orders SET paid = 1, status = ?, amount_paid = total, amount_remaining = 0 WHERE id = ? AND business_id = ?').run('entregado', req.params.id, req.biz.id);
+  res.redirect('/' + req.params.slug + '/admin/panel');
+});
+
+app.post('/:slug/admin/order/:id/cancelado', requireAuth, can('pedidos.gestionar'), (req, res) => {
+  db.prepare('UPDATE orders SET status = ? WHERE id = ? AND business_id = ?').run('cancelado', req.params.id, req.biz.id);
+  res.redirect('/' + req.params.slug + '/admin/panel');
+});
+
+app.post('/:slug/admin/order/:id/eliminar', requireAuth, can('pedidos.gestionar'), (req, res) => {
+  db.prepare('DELETE FROM orders WHERE id = ? AND business_id = ?').run(req.params.id, req.biz.id);
+  res.redirect('/' + req.params.slug + '/admin/panel');
+});
+
+app.get('/:slug/admin/reporte', requireAuth, (req, res) => {
+  const orders = db.prepare(
+    `SELECT * FROM orders WHERE business_id = ? ORDER BY created_at DESC`
+  ).all(req.biz.id);
+  let csv = 'Fecha,Productos,Total,Estado,Pagado,Metodo_pago,Abonado,Pendiente\n';
+  for (const o of orders) {
+    csv += `"${o.created_at}","${o.items.replace(/"/g, '""')}",${o.total},${o.status},${o.paid ? 'SI' : 'NO'},${o.payment_method || 'contado'},${o.amount_paid || 0},${o.amount_remaining || 0}\n`;
+  }
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename=pedidos-${req.biz.slug}.csv`);
+  res.send('\uFEFF' + csv);
+});
+
+// ================= EXPORTAR CATÁLOGO =================
+function variantsText(raw) {
+  const vm = parseVariantList(raw);
+  if (!vm.attrs.length) return '';
+  return vm.attrs.map(a => (a.name || 'Opciones') + ': ' + a.values.join(', ')).join(' | ');
+}
+
+app.get('/:slug/admin/exportar.xlsx', requireAuth, (req, res) => {
+  const biz = req.biz;
+  const catName = {};
+  db.prepare('SELECT id, name FROM categories WHERE business_id = ?').all(biz.id).forEach(c => { catName[c.id] = c.name; });
+  const products = db.prepare('SELECT * FROM products WHERE business_id = ? AND active = 1 ORDER BY sort ASC, id ASC').all(biz.id);
+
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet('Catálogo');
+  ws.columns = [
+    { header: 'Nombre', key: 'name', width: 32 },
+    { header: 'Precio', key: 'price', width: 12 },
+    { header: 'Precio anterior', key: 'old_price', width: 14 },
+    { header: 'Categoría', key: 'cat', width: 20 },
+    { header: 'Stock', key: 'stock', width: 10 },
+    { header: 'Atributos', key: 'variants', width: 30 },
+    { header: 'Descripción', key: 'desc', width: 40 },
+    { header: 'SKU', key: 'sku', width: 14 },
+    { header: 'Código de barras', key: 'barcode', width: 16 },
+    { header: 'Imagen', key: 'image', width: 45 }
+  ];
+  ws.getRow(1).font = { bold: true };
+  ws.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2563EB' } };
+  ws.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+  products.forEach(p => {
+    ws.addRow({
+      name: p.name,
+      price: p.price,
+      old_price: p.old_price || '',
+      cat: catName[p.category_id] || '',
+      stock: p.stock === null || p.stock === undefined ? '' : p.stock,
+      variants: variantsText(p.variants),
+      desc: p.description || '',
+      sku: p.sku || '',
+      barcode: p.barcode || '',
+      image: p.image || ''
+    });
+  });
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.setHeader('Content-Disposition', `attachment; filename=catalogo-${biz.slug}.xlsx`);
+  wb.xlsx.write(res).then(() => res.end());
+});
+
+app.get('/:slug/admin/catalogo-print', requireAuth, (req, res) => {
+  const { products } = getCatalog(req.biz.id);
+  res.set('Cache-Control', 'no-store');
+  res.render('catalogo-print', { biz: req.biz, products, money: moneyFor(req.biz) });
+});
+
+// ================= CLIENTES (mini-CRM) =================
+function upsertCustomer(bizId, name, phone) {
+  const nm = String(name || '').trim();
+  const ph = String(phone || '').replace(/[^0-9]/g, '');
+  if (!ph && !nm) return;
+  let existing = null;
+  if (ph) existing = db.prepare('SELECT * FROM customers WHERE business_id = ? AND phone = ?').get(bizId, ph);
+  if (!existing && nm) existing = db.prepare('SELECT * FROM customers WHERE business_id = ? AND LOWER(name) = LOWER(?)').get(bizId, nm);
+  if (existing) {
+    if (ph && !existing.phone) db.prepare('UPDATE customers SET phone = ? WHERE id = ?').run(ph, existing.id);
+    if (nm && (!existing.name || existing.name === String(existing.phone || ''))) db.prepare('UPDATE customers SET name = ? WHERE id = ?').run(nm, existing.id);
+  } else {
+    db.prepare('INSERT INTO customers (business_id, name, phone) VALUES (?, ?, ?)').run(bizId, nm || ph, ph);
+  }
+}
+
+function clientRows(bizId) {
+  const allOrders = db.prepare('SELECT * FROM orders WHERE business_id = ? ORDER BY created_at DESC').all(bizId);
+  return db.prepare('SELECT * FROM customers WHERE business_id = ? ORDER BY id DESC').all(bizId).map(c => {
+    const phone = (c.phone || '').trim();
+    const name = (c.name || '').trim().toLowerCase();
+    const ords = allOrders.filter(o => {
+      if (phone) {
+        const op = (o.customer_phone || '').replace(/[^0-9]/g, '');
+        if (op && (op.indexOf(phone) !== -1 || phone.indexOf(op) !== -1)) return true;
+      }
+      const on = (o.customer_name || '').toLowerCase();
+      return !!name && !!on && on.indexOf(name) !== -1;
+    });
+    c.orders = ords;
+    c.orderCount = ords.length;
+    c.totalSpent = ords.reduce((s, o) => s + (o.total || 0), 0);
+    return c;
+  });
+}
+
+app.get('/:slug/admin/clientes', requireAuth, can('clientes'), (req, res) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+  res.render('clientes', { biz: req.biz, customers: clientRows(req.biz.id), error: null, ok: req.query.ok === '1', money: moneyFor(req.biz) });
+});
+
+app.post('/:slug/admin/cliente', requireAuth, can('clientes'), (req, res) => {
+  const name = String(req.body.name || '').trim();
+  const phone = String(req.body.phone || '').replace(/[^0-9]/g, '');
+  const notes = String(req.body.notes || '').trim();
+  if (!name) return res.redirect('/' + req.params.slug + '/admin/clientes');
+  db.prepare('INSERT INTO customers (business_id, name, phone, notes) VALUES (?, ?, ?, ?)').run(req.biz.id, name, phone, notes);
+  res.redirect('/' + req.params.slug + '/admin/clientes?ok=1');
+});
+
+app.post('/:slug/admin/cliente/:id/eliminar', requireAuth, can('clientes'), (req, res) => {
+  db.prepare('DELETE FROM customers WHERE id = ? AND business_id = ?').run(req.params.id, req.biz.id);
+  res.redirect('/' + req.params.slug + '/admin/clientes');
+});
+
+// Conteo de pedidos nuevos (para la notificación del panel)
+app.get('/:slug/admin/api/new-orders', requireAuth, (req, res) => {
+  const row = db.prepare('SELECT COALESCE(MAX(id), 0) AS lastId FROM orders WHERE business_id = ?').get(req.biz.id);
+  res.json({ lastId: row.lastId });
+});
+
+// Conteo de productos con stock bajo/agotado (para el aviso del menú)
+app.get('/:slug/admin/api/low-stock', requireAuth, (req, res) => {
+  const c = db.prepare('SELECT COUNT(*) AS c FROM products WHERE business_id = ? AND active = 1 AND (stock IS NULL OR stock <= 5)').get(req.biz.id).c;
+  res.json({ count: c });
+});
+
+// ================= CARGA MASIVA (EXCEL) =================
+const importSessions = {};
+
+const FIELD_OPTIONS = [
+  { value: 'nombre', label: 'Nombre del producto', required: true },
+  { value: 'precio', label: 'Precio', required: true },
+  { value: 'categoria', label: 'Categoría' },
+  { value: 'precio_antes', label: 'Precio antes (promo)' },
+  { value: 'stock', label: 'Stock disponible' },
+  { value: 'variantes', label: 'Atributos (tallas, colores…)' },
+  { value: 'descripcion', label: 'Descripción' },
+  { value: 'imagen', label: 'Imagen (URL o ruta)' }
+];
+
+const COLUMN_ALIASES = {
+  nombre: ['nombre', 'name', 'producto', 'articulo', 'item', 'descripcion del producto', 'descripcion de producto', 'sku', 'referencia', 'product'],
+  precio: ['precio', 'price', 'costo', 'precio venta', 'precio de venta', 'costo de venta', 'venta', 'p.venta', 'pv', 'precio publico', 'precio publico iva', 'precio iva', 'precio con iva', 'precio unitario', 'precio lista', 'precio neto', 'precio contado', 'precio credito', 'importe'],
+  categoria: ['categoria', 'category', 'linea', 'seccion', 'grupo', 'rubro', 'departamento', 'familia', 'tipo'],
+  precio_antes: ['precio_antes', 'precio anterior', 'old price', 'precio regular', 'antes', 'precio tachado', 'precio lista', 'precio list', 'precio anterior iva', 'precio normal', 'precio mayor'],
+  stock: ['stock', 'cantidad', 'existencia', 'existencias', 'disponible', 'disponibilidad', 'inventario', 'unidades', 'cant', 'existe', 'stock disponible', 'piezas', 'uds'],
+  variantes: ['variantes', 'variante', 'atributos', 'atributo', 'talla', 'tallas', 'color', 'colores', 'color/talla', 'tamano', 'tamanos', 'tamaño', 'medida', 'medidas', 'presentacion', 'presentaciones', 'modelo', 'formato', 'opciones'],
+  descripcion: ['descripcion', 'description', 'detalle', 'nota', 'observaciones', 'especificaciones', 'caracteristicas', 'detalles'],
+  imagen: ['imagen', 'image', 'foto', 'url', 'link', 'fotografia', 'foto url', 'imagen url', 'foto principal']
+};
+
+function normalizeKey(s) {
+  return (s || '').toString().trim().toLowerCase().replace(/[áéíóúüñ]/g, (m) => ({ á: 'a', é: 'e', í: 'i', ó: 'o', ú: 'u', ü: 'u', ñ: 'n' }[m])).replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ');
+}
+
+function parseMoney(v) {
+  if (v === null || v === undefined || v === '') return NaN;
+  let s = v.toString().trim().replace(/[$MX\s]/gi, '');
+  if (/^\d{1,3}(,\d{3})+(\.\d+)?$/.test(s)) {
+    s = s.replace(/,/g, '');
+  } else {
+    s = s.replace(/,/g, '.');
+  }
+  const n = parseFloat(s);
+  return isNaN(n) ? NaN : n;
+}
+
+function autoMapColumns(headers) {
+  const norm = headers.map(normalizeKey);
+  const mapping = {};
+  Object.keys(COLUMN_ALIASES).forEach((field) => {
+    for (let i = 0; i < norm.length; i++) {
+      const h = norm[i];
+      const aliasHits = COLUMN_ALIASES[field].filter((a) => normalizeKey(a) === h);
+      const contains = COLUMN_ALIASES[field].some((a) => {
+        const k = normalizeKey(a);
+        if (!k) return false;
+        if (k.length >= 4 && h.indexOf(k) > -1) return true;   // "precio de venta" dentro de "precio de venta con iva"
+        if (h.length >= 4 && k.indexOf(h) > -1) return true;   // "precio" dentro de "precio de venta"
+        return false;
+      });
+      if (aliasHits.length > 0) { mapping[field] = i; break; }
+    }
+    if (mapping[field] === undefined) {
+      for (let i = 0; i < norm.length; i++) {
+        const h = norm[i];
+        const k = COLUMN_ALIASES[field].map(normalizeKey).filter(Boolean).find((a) => a.length >= 4 && (h.indexOf(a) > -1 || a.indexOf(h) > -1));
+        if (k) { mapping[field] = i; break; }
+      }
+    }
+  });
+  return mapping;
+}
+
+// Lee cualquier Excel/CSV y devuelve { headers, rows, totalRows } detectando la fila de encabezado
+// y el separador de CSV (funciona con la lista de precios de cada quien, no solo con la plantilla).
+function parseCsvRows(buffer) {
+  const text = buffer.toString('utf8').replace(/^\uFEFF/, '');
+  const firstLines = text.split(/\r?\n/).slice(0, 5).join('\n');
+  const candidates = [',', ';', '\t', '|'];
+  const sep = candidates.sort((a, b) => firstLines.split(b).length - firstLines.split(a).length)[0];
+  const rows = [];
+  let row = [], cell = '', quoted = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (ch === '"') {
+      if (quoted && text[i + 1] === '"') { cell += '"'; i++; }
+      else quoted = !quoted;
+    } else if (ch === sep && !quoted) { row.push(cell); cell = ''; }
+    else if ((ch === '\n' || ch === '\r') && !quoted) {
+      if (ch === '\r' && text[i + 1] === '\n') i++;
+      row.push(cell); rows.push(row); row = []; cell = '';
+    } else cell += ch;
+  }
+  if (cell || row.length) { row.push(cell); rows.push(row); }
+  return rows;
+}
+
+function excelCellText(value) {
+  if (value === null || value === undefined) return '';
+  if (value instanceof Date) return value.toISOString().slice(0, 10);
+  if (typeof value === 'object') {
+    if (value.text !== undefined) return String(value.text);
+    if (value.result !== undefined) return String(value.result);
+    if (Array.isArray(value.richText)) return value.richText.map(x => x.text || '').join('');
+  }
+  return String(value);
 }
 
 // ================= LANDING =================
@@ -2594,18 +3914,19 @@ function parseSheet(buffer, filename) {
   try {
     const ext = (filename || '').toLowerCase();
     const isCsv = ext.endsWith('.csv');
-    const opts = { type: 'buffer', raw: false, defval: '' };
-    if (isCsv) {
-      const firstLines = buffer.toString('utf8').split(/\r?\n/).slice(0, 5).join('\n');
-      let sep = ',';
-      const counts = {};
-      [',', ';', '\t', '|'].forEach(s => { counts[s] = firstLines.split(s).length; });
-      const best = Object.keys(counts).sort((a, b) => counts[b] - counts[a])[0];
-      if (counts[best] > 1 && counts[best] > counts[','] * 0.8) sep = best === '\t' ? '\t' : best;
-      if (sep === ';') { opts.FS = ';'; }
-      if (sep === '\t') { opts.FS = '\t'; }
+    if (isCsv) aoa = parseCsvRows(buffer);
+    else {
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(buffer);
+      const sheet = workbook.worksheets[0];
+      if (!sheet) return { error: 'El archivo no contiene hojas.' };
+      aoa = [];
+      sheet.eachRow({ includeEmpty: true }, (row) => {
+        const values = [];
+        for (let i = 1; i <= row.cellCount; i++) values.push(excelCellText(row.getCell(i).value));
+        aoa.push(values);
+      });
     }
-    workbook = XLSX.read(buffer, opts);
   } catch (e) {
     return { error: 'El archivo no se pudo leer. Verifica que sea un Excel o CSV válido.' };
   }
@@ -3386,20 +4707,23 @@ app.post('/:slug/admin/resetear-pin', (req, res) => {
   if (master !== MASTER_KEY) {
     return res.render('config', configLocals(biz, { error: 'Código maestro incorrecto. No se puede resetear el PIN.' }));
   }
-  db.prepare('UPDATE businesses SET pin_hash = ?, pin = \'\' WHERE id = ?').run(hashPin('123456'), biz.id);
+  const newPin = String(crypto.randomInt(100000, 1000000));
+  db.prepare('UPDATE businesses SET pin_hash = ?, pin = \'\' WHERE id = ?').run(hashPin(newPin), biz.id);
   db.prepare('DELETE FROM sessions WHERE biz_id = ?').run(biz.id);
-  res.render('config', configLocals(getBusiness(biz.slug), { ok: 'PIN reseteado a 123456. Todas las sesiones fueron cerradas.' }));
+  res.render('config', configLocals(getBusiness(biz.slug), { ok: `PIN temporal: ${newPin}. Guárdalo y cámbialo ahora. Todas las sesiones fueron cerradas.` }));
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+if (require.main === module) app.listen(PORT, () => {
   db.prepare("DELETE FROM sessions WHERE expires_at IS NOT NULL AND expires_at < datetime('now')").run();
   setInterval(() => {
     db.prepare("DELETE FROM sessions WHERE expires_at IS NOT NULL AND expires_at < datetime('now')").run();
   }, 60 * 60 * 1000);
   console.log(`Nessik corriendo en http://localhost:${PORT}`);
   console.log(`Landing:      http://localhost:${PORT}/`);
-  console.log(`Registrar:    http://localhost:${PORT}/registrar  (código maestro: ${MASTER_KEY})`);
+  console.log(`Registrar:    http://localhost:${PORT}/registrar`);
   console.log(`Demo tienda:  http://localhost:${PORT}/ferreteria-demo`);
-  console.log(`Panel demo:   http://localhost:${PORT}/ferreteria-demo/admin  (PIN: 1234)`);
+  if (process.env.SEED_DEMO === 'true') console.log(`Panel demo:   http://localhost:${PORT}/ferreteria-demo/admin`);
 });
+
+module.exports = { app, parseSheet };

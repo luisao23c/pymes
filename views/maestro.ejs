@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -751,3 +752,758 @@
   </script>
 </body>
 </html>
+=======
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="csrf" content="<%= csrf %>" />
+  <title><%= list ? 'Panel maestro · Catálogo Digital por Nessik' : 'Acceso maestro · Catálogo Digital por Nessik' %></title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800;14..32,900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/material.css" />
+  <script src="/js/material.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script>
+    (function () {
+      function csrfValue() {
+        var m = document.querySelector('meta[name="csrf"]');
+        return m ? m.getAttribute('content') : '';
+      }
+      function injectAll() {
+        var t = csrfValue();
+        if (!t) return;
+        document.querySelectorAll('form').forEach(function (f) {
+          if (f.querySelector('input[name="_csrf"]')) return;
+          var i = document.createElement('input');
+          i.type = 'hidden'; i.name = '_csrf'; i.value = t;
+          f.appendChild(i);
+        });
+      }
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', injectAll);
+      else injectAll();
+      window.__csrfValue = csrfValue;
+    })();
+  </script>
+  <style>
+    /* ============================================================
+       PANEL MAESTRO — ESTILO MODERNO 2026
+       ============================================================ */
+
+    :root {
+      --mp-bg: #f4f2ee;
+      --mp-card: #ffffff;
+      --mp-text: #1a1a1a;
+      --mp-text-sec: #7a7470;
+      --mp-accent: #2563eb;
+      --mp-accent-light: #60a5fa;
+      --mp-accent-glow: rgba(37,99,235,.08);
+      --mp-border: rgba(0,0,0,.06);
+      --mp-shadow: 0 1px 3px rgba(0,0,0,.04), 0 1px 2px rgba(0,0,0,.03);
+      --mp-shadow-lg: 0 10px 40px -8px rgba(0,0,0,.12);
+      --mp-radius: 16px;
+    }
+    * { transition: border-color .2s, background .2s, box-shadow .25s, transform .3s cubic-bezier(.22,1,.36,1); }
+    body { font-family:'Inter',system-ui,sans-serif; }
+
+    /* Scrollbar moderno */
+    ::-webkit-scrollbar { width:5px; height:5px; }
+    ::-webkit-scrollbar-track { background:transparent; }
+    ::-webkit-scrollbar-thumb { background:#c4bfba; border-radius:10px; }
+    ::-webkit-scrollbar-thumb:hover { background:#a09890; }
+
+    /* Header glass */
+    .panel-header {
+      background: rgba(255,255,255,.82)!important;
+      backdrop-filter: blur(20px) saturate(1.8);
+      -webkit-backdrop-filter: blur(20px) saturate(1.8);
+      border-bottom: 1px solid var(--mp-border)!important;
+      box-shadow: 0 1px 0 rgba(0,0,0,.03);
+    }
+
+    /* Tarjeta de tienda */
+    .store-card {
+      background: var(--mp-card);
+      border-radius: var(--mp-radius);
+      border: 1px solid var(--mp-border);
+      padding: 1.1rem 1.3rem;
+      transition: all .3s cubic-bezier(.22,1,.36,1);
+      box-shadow: var(--mp-shadow);
+      position: relative;
+      overflow: hidden;
+    }
+    .store-card::before {
+      content: '';
+      position: absolute; top:0; left:0; right:0; height:3px;
+      background: linear-gradient(90deg, var(--mp-accent), var(--mp-accent-light));
+      opacity: 0; transition: opacity .3s;
+    }
+    .store-card:hover::before { opacity:1; }
+    .store-card:hover {
+      box-shadow: var(--mp-shadow-lg);
+      border-color: rgba(37,99,235,.12);
+      transform: translateY(-3px);
+    }
+    .store-card.expired {
+      border-color: rgba(239,68,68,.2);
+      background: linear-gradient(135deg, #fff 80%, rgba(239,68,68,.03));
+    }
+    .store-card.suspended {
+      border-color: rgba(239,68,68,.12);
+      background: #fafafa;
+      opacity: .6;
+    }
+
+    /* Badges de estado */
+    .badge-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.2rem 0.75rem;
+      border-radius: 99px;
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      border: 1px solid transparent;
+      transition: all .2s;
+    }
+    .badge-status.active {
+      background: #ecfdf5;
+      color: #065f46;
+      border-color: #a7f3d0;
+      box-shadow: 0 0 0 3px rgba(16,185,129,.06);
+    }
+    .badge-status.inactive {
+      background: #f8fafc;
+      color: #64748b;
+      border-color: #e2e8f0;
+    }
+    .badge-status.suspended {
+      background: #fef2f2;
+      color: #991b1b;
+      border-color: #fecaca;
+    }
+    .badge-status.pro {
+      background: #eff6ff;
+      color: #1e40af;
+      border-color: #bfdbfe;
+      box-shadow: 0 0 0 3px rgba(37,99,235,.06);
+    }
+    .badge-status.free {
+      background: #f8fafc;
+      color: #475569;
+      border-color: #e2e8f0;
+    }
+    .badge-status.expired {
+      background: #fef2f2;
+      color: #991b1b;
+      border-color: #fecaca;
+    }
+    .badge-status.ads {
+      background: #fffbeb;
+      color: #92400e;
+      border-color: #fde68a;
+    }
+    .badge-status.no-ads {
+      background: #f8fafc;
+      color: #64748b;
+      border-color: #e2e8f0;
+    }
+
+    /* Botones de accion */
+    .action-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.3rem;
+      padding: 0.35rem 0.8rem;
+      border-radius: 10px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      border: 1px solid var(--mp-border);
+      background: var(--mp-card);
+      color: var(--mp-text-sec);
+      cursor: pointer;
+      transition: all .2s cubic-bezier(.22,1,.36,1);
+      min-height: 30px;
+      line-height: 1;
+    }
+    .action-btn:hover {
+      background: #f8f7f5;
+      border-color: #d1cdc7;
+      color: var(--mp-text);
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(0,0,0,.06);
+    }
+    .action-btn:active { transform:scale(.97); }
+    .action-btn.primary {
+      background: var(--mp-accent);
+      border-color: var(--mp-accent);
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(37,99,235,.2);
+    }
+    .action-btn.primary:hover {
+      background: #1d4ed8;
+      border-color: #1d4ed8;
+      box-shadow: 0 4px 14px rgba(37,99,235,.3);
+    }
+    .action-btn.danger {
+      color: #dc2626;
+      border-color: rgba(220,38,38,.2);
+    }
+    .action-btn.danger:hover {
+      background: #fef2f2;
+      border-color: rgba(220,38,38,.3);
+    }
+    .action-btn.success {
+      color: #059669;
+      border-color: rgba(5,150,105,.2);
+    }
+    .action-btn.success:hover {
+      background: #ecfdf5;
+      border-color: rgba(5,150,105,.3);
+    }
+    .action-btn.warning {
+      color: #d97706;
+      border-color: rgba(217,119,6,.2);
+    }
+    .action-btn.warning:hover {
+      background: #fffbeb;
+      border-color: rgba(217,119,6,.3);
+    }
+    .action-btn.small {
+      padding: 0.2rem 0.5rem;
+      font-size: 0.65rem;
+      min-height: 24px;
+      border-radius: 8px;
+    }
+
+    /* Selector de plan */
+    .plan-select {
+      font-size: 0.75rem;
+      padding: 0.3rem 0.7rem;
+      border-radius: 10px;
+      border: 1px solid var(--mp-border);
+      background: var(--mp-card);
+      color: var(--mp-text);
+      font-weight: 600;
+      cursor: pointer;
+      outline: none;
+      transition: all .2s;
+    }
+    .plan-select:focus {
+      border-color: var(--mp-accent);
+      box-shadow: 0 0 0 3px var(--mp-accent-glow);
+    }
+
+    /* Inputs compactos */
+    .input-compact {
+      font-size: 0.75rem;
+      padding: 0.3rem 0.7rem;
+      border-radius: 10px;
+      border: 1px solid var(--mp-border);
+      background: var(--mp-card);
+      color: var(--mp-text);
+      outline: none;
+      transition: all .2s;
+      width: auto;
+      min-width: 60px;
+    }
+    .input-compact:focus {
+      border-color: var(--mp-accent);
+      box-shadow: 0 0 0 3px var(--mp-accent-glow);
+    }
+
+    /* Tabs modernos */
+    .mt-tab {
+      flex: 1;
+      padding: 0.6rem 0.8rem;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--mp-text-sec);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      transition: all .25s cubic-bezier(.22,1,.36,1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+    }
+    .mt-tab:hover { color: var(--mp-text); background: rgba(37,99,235,.04); }
+    .mt-tab.active {
+      background: var(--mp-card);
+      color: var(--mp-text);
+      box-shadow: 0 2px 12px rgba(0,0,0,.06);
+    }
+    .mt-tab-count {
+      font-size: 0.6rem;
+      padding: 0.1rem 0.45rem;
+      border-radius: 99px;
+      background: #f1f5f9;
+      color: #94a3b8;
+      font-weight: 800;
+    }
+    .mt-tab.active .mt-tab-count { background: #dbeafe; color: var(--mp-accent); }
+    .mt-tab-panel { display: none; }
+    .mt-tab-panel.active { display: block; animation: mtFadeIn .3s cubic-bezier(.22,1,.36,1); }
+    @keyframes mtFadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+
+    /* Stagger animation */
+    .stagger-item {
+      animation: fadeSlideUp .4s cubic-bezier(.22,1,.36,1) both;
+    }
+    @keyframes fadeSlideUp {
+      from { opacity:0; transform:translateY(16px); }
+      to { opacity:1; transform:translateY(0); }
+    }
+    .stagger-item:nth-child(1) { animation-delay:.02s; }
+    .stagger-item:nth-child(2) { animation-delay:.05s; }
+    .stagger-item:nth-child(3) { animation-delay:.08s; }
+    .stagger-item:nth-child(4) { animation-delay:.11s; }
+    .stagger-item:nth-child(5) { animation-delay:.14s; }
+    .stagger-item:nth-child(6) { animation-delay:.17s; }
+    .stagger-item:nth-child(7) { animation-delay:.20s; }
+    .stagger-item:nth-child(8) { animation-delay:.23s; }
+    .stagger-item:nth-child(9) { animation-delay:.26s; }
+    .stagger-item:nth-child(10) { animation-delay:.29s; }
+
+    /* Animacion fade-in global */
+    .fade-in { animation: fadeIn .3s cubic-bezier(.22,1,.36,1) both; }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+
+    /* Toast moderno */
+    .toast-in { animation: toastIn .35s cubic-bezier(.22,1,.36,1) both; }
+    @keyframes toastIn { from { opacity:0; transform:translateY(12px) scale(.95); } to { opacity:1; transform:none; } }
+
+    /* ========== MODO OSCURO ========== */
+    body.dark { --mp-bg: #0d1117; --mp-card: #161b22; --mp-text: #e6edf3; --mp-text-sec: #8b949e; --mp-border: rgba(255,255,255,.08); --mp-shadow: 0 1px 3px rgba(0,0,0,.3); --mp-shadow-lg: 0 10px 40px -8px rgba(0,0,0,.5); }
+    body.dark .panel-header { background: rgba(13,17,23,.85)!important; border-bottom-color: rgba(255,255,255,.06)!important; }
+    body.dark .store-card { border-color: rgba(255,255,255,.08); }
+    body.dark .store-card:hover { border-color: rgba(96,165,250,.2); }
+    body.dark .store-card.expired { border-color: rgba(248,113,113,.2); background: linear-gradient(135deg, #161b22 80%, rgba(248,113,113,.04)); }
+    body.dark .badge-status.active { background: rgba(16,185,129,.12); color: #6ee7b7; border-color: rgba(16,185,129,.25); }
+    body.dark .badge-status.inactive { background: rgba(255,255,255,.04); color: #8b949e; border-color: rgba(255,255,255,.08); }
+    body.dark .badge-status.suspended { background: rgba(248,113,113,.1); color: #fca5a5; border-color: rgba(248,113,113,.2); }
+    body.dark .badge-status.pro { background: rgba(96,165,250,.1); color: #93c5fd; border-color: rgba(96,165,250,.2); }
+    body.dark .badge-status.free { background: rgba(255,255,255,.04); color: #8b949e; border-color: rgba(255,255,255,.08); }
+    body.dark .badge-status.expired { background: rgba(248,113,113,.1); color: #fca5a5; border-color: rgba(248,113,113,.2); }
+    body.dark .badge-status.ads { background: rgba(251,191,36,.1); color: #fcd34d; border-color: rgba(251,191,36,.2); }
+    body.dark .badge-status.no-ads { background: rgba(255,255,255,.04); color: #8b949e; border-color: rgba(255,255,255,.08); }
+    body.dark .action-btn { border-color: rgba(255,255,255,.08); color: #8b949e; background: transparent; }
+    body.dark .action-btn:hover { background: rgba(255,255,255,.04); border-color: rgba(255,255,255,.12); color: #e6edf3; }
+    body.dark .action-btn.primary { background: #2563eb; border-color: #2563eb; color: #fff; }
+    body.dark .action-btn.primary:hover { background: #3b82f6; border-color: #3b82f6; }
+    body.dark .action-btn.danger { color: #fca5a5; border-color: rgba(248,113,113,.2); }
+    body.dark .action-btn.danger:hover { background: rgba(248,113,113,.08); }
+    body.dark .action-btn.success { color: #6ee7b7; border-color: rgba(16,185,129,.2); }
+    body.dark .action-btn.success:hover { background: rgba(16,185,129,.08); }
+    body.dark .action-btn.warning { color: #fcd34d; border-color: rgba(251,191,36,.2); }
+    body.dark .action-btn.warning:hover { background: rgba(251,191,36,.08); }
+    body.dark .plan-select { background: #0d1117; border-color: rgba(255,255,255,.08); color: #e6edf3; }
+    body.dark .plan-select:focus { border-color: #60a5fa; box-shadow: 0 0 0 3px rgba(96,165,250,.12); }
+    body.dark .input-compact { background: #0d1117; border-color: rgba(255,255,255,.08); color: #e6edf3; }
+    body.dark .input-compact:focus { border-color: #60a5fa; box-shadow: 0 0 0 3px rgba(96,165,250,.12); }
+    body.dark .mt-tab:hover { color: #e6edf3; background: rgba(255,255,255,.04); }
+    body.dark .mt-tab.active { background: #161b22; color: #fff; }
+    body.dark .mt-tab-count { background: rgba(255,255,255,.06); color: #8b949e; }
+    body.dark .mt-tab.active .mt-tab-count { background: rgba(96,165,250,.15); color: #93c5fd; }
+  </style>
+</head>
+<body class="m-material min-h-screen bg-slate-100 dark:bg-[#0d1117]">
+
+  <% if (!list) { %>
+
+    <!-- ============================================================
+    LOGIN – Acceso maestro
+    ============================================================ -->
+    <div class="min-h-screen flex items-center justify-center p-4 bg-slate-50">
+      <div class="w-full max-w-sm">
+        <div class="bg-white rounded-3xl border border-slate-200 shadow-[0_12px_40px_rgba(15,23,42,0.08)] p-8 m-rise">
+          <div class="flex flex-col items-center text-center mb-6">
+            <div class="w-16 h-16 rounded-2xl bg-slate-800 text-white flex items-center justify-center text-3xl shadow-sm mb-4">🔐</div>
+            <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Panel maestro</h1>
+            <p class="text-sm text-slate-400 mt-1">Control global de todas las tiendas</p>
+          </div>
+
+          <% if (error) { %>
+            <div class="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl p-3.5 mb-4 font-semibold flex items-center gap-2">
+              <span>⚠️</span>
+              <span><%= error %></span>
+            </div>
+          <% } %>
+
+          <form method="POST" action="/maestro">
+            <label class="block text-[0.7rem] font-bold uppercase tracking-wide text-slate-400 mb-2" for="f-master">Código maestro</label>
+            <input type="password" name="master" id="f-master" placeholder="••••" autofocus class="w-full border-2 border-slate-200 rounded-2xl px-4 py-3 text-lg font-semibold tracking-[0.4em] text-center text-slate-900 focus:outline-none focus:border-slate-500 focus:ring-4 focus:ring-slate-200" />
+            <button class="m-btn m-btn-filled w-full !min-h-11 mt-4 !bg-slate-800 hover:!bg-slate-700">
+              Entrar al panel
+            </button>
+          </form>
+
+          <a href="/" class="block text-center text-sm text-slate-400 font-semibold hover:text-slate-600 transition mt-5">
+            ← Volver al inicio
+          </a>
+        </div>
+      </div>
+    </div>
+
+  <% } else { %>
+
+    <!-- ============================================================
+    PANEL – Listado de tiendas
+    ============================================================ -->
+
+    <!-- HEADER -->
+    <header class="panel-header sticky top-0 z-10">
+      <div class="max-w-6xl mx-auto px-4 md:px-6 py-4 flex items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <span class="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-800 to-blue-600 text-white flex items-center justify-center text-lg shadow-sm">🔐</span>
+          <div>
+            <h1 class="font-extrabold text-slate-900 dark:text-white leading-tight text-lg">Panel maestro</h1>
+            <p class="text-xs text-slate-400 dark:text-slate-500"><%= list.length %> tiendas registradas</p>
+          </div>
+        </div>
+        <form method="POST" action="/maestro/cerrar">
+          <button class="text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white bg-slate-100 dark:bg-[#21262d] hover:bg-slate-200 dark:hover:bg-[#30363d] px-4 py-2 rounded-xl transition">
+            Cerrar sesión
+          </button>
+        </form>
+      </div>
+    </header>
+
+    <!-- MAIN -->
+    <main class="max-w-6xl mx-auto px-3 md:px-6 py-5">
+
+      <!-- TAB NAV -->
+      <nav class="flex gap-1 bg-slate-100 dark:bg-[#161b22] rounded-2xl p-1 mb-5 border border-slate-200 dark:border-[#21262d]">
+        <button onclick="switchTab('tiendas')" id="tab-btn-tiendas" class="mt-tab active">🏪 Tiendas <span class="mt-tab-count"><%= list.length %></span></button>
+        <button onclick="switchTab('planes')" id="tab-btn-planes" class="mt-tab">🎛 Planes <span class="mt-tab-count"><%= plans.length %></span></button>
+        <button onclick="switchTab('plantillas')" id="tab-btn-plantillas" class="mt-tab">📋 Plantillas <span class="mt-tab-count"><%= customTemplates.length %></span></button>
+      </nav>
+
+      <!-- TAB: TIENDAS -->
+      <div id="tab-tiendas" class="mt-tab-panel active">
+
+      <!-- FILTROS DE TIENDAS -->
+      <div class="flex flex-wrap items-center gap-2 mb-3">
+        <select id="giro-filtro" class="input-compact rounded-xl px-3 py-2 text-sm border border-slate-200 dark:bg-[#0d1117] dark:border-[#30363d] dark:text-white bg-white focus:outline-none focus:border-blue-400">
+          <option value="">Todos los giros</option>
+          <% GIROS.forEach(g => { %>
+            <option value="<%= g %>"><%= g.charAt(0).toUpperCase() + g.slice(1) %></option>
+          <% }) %>
+        </select>
+        <input id="busca-tienda" type="search" placeholder="Buscar por nombre o slug…"
+          class="input-compact flex-1 min-w-[180px] rounded-xl px-3 py-2 text-sm border border-slate-200 dark:bg-[#0d1117] dark:border-[#30363d] dark:text-white bg-white focus:outline-none focus:border-blue-400">
+      </div>
+
+      <!-- LISTADO DE TIENDAS -->
+      <div class="grid gap-3">
+        <% list.forEach((b, i) => { %>
+          <div class="store-card <%= b.expired ? 'expired' : '' %> <%= b.suspended ? 'suspended' : '' %> stagger-item" data-giro="<%= b.giro || '' %>" data-busca="<%= (b.name + ' ' + b.slug).toLowerCase() %>" style="animation-delay: <%= (i * 0.03) %>s">
+            <div class="flex flex-col md:flex-row md:items-center gap-3">
+
+              <!-- Info tienda -->
+              <div class="flex items-center gap-3 min-w-0 flex-1">
+                <img src="<%= b.logo || '/img/sin-imagen.svg' %>" class="w-10 h-10 rounded-xl object-cover border border-slate-200 dark:border-[#30363d] shrink-0" />
+                <div class="min-w-0">
+                  <p class="font-bold text-slate-900 dark:text-white truncate">
+                    <%= b.name %>
+                    <a href="/<%= b.slug %>" target="_blank" class="text-blue-500 dark:text-[#8ab4f8] text-xs font-bold hover:underline">/<%= b.slug %></a>
+                  </p>
+                  <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5">
+                    <span>📦 <%= b.products_count || 0 %> productos</span>
+                    <span>🧾 <%= b.orders_count || 0 %> pedidos</span>
+                    <span>👁 <%= b.visits_count || 0 %> visitas</span>
+                    <span>📅 <%= b.created_at %></span>
+                  </p>
+                  <div class="flex items-center gap-1.5 mt-1 flex-wrap">
+                    <% if (b.giro) { %><span class="badge-status giro">🏪 <%= b.giro %></span><% } %>
+                    <span class="badge-status <%= b.plan === 'pro' ? 'pro' : 'free' %>"><%= b.plan_name.toUpperCase() %></span>
+                    <span class="badge-status neutral">$<%= Number(b.plan_price || 0).toFixed(2) %></span>
+                    <% if (b.plan_ends_at) { %>
+                      <span class="badge-status <%= b.expired ? 'expired' : 'warning' %>">
+                        Vence <%= b.plan_ends_at %> <%= b.expired ? '· VENCIDO' : '' %>
+                      </span>
+                    <% } %>
+                    <% if (b.suspended) { %><span class="badge-status suspended">⏸ Suspendida</span><% } %>
+                    <span class="badge-status <%= b.ads_enabled ? 'ads' : 'no-ads' %>">📣 <%= b.ads_enabled ? 'anuncio' : 'sin anuncio' %></span>
+                    <span class="badge-status <%= b.active ? 'active' : 'inactive' %>"><%= b.active ? '● Activa' : '○ Inactiva' %></span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Acciones -->
+              <div class="flex items-center gap-1.5 flex-wrap shrink-0 justify-end md:justify-start">
+                <!-- Cambiar plan -->
+                <form method="POST" action="/maestro/<%= b.id %>/plan" class="inline">
+                  <select name="plan" onchange="this.form.submit()" class="plan-select">
+                    <% plans.forEach(p => { %>
+                      <option value="<%= p.key %>" <%= b.plan === p.key ? 'selected' : '' %> <%= p.active ? '' : 'disabled' %>><%= p.name %></option>
+                    <% }) %>
+                  </select>
+                </form>
+
+                <!-- Vencimiento y precio -->
+                <form method="POST" action="/maestro/<%= b.id %>/vencimiento" class="flex items-center gap-1">
+                  <input name="plan_price" type="number" step="0.01" min="0" value="<%= b.plan_price || 0 %>" title="Precio ($)" class="input-compact w-14" />
+                  <input name="plan_ends_at" type="date" value="<%= b.plan_ends_at || '' %>" title="Vence el" class="input-compact w-28" />
+                  <button class="action-btn primary small">OK</button>
+                </form>
+
+                <!-- Alternar anuncio -->
+                <form method="POST" action="/maestro/<%= b.id %>/ads" class="inline">
+                  <button class="action-btn <%= b.ads_enabled ? 'warning' : '' %> small" title="Mostrar como anuncio en otros catálogos">
+                    📣
+                  </button>
+                </form>
+
+                <!-- Suspender / Reactivar -->
+                <% if (b.suspended) { %>
+                  <form method="POST" action="/maestro/<%= b.id %>/reactivar" class="inline">
+                    <button class="action-btn success small">▶ Reactivar</button>
+                  </form>
+                <% } else { %>
+                  <form method="POST" action="/maestro/<%= b.id %>/suspender" class="inline">
+                    <button class="action-btn danger small" title="Pausar catálogo y panel">⏸</button>
+                  </form>
+                <% } %>
+
+                <!-- Activar / Desactivar -->
+                <form method="POST" action="/maestro/<%= b.id %>/toggle" class="inline">
+                  <button class="action-btn <%= b.active ? 'primary' : 'danger' %> small">
+                    <%= b.active ? '● Activa' : '○ Inactiva' %>
+                  </button>
+                </form>
+
+                <!-- Resetear PIN -->
+                <form method="POST" action="/maestro/<%= b.id %>/reset-pin" class="inline" onsubmit="var p=prompt('Nuevo PIN para <%= b.slug %> (min 6 digitos):','123456'); if(!p){event.preventDefault();return;} this.insertAdjacentHTML('beforeend','<input type=hidden name=new_pin value=\'' + p + '\'>');">
+                  <button class="action-btn warning small" title="Resetear PIN de acceso">🔑</button>
+                </form>
+              </div>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+      </div><!-- /tab-tiendas -->
+
+      <!-- TAB: PLANES -->
+      <div id="tab-planes" class="mt-tab-panel">
+      <section class="bg-white dark:bg-[#161b22] rounded-2xl border border-slate-200 dark:border-[#21262d] p-4 md:p-5 shadow-sm">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center text-lg">🎛</div>
+          <div>
+            <h2 class="font-extrabold text-slate-900 dark:text-white text-sm">Planes</h2>
+            <p class="text-xs text-slate-400 dark:text-slate-500">Precio, duración, límite de productos, publicidad y diseño.</p>
+          </div>
+        </div>
+        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
+          <% plans.forEach(p => { %>
+            <div class="border border-slate-200 dark:border-[#30363d] rounded-2xl p-3 <%= p.active ? 'bg-white dark:bg-[#0d1117]' : 'opacity-50 bg-slate-50 dark:bg-[#0d1117]/50' %>">
+              <div class="flex items-center justify-between">
+                <p class="font-bold text-sm text-slate-800 dark:text-white"><%= p.name %></p>
+                <div class="flex flex-col items-end gap-1">
+                  <span class="text-[10px] font-black px-2 py-0.5 rounded-full <%= p.ads ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600' %>">📣 <%= p.ads ? 'con publicidad' : 'sin publicidad' %></span>
+                  <span class="text-[10px] font-black px-2 py-0.5 rounded-full <%= p.design ? 'bg-fuchsia-50 text-fuchsia-600' : 'bg-slate-100 text-slate-500' %>">🎨 <%= p.design ? 'con diseño' : 'sin diseño' %></span>
+                </div>
+              </div>
+              <p class="text-xs text-slate-500 mt-1">$<%= p.price.toFixed(2) %> · <%= p.days ? p.days + ' días' : 'sin vencimiento' %> · <%= p.max_products === -1 ? '∞ productos' : p.max_products + ' productos' %></p>
+              <p class="text-[10px] text-slate-400 mt-0.5"><%= planUsage[p.key] || 0 %> tiendas usándolo</p>
+              <% if (p.key !== 'free' && p.key !== 'pro') { %>
+                <form method="POST" action="/maestro/plan/<%= p.id %>/eliminar" data-confirm="¿Eliminar el plan <%= p.name.replace(/'/g, "\\'") %>?" class="mt-2">
+                  <button class="text-[11px] font-bold text-red-500 hover:text-red-700 transition">Eliminar</button>
+                </form>
+              <% } %>
+            </div>
+          <% }) %>
+        </div>
+        <details class="border border-dashed border-slate-300 rounded-2xl p-3 transition hover:border-slate-400">
+          <summary class="text-xs font-bold text-slate-600 cursor-pointer">＋ Crear nuevo plan</summary>
+          <form method="POST" action="/maestro/plan" class="grid sm:grid-cols-2 lg:grid-cols-5 gap-2 mt-3">
+            <input name="name" required placeholder="Nombre del plan" class="input-compact w-full rounded-xl px-3 py-2 text-sm" />
+            <input name="price" type="number" step="0.01" min="0" placeholder="Precio $/mes" class="input-compact w-full rounded-xl px-3 py-2 text-sm" />
+            <input name="days" type="number" min="0" placeholder="Días del periodo" class="input-compact w-full rounded-xl px-3 py-2 text-sm" />
+            <input name="max_products" type="number" min="-1" placeholder="Productos (-1 = ∞)" class="input-compact w-full rounded-xl px-3 py-2 text-sm" />
+            <label class="flex items-center gap-2 text-xs font-bold text-slate-600 cursor-pointer"><input type="checkbox" name="ads" class="w-4 h-4 accent-amber-500" /> Con publicidad cruzada</label>
+            <label class="flex items-center gap-2 text-xs font-bold text-slate-600 cursor-pointer"><input type="checkbox" name="design" class="w-4 h-4 accent-fuchsia-500" /> Diseño personalizable</label>
+            <button class="m-btn m-btn-filled m-btn-sm sm:col-span-2 lg:col-span-5">Crear plan</button>
+          </form>
+        </details>
+      </section>
+      </div><!-- /tab-planes -->
+
+      <!-- TAB: PLANTILLAS -->
+      <div id="tab-plantillas" class="mt-tab-panel">
+      <section class="bg-white dark:bg-[#161b22] rounded-2xl border border-slate-200 dark:border-[#21262d] p-4 md:p-5 shadow-sm">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-lg">📋</div>
+          <div class="flex-1">
+            <h2 class="font-extrabold text-slate-900 dark:text-white text-sm">Plantillas del equipo</h2>
+            <p class="text-xs text-slate-400 dark:text-slate-500">Diseñadas desde el panel maestro — disponibles para todos los catálogos</p>
+          </div>
+          <button onclick="document.getElementById('tpl-create-form').classList.toggle('hidden')" class="text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 px-3 py-1.5 rounded-xl transition">＋ Nueva plantilla</button>
+        </div>
+
+        <!-- Formulario crear -->
+        <div id="tpl-create-form" class="hidden mb-4 border border-dashed border-emerald-300 dark:border-emerald-700 rounded-2xl p-4 bg-emerald-50/50 dark:bg-emerald-900/10">
+          <form method="POST" action="/maestro/plantilla/crear" class="grid sm:grid-cols-2 lg:grid-cols-5 gap-2">
+            <input name="name" required placeholder="Nombre de la plantilla" class="input-compact w-full rounded-xl px-3 py-2 text-sm" />
+            <input name="emoji" placeholder="Emoji 📄" maxlength="4" class="input-compact w-full rounded-xl px-3 py-2 text-sm" />
+            <input name="description" placeholder="Descripción breve" class="input-compact w-full rounded-xl px-3 py-2 text-sm sm:col-span-2" />
+            <select name="category" class="input-compact w-full rounded-xl px-3 py-2 text-sm">
+              <option value="">Sin categoría</option>
+              <option value="catálogo">Catálogo</option>
+              <option value="portafolio">Portafolio</option>
+              <option value="restaurante">Restaurante</option>
+              <option value="servicios">Servicios</option>
+              <option value="tienda">Tienda</option>
+            </select>
+            <select name="giro" class="input-compact w-full rounded-xl px-3 py-2 text-sm">
+              <option value="">Sin giro</option>
+              <% GIROS.forEach(g => { %>
+                <option value="<%= g %>"><%= g.charAt(0).toUpperCase() + g.slice(1) %></option>
+              <% }) %>
+            </select>
+            <button class="m-btn m-btn-filled m-btn-sm sm:col-span-2 lg:col-span-5">Crear plantilla</button>
+          </form>
+        </div>
+
+        <!-- Lista de plantillas -->
+        <% if (customTemplates.length === 0) { %>
+          <div class="text-center py-8 text-slate-400">
+            <p class="text-3xl mb-2">📭</p>
+            <p class="text-sm font-semibold">No hay plantillas creadas</p>
+            <p class="text-xs">Crea la primera con el botón de arriba</p>
+          </div>
+        <% } else { %>
+          <div class="grid gap-2">
+            <% customTemplates.forEach((t, i) => { %>
+              <div class="flex items-center gap-3 border border-slate-200 dark:border-[#30363d] rounded-2xl p-3 bg-white dark:bg-[#0d1117] hover:shadow-md transition stagger-item" style="animation-delay: <%= (i * 0.03) %>s">
+                <span class="text-2xl shrink-0"><%= t.emoji || '📄' %></span>
+                <div class="min-w-0 flex-1">
+                  <p class="font-bold text-sm text-slate-800 dark:text-white truncate"><%= t.name %></p>
+                  <p class="text-[11px] text-slate-400 dark:text-slate-500 truncate"><%= t.description || 'Sin descripción' %></p>
+                  <div class="flex gap-1.5 mt-1">
+                    <% if (t.is_default) { %><span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400">⭐ Predeterminada</span><% } %>
+                    <% if (t.category) { %><span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-[#21262d] text-slate-500 dark:text-slate-400"><%= t.category %></span><% } %>
+                    <% if (t.giro) { %><span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">🏪 <%= t.giro %></span><% } %>
+                  </div>
+                </div>
+                <div class="flex items-center gap-1 shrink-0">
+                  <% if (t.is_default) { %>
+                    <form method="POST" action="/maestro/plantilla/<%= t.id %>/quitar-default" class="inline">
+                      <button class="action-btn small" title="Quitar como predeterminada" style="background:#fbbf24;color:#000;font-weight:800;">★</button>
+                    </form>
+                  <% } else { %>
+                    <form method="POST" action="/maestro/plantilla/<%= t.id %>/default" class="inline">
+                      <button class="action-btn small" title="Marcar como predeterminada" style="background:#e2e8f0;color:#64748b;">☆</button>
+                    </form>
+                  <% } %>
+                  <button onclick="toggleTplEdit(<%= t.id %>)" class="action-btn primary small" title="Editar datos">✎</button>
+                  <form method="POST" action="/maestro/plantilla/<%= t.id %>/eliminar" data-confirm="¿Eliminar la plantilla '<%= t.name.replace(/'/g, "\\'") %>'?" class="inline">
+                    <button class="action-btn danger small" title="Eliminar">🗑</button>
+                  </form>
+                </div>
+              </div>
+              <!-- Formulario editar (oculto) -->
+              <div id="tpl-edit-<%= t.id %>" class="hidden border border-dashed border-blue-300 dark:border-blue-700 rounded-2xl p-4 bg-blue-50/50 dark:bg-blue-900/10">
+                <form method="POST" action="/maestro/plantilla/<%= t.id %>/editar" class="grid sm:grid-cols-2 lg:grid-cols-5 gap-2">
+                  <input name="name" value="<%= t.name %>" required placeholder="Nombre" class="input-compact w-full rounded-xl px-3 py-2 text-sm" />
+                  <input name="emoji" value="<%= t.emoji || '' %>" maxlength="4" placeholder="Emoji" class="input-compact w-full rounded-xl px-3 py-2 text-sm" />
+                  <input name="description" value="<%= t.description || '' %>" placeholder="Descripción" class="input-compact w-full rounded-xl px-3 py-2 text-sm sm:col-span-2" />
+                  <select name="category" class="input-compact w-full rounded-xl px-3 py-2 text-sm">
+                    <option value="">Sin categoría</option>
+                    <option value="catálogo" <%= t.category === 'catálogo' ? 'selected' : '' %>>Catálogo</option>
+                    <option value="portafolio" <%= t.category === 'portafolio' ? 'selected' : '' %>>Portafolio</option>
+                    <option value="restaurante" <%= t.category === 'restaurante' ? 'selected' : '' %>>Restaurante</option>
+                    <option value="servicios" <%= t.category === 'servicios' ? 'selected' : '' %>>Servicios</option>
+                    <option value="tienda" <%= t.category === 'tienda' ? 'selected' : '' %>>Tienda</option>
+                  </select>
+                  <select name="giro" class="input-compact w-full rounded-xl px-3 py-2 text-sm">
+                    <option value="">Sin giro</option>
+                    <% GIROS.forEach(g => { %>
+                      <option value="<%= g %>" <%= t.giro === g ? 'selected' : '' %>><%= g.charAt(0).toUpperCase() + g.slice(1) %></option>
+                    <% }) %>
+                  </select>
+                  <button class="m-btn m-btn-filled m-btn-sm sm:col-span-2 lg:col-span-5">Guardar</button>
+                </form>
+              </div>
+            <% }) %>
+          </div>
+        <% } %>
+      </section>
+      </div><!-- /tab-plantillas -->
+    </main>
+  <% } %>
+
+  <!-- ============================================================
+  SCRIPT DE CONFIRMACIÓN
+  ============================================================ -->
+  <script>
+    function toastMaestro(msg, ok) {
+      Swal.fire({ toast: true, position: 'bottom', timer: 2600, timerProgressBar: true, showConfirmButton: false,
+        icon: ok ? 'success' : 'error', title: msg });
+    }
+
+    // Tab switching
+    function switchTab(name) {
+      document.querySelectorAll('.mt-tab').forEach(function(b){ b.classList.remove('active'); });
+      document.querySelectorAll('.mt-tab-panel').forEach(function(p){ p.classList.remove('active'); });
+      var btn = document.getElementById('tab-btn-' + name);
+      var panel = document.getElementById('tab-' + name);
+      if (btn) btn.classList.add('active');
+      if (panel) panel.classList.add('active');
+      history.replaceState(null, '', '?tab=' + name);
+    }
+    // Auto-switch from URL param
+    (function(){
+      var t = new URLSearchParams(window.location.search).get('tab');
+      if (t && document.getElementById('tab-' + t)) switchTab(t);
+    })();
+    // Toggle edit form for a template
+    function toggleTplEdit(id) {
+      var el = document.getElementById('tpl-edit-' + id);
+      if (el) el.classList.toggle('hidden');
+    }
+    (function () {
+      var ok = new URLSearchParams(window.location.search).get('ok');
+      if (ok) toastMaestro(ok, true);
+    })();
+    document.addEventListener('submit', function (e) {
+      var f = e.target;
+      if (f && f.hasAttribute && f.hasAttribute('data-confirm')) {
+        var msg = f.getAttribute('data-confirm');
+        e.preventDefault();
+        Swal.fire({
+          title: msg, icon: 'warning', showCancelButton: true,
+          confirmButtonText: 'Sí, continuar', cancelButtonText: 'Cancelar',
+          confirmButtonColor: '#dc2626', cancelButtonColor: '#64748b'
+        }).then(function (r) { if (r.isConfirmed) f.submit(); });
+      }
+    });
+
+    // Filtro por giro + búsqueda en el listado de tiendas
+    (function () {
+      var sel = document.getElementById('giro-filtro');
+      var inp = document.getElementById('busca-tienda');
+      if (!sel || !inp) return;
+      var cards = Array.prototype.slice.call(document.querySelectorAll('.store-card[data-giro]'));
+      function apply() {
+        var g = sel.value, q = inp.value.trim().toLowerCase();
+        cards.forEach(function (c) {
+          var okG = !g || c.getAttribute('data-giro').toLowerCase() === g;
+          var okQ = !q || (c.getAttribute('data-busca') || '').indexOf(q) !== -1;
+          c.style.display = okG && okQ ? '' : 'none';
+        });
+      }
+      sel.addEventListener('change', apply);
+      inp.addEventListener('input', apply);
+    })();
+  </script>
+</body>
+</html>
+>>>>>>> 44f3e8f76e6aa48f417f947142f5ea40b8eb78ef

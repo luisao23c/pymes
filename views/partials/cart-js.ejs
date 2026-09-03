@@ -20,6 +20,24 @@
   .prod-pager button:disabled { opacity:.4; cursor:default; }
   .prod-pager .pp-gap { min-width:18px; text-align:center; color:var(--muted,#94a3b8); font-weight:700; font-size:15px; user-select:none; }
   .prod-pager .pp-nav { font-size:17px; line-height:1; padding:0 6px; }
+  #chat-fab {
+    background:linear-gradient(135deg,var(--accent,#1a3c5e),var(--accent-light,#315f86)) !important;
+    box-shadow:0 12px 30px rgba(15,23,42,.24),0 0 0 1px rgba(255,255,255,.18) inset !important;
+    transition:transform .24s cubic-bezier(.22,1,.36,1),box-shadow .24s ease !important;
+  }
+  #chat-fab:hover { transform:translateY(-3px) scale(1.04); box-shadow:0 18px 38px rgba(15,23,42,.28) !important; }
+  #chat-fab:active { transform:scale(.95); }
+  #chat-panel {
+    border:1px solid rgba(148,163,184,.24);
+    box-shadow:0 28px 80px rgba(15,23,42,.22),0 4px 18px rgba(15,23,42,.08) !important;
+    animation:cartPanelIn .3s cubic-bezier(.22,1,.36,1);
+  }
+  #chat-panel > div:first-child { background:linear-gradient(135deg,var(--accent,#1a3c5e),#0f2940) !important; padding:15px 18px !important; }
+  #chat-panel input[type="text"],#chat-panel input[type="tel"] { transition:border-color .2s,box-shadow .2s,background .2s; }
+  #chat-panel input[type="text"]:focus,#chat-panel input[type="tel"]:focus { border-color:var(--accent,#1a3c5e) !important; box-shadow:0 0 0 3px rgba(26,60,94,.1); background:#fff; }
+  #chat-panel button { transition:transform .18s ease,filter .18s ease,background .18s ease; }
+  #chat-panel button:active { transform:scale(.96); }
+  @keyframes cartPanelIn { from { opacity:0; transform:translateY(14px) scale(.97); } to { opacity:1; transform:none; } }
   /* Drawer de filtros en móvil */
   @media (max-width: 1023px) {
     .catalog-sidebar {
@@ -44,7 +62,7 @@
   const NO_IMAGE = '/img/sin-imagen.svg';
   function money(n) { return CURRENCY_SYMBOL + (Number(n || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')); }
   const PROMAP = Object.fromEntries(
-    <%- safeJson((products || []).filter(p => !p.isAd).map(p => [String(p.id), { name: p.name, price: p.price, stock: p.stock === null || p.stock === undefined ? null : p.stock, image: p.image || '/img/sin-imagen.svg', imgs: (p.imgs && p.imgs.length ? p.imgs : [p.image || '/img/sin-imagen.svg']), variants: (typeof p.variants === 'string' ? p.variants : '') }])) %>
+    <%- safeJson((products || []).filter(p => !p.isAd).map(p => { var _pp = null; try { _pp = JSON.parse(p.payment_plan || 'null'); } catch(e) {} return [String(p.id), { name: p.name, price: p.price, stock: p.stock === null || p.stock === undefined ? null : p.stock, image: p.image || '/img/sin-imagen.svg', imgs: (p.imgs && p.imgs.length ? p.imgs : [p.image || '/img/sin-imagen.svg']), variants: (typeof p.variants === 'string' ? p.variants : ''), payment_plan: _pp }]; })) %>
   );
   const CURRENT_STORE = { slug: SLUG, name: STORE_NAME, whatsapp: STORE_WHATSAPP, logo: STORE_LOGO, wa_message: <%- safeJson(biz.wa_message || '') %> };
   const HORARIO_RAW = <%- safeJson(biz.horario || '') %>;
@@ -235,7 +253,12 @@
     if (!price || price <= 0) { toast('Precio invalido', false); return; }
     if (!image) image = p.image;
     const pvm = normVariantModel(p.variants);
+<<<<<<< HEAD
     if (!pvm.attrs.length && (p.stock === null || p.stock === undefined || p.stock <= 0)) { toast('Producto agotado 😕', false); return; }
+=======
+    // null/undefined significa stock ilimitado; solamente 0 (o menos) es agotado.
+    if (!pvm.attrs.length && p.stock !== null && p.stock !== undefined && p.stock <= 0) { toast('Producto agotado 😕', false); return; }
+>>>>>>> 44f3e8f76e6aa48f417f947142f5ea40b8eb78ef
     if (pvm.attrs.length && !variant) { variantPicker(id); return; }
     const key = itemKey(s.slug, id, variant);
     // stock por combinación
@@ -244,7 +267,13 @@
       const st = pvm.stock[ck];
       if (st === undefined || st <= 0) { toast('Esa combinación está agotada 😕', false); return; }
     }
+<<<<<<< HEAD
     cart[key] = cart[key] || { store: s, id, name, price: Number(price), image: image || p.image, variant: variant || '', qty: 0 };
+=======
+    cart[key] = cart[key] || { store: s, id, name, price: Number(price), image: image || p.image, variant: variant || '', payment_plan: p.payment_plan || null, qty: 0 };
+    // Actualiza carritos guardados antes de que existieran los planes de abono.
+    cart[key].payment_plan = p.payment_plan || null;
+>>>>>>> 44f3e8f76e6aa48f417f947142f5ea40b8eb78ef
     if (!pvm.attrs.length && p.stock !== null && cart[key].qty + 1 > p.stock) { toast('Stock máximo disponible', false); return; }
     if (variant && pvm.stock) {
       const ck = variant.split(' / ').join('|');
@@ -335,6 +364,20 @@
           <input id="chat-nombre" type="text" placeholder="Tu nombre" style="flex:1;min-width:0;border:1px solid #e2e8f0;border-radius:10px;padding:9px 12px;font-size:13px;outline:none;">
           <input id="chat-telefono" type="tel" inputmode="numeric" placeholder="Teléfono" style="flex:1;min-width:0;border:1px solid #e2e8f0;border-radius:10px;padding:9px 12px;font-size:13px;outline:none;">
         </div>
+        <div style="margin-bottom:8px;">
+          <p style="font-size:11px;color:#64748b;margin-bottom:4px;">Método de pago</p>
+          <div style="display:flex;gap:6px;">
+            <label style="flex:1;display:flex;align-items:center;gap:4px;padding:6px 8px;border:1px solid #e2e8f0;border-radius:8px;cursor:pointer;font-size:12px;background:#fff;transition:all .2s">
+              <input type="radio" name="chat-pago" value="efectivo" checked style="accent-color:#1a3c5e;"> 💵 Efectivo
+            </label>
+            <label style="flex:1;display:flex;align-items:center;gap:4px;padding:6px 8px;border:1px solid #e2e8f0;border-radius:8px;cursor:pointer;font-size:12px;background:#fff;transition:all .2s">
+              <input type="radio" name="chat-pago" value="tarjeta" style="accent-color:#1a3c5e;"> 💳 Tarjeta
+            </label>
+            <label style="flex:1;display:flex;align-items:center;gap:4px;padding:6px 8px;border:1px solid #e2e8f0;border-radius:8px;cursor:pointer;font-size:12px;background:#fff;transition:all .2s">
+              <input type="radio" name="chat-pago" value="transferencia" style="accent-color:#1a3c5e;"> 🏦 Transferencia
+            </label>
+          </div>
+        </div>
         <div style="display:flex;align-items:center;justify-content:space-between;">
           <div id="chat-total" style="font-size:13px;color:#64748b;">Total: <b style="color:#0f172a;">$0.00</b></div>
           <button id="chat-clear" type="button" style="background:none;border:none;color:#ef4444;font-size:12px;font-weight:700;cursor:pointer;">Vaciar carrito</button>
@@ -416,32 +459,69 @@
     const n = String(num || '').replace(/[^0-9]/g, '');
     return n.indexOf('52') === 0 ? n : '52' + n;
   }
+  function cleanWhatsAppText(value) {
+    return String(value == null ? '' : value)
+      .replace(/\uFFFD/g, '')
+      .replace(/\p{Extended_Pictographic}/gu, '')
+      .replace(/[\uFE0E\uFE0F\u200D]/g, '')
+      .replace(/ðŸ›’/g, '')
+      .replace(/ðŸ“¦/g, '')
+      .replace(/ðŸ’°/g, '')
+      .replace(/ðŸ’³/g, '')
+      .replace(/âœ…/g, '')
+      .replace(/â€¢/g, '-')
+      .replace(/â€”|â€“/g, '-')
+      .replace(/[ \t]{2,}/g, ' ')
+      .replace(/[ \t]+\n/g, '\n')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+  }
   function orderMessage(store, lines, total) {
-    const lista = lines.join('\n');
+    const lista = lines.map(cleanWhatsAppText).join('\n');
     const totalStr = money(total);
     const custom = (store.wa_message || '').trim();
+    const pagoEl = document.querySelector('input[name="chat-pago"]:checked');
+    const pago = pagoEl ? pagoEl.value : 'contado';
+    const pagoLabel = { efectivo: 'Pago en efectivo', tarjeta: 'Pago con tarjeta', transferencia: 'Pago por transferencia' }[pago] || 'Pago en efectivo';
     if (custom) {
-      return custom
+      return cleanWhatsAppText(custom
         .replace(/\{tienda\}/g, store.name)
         .replace(/\{productos\}/g, lista)
-        .replace(/\{total\}/g, totalStr);
+        .replace(/\{total\}/g, totalStr)
+        .replace(/\{pago\}/g, pagoLabel));
     }
-    return 'Hola ' + store.name + '! 👋 Quiero pedir:\n\n' + lista + '\n\nTotal: ' + totalStr + '\n\n¿Me confirmas disponibilidad y envío?';
+    var msg = '';
+    msg += '*NUEVO PEDIDO*\n';
+    msg += '*' + cleanWhatsAppText(store.name) + '*\n\n';
+    msg += '*Productos*\n';
+    lines.forEach(function(l, index) { msg += (index + 1) + '. ' + cleanWhatsAppText(l).replace(/^[-•]\s*/, '') + '\n'; });
+    msg += '\n*TOTAL: ' + totalStr + '*\n';
+    msg += '_' + pagoLabel + '_\n\n';
+    msg += '¿Me confirma disponibilidad y entrega, por favor?';
+    return cleanWhatsAppText(msg);
   }
   function sendStoreOrder(slug) {
     const g = storeGroups().find(x => x.store.slug === slug);
     if (!g) return;
-    const lines = g.items.map(it => '• ' + it.qty + ' x ' + it.name + (it.variant ? ' (' + it.variant + ')' : '') + ' = ' + money(it.qty * it.price));
+    const lines = g.items.map(it => '- ' + it.qty + ' x ' + cleanWhatsAppText(it.name) + (it.variant ? ' (' + cleanWhatsAppText(it.variant) + ')' : '') + ' = ' + money(it.qty * it.price));
+    // Agregar info de plan de pago si el producto lo tiene
+    const planLines = g.items.filter(it => it.payment_plan && it.payment_plan.amount && it.payment_plan.freq).map(it => {
+      var pp = it.payment_plan;
+      var fl = {diario:'diarios',semanal:'semanales',quincenal:'quincenales',mensual:'mensuales'};
+      return it.name + ': $' + Number(pp.amount).toFixed(2) + ' ' + (fl[pp.freq]||pp.freq) + (pp.num ? ' x ' + pp.num + ' pagos' : '');
+    });
     const total = g.items.reduce((s, it) => s + it.qty * it.price, 0);
     const nombre = (document.getElementById('chat-nombre') || {}).value || '';
     const telefono = (document.getElementById('chat-telefono') || {}).value || '';
     let msg = orderMessage(g.store, lines, total);
+    if (planLines.length) { msg += '\n\n*Planes de abono*\n' + planLines.join('\n'); }
     if (nombre || telefono) {
       const datos = [];
       if (nombre) datos.push('Mi nombre: ' + nombre);
       if (telefono) datos.push('Mi teléfono: ' + telefono);
-      msg += '\n\n' + datos.join('\n');
+      msg += '\n\n*Datos del cliente*\n' + datos.join('\n');
     }
+    msg = cleanWhatsAppText(msg);
     const url = 'https://wa.me/' + waNumber(g.store.whatsapp) + '?text=' + encodeURIComponent(msg);
     try {
       fetch('/api/pedir', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ items: g.items.map(it => ({ store: it.store.slug, id: it.id, qty: it.qty, variant: it.variant })), nombre: nombre, telefono: telefono }) }).catch(() => {});
@@ -1120,8 +1200,11 @@
       if (q) url += '?' + q;
     }
     const text = name + (price ? ' — ' + money(price) : '') + '\n' + url;
-    if (navigator.share) {
-      navigator.share({ title: name, text: name + ' ' + url, url: url }).catch(function () {});
+    if (navigator.share && window.isSecureContext) {
+      navigator.share({ title: name || STORE_NAME, text: text, url: url }).catch(function (err) {
+        // Si el usuario cancela no hacemos nada; si el navegador falla, copiamos el vínculo.
+        if (!err || err.name !== 'AbortError') copyText(url);
+      });
       return;
     }
     const menu = document.createElement('div');
@@ -1137,10 +1220,24 @@
     document.body.appendChild(menu);
     menu.addEventListener('click', function (e) { if (e.target === menu) menu.remove(); });
     menu.querySelector('[data-close]').addEventListener('click', function () { menu.remove(); });
-    menu.querySelector('[data-copy]').addEventListener('click', function () {
-      try { navigator.clipboard.writeText(url); } catch (e) {}
-      menu.remove();
-      toast('Enlace copiado ✓', true);
-    });
+    menu.querySelector('[data-copy]').addEventListener('click', function () { menu.remove(); copyText(url); });
+  }
+
+  function copyText(value) {
+    function legacyCopy() {
+      var ta = document.createElement('textarea');
+      ta.value = value;
+      ta.setAttribute('readonly', '');
+      ta.style.cssText = 'position:fixed;left:-9999px;top:0;opacity:0;';
+      document.body.appendChild(ta);
+      ta.select();
+      var ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) {}
+      ta.remove();
+      toast(ok ? 'Enlace copiado ✓' : value, ok);
+    }
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(value).then(function () { toast('Enlace copiado ✓', true); }).catch(legacyCopy);
+    } else legacyCopy();
   }
 </script>

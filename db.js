@@ -1,7 +1,11 @@
 const Database = require('better-sqlite3');
 const path = require('path');
+const fs = require('fs');
 
-const db = new Database(path.join(__dirname, 'data.db'));
+const dataDir = path.resolve(process.env.DATA_DIR || __dirname);
+const databasePath = path.resolve(process.env.DATABASE_PATH || path.join(dataDir, 'data.db'));
+fs.mkdirSync(path.dirname(databasePath), { recursive: true });
+const db = new Database(databasePath);
 
 db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
@@ -15,7 +19,7 @@ CREATE TABLE IF NOT EXISTS businesses (
   description TEXT DEFAULT '',
   logo TEXT DEFAULT '',
   banner TEXT DEFAULT '',
-  pin TEXT DEFAULT '1234',
+  pin TEXT DEFAULT '',
   active INTEGER DEFAULT 1,
   created_at TEXT DEFAULT (datetime('now'))
 );
@@ -169,6 +173,7 @@ addColumnIfMissing('products', 'tags', "TEXT DEFAULT ''"); // etiquetas separada
 addColumnIfMissing('products', 'video', "TEXT DEFAULT ''"); // URL de video (limitado, 1 por producto)
 addColumnIfMissing('products', 'specs', "TEXT DEFAULT ''"); // características (una por línea: Clave: Valor)
 addColumnIfMissing('products', 'barcode', "TEXT DEFAULT ''"); // código de barras (opcional)
+addColumnIfMissing('products', 'payment_plan', "TEXT DEFAULT ''"); // sugerencia de pago visible al cliente, ej: 'Abonos de $200 semanales'
 
 // Proveedores y pedidos de compra
 db.exec(`
@@ -193,7 +198,6 @@ CREATE TABLE IF NOT EXISTS purchase_orders (
 );
 `);
 addColumnIfMissing('purchase_orders', 'received', 'INTEGER DEFAULT 0');
-addColumnIfMissing('orders', 'customer_phone', "TEXT DEFAULT ''");
 
 // Clientes (mini-CRM): contactos frecuentes con su historial de pedidos
 db.exec(`
@@ -221,6 +225,18 @@ CREATE TABLE IF NOT EXISTS orders (
   FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS payment_history (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  order_id INTEGER NOT NULL,
+  business_id INTEGER NOT NULL,
+  amount REAL NOT NULL,
+  method TEXT DEFAULT 'abono',  -- abono | contado | credito
+  note TEXT DEFAULT '',
+  created_at TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+  FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS tracking (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   business_id INTEGER NOT NULL,
@@ -230,6 +246,13 @@ CREATE TABLE IF NOT EXISTS tracking (
   FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE
 );
 `);
+
+// Las migraciones de pedidos deben ejecutarse después de crear la tabla.
+// Así una instalación nueva funciona igual que una base existente.
+addColumnIfMissing('orders', 'customer_phone', "TEXT DEFAULT ''");
+addColumnIfMissing('orders', 'payment_method', "TEXT DEFAULT 'contado'"); // contado | parcial | credito
+addColumnIfMissing('orders', 'amount_paid', 'REAL DEFAULT 0'); // total abonado hasta ahora
+addColumnIfMissing('orders', 'amount_remaining', 'REAL DEFAULT 0'); // saldo pendiente
 
 // ================= PLANES (creados por el administrador maestro) =================
 db.exec(`
@@ -257,6 +280,9 @@ if (planCount === 0) {
 }
 
 function seed() {
+  const demoWhatsApp = String(process.env.DEMO_WHATSAPP || '').replace(/[^0-9]/g, '');
+  const demoPin = String(process.env.DEMO_PIN || '');
+  if (process.env.SEED_DEMO !== 'true' || !demoWhatsApp || !/^\d{6,12}$/.test(demoPin)) return;
   const existing = db.prepare('SELECT COUNT(*) AS c FROM businesses').get().c;
   if (existing > 0) return;
 
@@ -267,9 +293,9 @@ function seed() {
   const biz = insertBiz.run(
     'ferreteria-demo',
     'Ferretería El Toro',
-    '528719920338',
+    demoWhatsApp,
     'Todo para tu obra y hogar en Torreón. Envíos a toda La Laguna.',
-    '1234'
+    demoPin
   );
   const businessId = biz.lastInsertRowid;
 
@@ -380,5 +406,6 @@ function crearPaginasSugeridas(businessId, paginasSugeridas) {
 }
 
 module.exports = db;
+module.exports.databasePath = databasePath;
 module.exports.crearPaginasSugeridas = crearPaginasSugeridas;
-require('./seed-demo');
+if (process.env.NODE_ENV !== 'production' && process.env.SEED_DEMO === 'true') require('./seed-demo');

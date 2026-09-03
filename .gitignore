@@ -1,0 +1,25 @@
+node_modules/
+.env
+.env.*
+!.env.example
+
+# Datos y sesiones locales
+data.db
+data.db-shm
+data.db-wal
+backups/
+cookies*.txt
+
+# Archivos subidos por usuarios
+public/uploads/*
+!public/uploads/.gitkeep
+
+# Logs y archivos de herramientas
+*.log
+*.log.err
+.impeccable/
+
+# Sistema operativo y editores
+.DS_Store
+Thumbs.db
+.vscode/
