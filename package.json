@@ -1,7 +1,7 @@
 {
-  "name": "catamanager",
+  "name": "nessik-catalogo-digital",
   "version": "1.0.0",
-  "description": "Catálogo digital + WhatsApp para pymes de La Laguna",
+  "description": "Catálogo Digital por Nessik con pedidos por WhatsApp para pymes de La Laguna",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
