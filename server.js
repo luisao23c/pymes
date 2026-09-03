@@ -1,42 +1,27 @@
 const express = require('express');
-const db = require('./db');
 const path = require('path');
+const { createRuntimeConfig } = require('./config/runtime');
+const runtime = createRuntimeConfig(__dirname);
+const db = require('./db');
 const { MASCARA_SIZES, SHAPE_DEFS, getShapeClip, MASCARA_CSS, EDITOR_ONLY_CSS } = require('./lib/mascara');
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
-const multer = require('multer');
 const ExcelJS = require('exceljs');
 const QRCode = require('qrcode');
-const fs = require('fs');
 const { TPL_THEMES, TPL_META, TPL_CASOS } = require('./templates-data');
 const { buildOrderMessage } = require('./lib/order-message');
 const { buildPaymentPlan } = require('./lib/payment-plan');
+const { createUploaders } = require('./middleware/uploads');
+const { cookieParser, createCsrfProtection, createRateLimiter, verifyBodyCsrf } = require('./middleware/security');
+const { scheduleBackups } = require('./services/backup');
 const app = express();
-
-// Carga variables de entorno desde .env (si existe), sin dependencias externas
-try {
-  const fsEnv = require('fs');
-  const envPath = path.join(__dirname, '.env');
-  if (fsEnv.existsSync(envPath)) {
-    fsEnv.readFileSync(envPath, 'utf8').split(/\r?\n/).forEach(line => {
-      const m = line.match(/^\s*([\w.]+)\s*=\s*(.*)\s*$/);
-      if (m && !process.env[m[1]]) process.env[m[1]] = m[2].replace(/^["']|["']$/g, '');
-    });
-  }
-} catch (e) {}
-
-const IS_PRODUCTION = process.env.NODE_ENV === 'production';
-if (IS_PRODUCTION && (!process.env.MASTER_KEY || process.env.MASTER_KEY.length < 32)) {
-  throw new Error('MASTER_KEY es obligatoria en producción y debe tener al menos 32 caracteres.');
-}
-const MASTER_KEY = process.env.MASTER_KEY || crypto.randomBytes(24).toString('hex');
-const BASE_URL = process.env.BASE_URL || '';
-const DATA_DIR = path.resolve(process.env.DATA_DIR || __dirname);
-const UPLOAD_DIR = path.resolve(process.env.UPLOAD_DIR || path.join(DATA_DIR, 'uploads'));
-const BACKUP_DIR = path.resolve(process.env.BACKUP_DIR || path.join(DATA_DIR, 'backups'));
-fs.mkdirSync(UPLOAD_DIR, { recursive: true });
-fs.mkdirSync(BACKUP_DIR, { recursive: true });
-const sessionCookie = (maxAge) => ({ maxAge, httpOnly: true, sameSite: 'lax', secure: IS_PRODUCTION, path: '/' });
+const IS_PRODUCTION = runtime.isProduction;
+const MASTER_KEY = runtime.masterKey;
+const BASE_URL = runtime.baseUrl;
+const UPLOAD_DIR = runtime.uploadDir;
+const sessionCookie = runtime.sessionCookie;
+const { upload, uploadExcel, uploadVideo, uploadFile } = createUploaders(UPLOAD_DIR);
+const rateLimit = createRateLimiter();
 
 // ================= PLANES (configurables desde el panel maestro) =================
 function getPlan(biz) {
@@ -176,159 +161,9 @@ app.get('/health', (req, res) => {
   }
 });
 if (IS_PRODUCTION) app.set('trust proxy', 1);
-// === RATE LIMITER ===
-var _rateLimit = {};
-function rateLimit(maxPerMin) {
-  return function(req, res, next) {
-    var ip = req.ip || req.connection.remoteAddress || "unknown";
-    var now = Date.now();
-    var key = ip + ":" + req.path;
-    if (!_rateLimit[key]) _rateLimit[key] = [];
-    _rateLimit[key] = _rateLimit[key].filter(function(t) { return now - t < 60000; });
-    if (_rateLimit[key].length >= maxPerMin) {
-      return res.status(429).json({ error: "Demasiadas peticiones. Intenta en 1 minuto." });
-    }
-    _rateLimit[key].push(now);
-    next();
-  };
-}
-setInterval(function() {
-  var now = Date.now();
-  for (var k in _rateLimit) {
-    _rateLimit[k] = _rateLimit[k].filter(function(t) { return now - t < 60000; });
-    if (!_rateLimit[k].length) delete _rateLimit[k];
-  }
-}, 300000);
-
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, UPLOAD_DIR),
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase();
-    const allowed = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
-    const safeExt = allowed.includes(ext) ? ext : '.png';
-    cb(null, Date.now() + '-' + crypto.randomBytes(4).toString('hex') + safeExt);
-  }
-});
-const upload = multer({
-  storage,
-  limits: { fileSize: 5 * 1024 * 1024 },
-  fileFilter: (req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase();
-    const allowed = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
-    const okMime = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(file.mimetype);
-    cb(null, allowed.includes(ext) && okMime);
-  }
-});
-
-const uploadExcel = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 },
-  fileFilter: (req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase();
-    const allowed = ['.xlsx', '.csv'];
-    cb(null, allowed.includes(ext));
-  }
-});
-
-const videoStorage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, UPLOAD_DIR),
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase();
-    const allowed = ['.mp4', '.webm', '.mov', '.m4v', '.ogg'];
-    const safeExt = allowed.includes(ext) ? ext : '.mp4';
-    cb(null, 'vid-' + Date.now() + '-' + crypto.randomBytes(4).toString('hex') + safeExt);
-  }
-});
-const uploadVideo = multer({
-  storage: videoStorage,
-  limits: { fileSize: 100 * 1024 * 1024 },
-  fileFilter: (req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase();
-    const allowed = ['.mp4', '.webm', '.mov', '.m4v', '.ogg'];
-    const okMime = ['video/mp4', 'video/webm', 'video/quicktime', 'video/x-m4v', 'video/ogg'].includes(file.mimetype);
-    cb(null, allowed.includes(ext) && okMime);
-  }
-});
-
-const fileStorage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, UPLOAD_DIR),
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase();
-    const allowed = ['.mp3', '.wav', '.ogg', '.m4a', '.aac', '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.zip', '.txt', '.csv', '.json'];
-    const safeExt = allowed.includes(ext) ? ext : '.bin';
-    cb(null, 'file-' + Date.now() + '-' + crypto.randomBytes(4).toString('hex') + safeExt);
-  }
-});
-const uploadFile = multer({
-  storage: fileStorage,
-  limits: { fileSize: 50 * 1024 * 1024 },
-  fileFilter: (req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase();
-    const allowed = ['.mp3', '.wav', '.ogg', '.m4a', '.aac', '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.zip', '.txt', '.csv', '.json'];
-    cb(null, allowed.includes(ext));
-  }
-});
-
-app.use((req, res, next) => {
-  const raw = req.headers.cookie || '';
-  const out = {};
-  raw.split(';').forEach((pair) => {
-    const idx = pair.indexOf('=');
-    if (idx > -1) out[pair.slice(0, idx).trim()] = pair.slice(idx + 1).trim();
-  });
-  req.cookies = out;
-  next();
-});
-
-// ================= CSRF (doble-envío de cookie + token oculto) =================
-app.use((req, res, next) => {
-  if (!req.cookies.csrf) {
-    req.cookies.csrf = crypto.randomBytes(24).toString('hex');
-    res.cookie('csrf', req.cookies.csrf, { httpOnly: false, sameSite: 'lax', secure: IS_PRODUCTION, path: '/' });
-  }
-  res.locals.csrf = req.cookies.csrf;
-  next();
-});
-app.use((req, res, next) => {
-  if (req.method !== 'POST') return next();
-  const p = req.path;
-  if (p === '/registrar' || p === '/maestro' || p === '/maestro/cerrar') return next();
-  if (p.endsWith('/admin')) return next(); // login público
-  if (!/^\/[^/]+\/admin(\/|$)/.test(p) && !/^\/maestro\//.test(p)) return next();
-  // Multipart: el body aún no está parseado aquí; se valida en la ruta tras multer (ver verifyBodyCsrf)
-  if (req.is('multipart/form-data')) return next();
-  const t = (req.body && req.body._csrf) || req.get('x-csrf-token') || '';
-  if (!t || t !== req.cookies.csrf) {
-    return res.status(403).send('Solicitud rechazada: token de seguridad inválido. Recarga la página e intenta de nuevo.');
-  }
-  next();
-});
-
-// Valida CSRF en peticiones multipart, una vez que multer ya parseó el body
-function verifyBodyCsrf(req, res, next) {
-  const t = (req.body && req.body._csrf) || req.get('x-csrf-token') || '';
-  if (!t || t !== req.cookies.csrf) {
-    return res.status(403).send('Solicitud rechazada: token de seguridad inválido. Recarga la página e intenta de nuevo.');
-  }
-  next();
-}
-
-// ================= BACKUP AUTOMÁTICO DIARIO =================
-const backupsDir = BACKUP_DIR;
-if (!fs.existsSync(backupsDir)) fs.mkdirSync(backupsDir, { recursive: true });
-function hacerBackup() {
-  try {
-    const date = new Date().toISOString().slice(0, 10);
-    const dest = path.join(backupsDir, `data-${date}.db`);
-    fs.copyFileSync(db.databasePath, dest);
-    console.log(`Backup creado: ${dest}`);
-  } catch (e) {
-    console.error('Error al crear backup:', e.message);
-  }
-}
-setTimeout(hacerBackup, 1000 * 60 * 5); // 5 min tras iniciar
-setInterval(hacerBackup, 1000 * 60 * 60 * 24); // luego cada 24h
+app.use(cookieParser);
+app.use(createCsrfProtection(IS_PRODUCTION));
+scheduleBackups(db, runtime.backupDir);
 
 // ================= RATE LIMIT DE LOGIN (anti fuerza bruta) =================
 const loginAttempts = new Map();

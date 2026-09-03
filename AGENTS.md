@@ -1,5 +1,18 @@
 # AGENTS.md — Non-obvious project learnings
 
+## Product identity
+
+- The product name is **Catálogo Digital** and **Nessik** is the company/creator.
+- Public-facing copy should use “Catálogo Digital por Nessik”. Do not expose internal tool or legacy project names.
+
+## Backend modules
+
+- `config/runtime.js` loads `.env` before `db.js` opens SQLite and owns runtime paths/cookie settings.
+- `middleware/security.js` owns cookie parsing, CSRF validation, and the general rate limiter.
+- `middleware/uploads.js` owns Multer configuration for images, videos, documents, and catalog imports.
+- `services/backup.js` owns creation and scheduling of SQLite backups.
+- Keep new infrastructure concerns out of `server.js`; route extraction can continue incrementally by domain.
+
 ## Architecture & rendering
 
 - The public catalog renders `views/catalog.ejs` → which includes `views/templates/constructor.ejs` and `views/partials/cart-js.ejs`. The constructor.ejs is the main template for both the public catalog AND the design editor (`/admin/diseno`).

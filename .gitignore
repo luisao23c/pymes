@@ -17,8 +17,6 @@ public/uploads/*
 # Logs y archivos de herramientas
 *.log
 *.log.err
-.freebuff/
-.freebuffpreview*
 .impeccable/
 
 # Sistema operativo y editores
