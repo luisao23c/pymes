@@ -891,7 +891,7 @@
     <div class="ofertas-track-wrap">
       <div class="ofertas-track" id="ofertas-track">
         <% _ofertas.forEach(function(p){ var _pct=Math.round((1-p.price/p.old_price)*100); %>
-        <div class="oferta-card">
+        <div class="oferta-card" role="link" tabindex="0" aria-label="Ver <%= p.name %>" onclick="location.href='/<%= biz.slug %>/p/<%= p.id %>'" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();location.href='/<%= biz.slug %>/p/<%= p.id %>'}">
           <div class="oferta-img-wrap">
             <img src="<%= p.image||'/img/sin-imagen.svg' %>" loading="lazy" alt="<%= p.name %>" onerror="this.onerror=null;this.src='/img/sin-imagen.svg'">
             <span class="oferta-badge-pct">-<%= _pct %>%</span>
@@ -1071,7 +1071,7 @@
     <div class="ofertas-track-wrap">
       <div class="ofertas-track" id="sponsored-track">
         <% sponsoredAds.forEach(function(ad) { %>
-        <a href="/<%= ad.store.slug %>" class="oferta-card" style="text-decoration:none;color:inherit;">
+        <a href="/<%= ad.store.slug %>/p/<%= ad.id %>" class="oferta-card" style="text-decoration:none;color:inherit;">
           <div class="oferta-img-wrap">
             <% if (ad.image) { %><img src="<%= ad.image %>" alt="<%= ad.name %>" loading="lazy" onerror="this.onerror=null;this.src='/img/sin-imagen.svg'"><% } %>
             <span class="oferta-badge-tag"><%= ad.store.name %></span>
