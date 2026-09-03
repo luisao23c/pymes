@@ -7,7 +7,7 @@ const os = require('os');
 const path = require('path');
 const { spawnSync } = require('child_process');
 
-test('sirve landing, catálogo y producto usando MariaDB', { skip: process.env.MARIADB_TEST !== '1' }, async () => {
+test('sirve landing, catálogo y producto usando MariaDB', { skip: process.env.MARIADB_TEST !== '1', timeout: 60000 }, async () => {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'nessik-app-'));
   const env = {
     ...process.env,
@@ -46,20 +46,21 @@ test('sirve landing, catálogo y producto usando MariaDB', { skip: process.env.M
 
   try {
     for (const route of ['/health', '/', '/ferreteria-prueba', `/ferreteria-prueba/p/${product.lastInsertRowid}`]) {
-      const response = await fetch(base + route);
+      const response = await fetch(base + route, { signal: AbortSignal.timeout(10000) });
       assert.equal(response.status, 200, `${route}: ${await response.text()}`);
     }
-    const catalog = await (await fetch(base + '/ferreteria-prueba')).text();
+    const catalog = await (await fetch(base + '/ferreteria-prueba', { signal: AbortSignal.timeout(10000) })).text();
     assert.match(catalog, /Martillo profesional/);
 
     for (const route of ['/ferreteria-prueba/admin/panel', '/ferreteria-prueba/admin/productos']) {
-      const response = await fetch(base + route, { headers: { cookie: 'sid=test-session' } });
+      const response = await fetch(base + route, { headers: { cookie: 'sid=test-session' }, signal: AbortSignal.timeout(10000) });
       assert.equal(response.status, 200, `${route}: ${await response.text()}`);
     }
 
     const orderResponse = await fetch(base + '/api/pedir', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
+      signal: AbortSignal.timeout(10000),
       body: JSON.stringify({
         nombre: 'Cliente Prueba', telefono: '8710000000',
         items: [{ store: 'ferreteria-prueba', id: product.lastInsertRowid, qty: 2 }]
@@ -72,6 +73,7 @@ test('sirve landing, catálogo y producto usando MariaDB', { skip: process.env.M
     assert.equal((await db.prepare('SELECT COUNT(*) AS total FROM orders WHERE business_id = ?').get(business.lastInsertRowid)).total, 1);
     assert.equal((await db.prepare('SELECT COUNT(*) AS total FROM customers WHERE business_id = ?').get(business.lastInsertRowid)).total, 1);
   } finally {
+    if (typeof server.closeAllConnections === 'function') server.closeAllConnections();
     await new Promise((resolve) => server.close(resolve));
     await db.close();
     fs.rmSync(tempDir, { recursive: true, force: true });
