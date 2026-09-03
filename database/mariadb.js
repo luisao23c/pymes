@@ -29,7 +29,13 @@ function normalizeSql(sql) {
 }
 
 function paramsOf(args) {
-  return args.length === 1 && Array.isArray(args[0]) ? args[0] : args;
+  const params = args.length === 1 && Array.isArray(args[0]) ? args[0] : args;
+  return params.map((value) => {
+    if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/.test(value)) {
+      return value.slice(0, 19).replace('T', ' ');
+    }
+    return value;
+  });
 }
 
 function prepare(sql) {
