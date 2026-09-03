@@ -198,10 +198,6 @@ CREATE TABLE IF NOT EXISTS purchase_orders (
 );
 `);
 addColumnIfMissing('purchase_orders', 'received', 'INTEGER DEFAULT 0');
-addColumnIfMissing('orders', 'customer_phone', "TEXT DEFAULT ''");
-addColumnIfMissing('orders', 'payment_method', "TEXT DEFAULT 'contado'"); // contado | parcial | credito
-addColumnIfMissing('orders', 'amount_paid', 'REAL DEFAULT 0'); // total abonado hasta ahora
-addColumnIfMissing('orders', 'amount_remaining', 'REAL DEFAULT 0'); // saldo pendiente
 
 // Clientes (mini-CRM): contactos frecuentes con su historial de pedidos
 db.exec(`
@@ -250,6 +246,13 @@ CREATE TABLE IF NOT EXISTS tracking (
   FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE
 );
 `);
+
+// Las migraciones de pedidos deben ejecutarse después de crear la tabla.
+// Así una instalación nueva funciona igual que una base existente.
+addColumnIfMissing('orders', 'customer_phone', "TEXT DEFAULT ''");
+addColumnIfMissing('orders', 'payment_method', "TEXT DEFAULT 'contado'"); // contado | parcial | credito
+addColumnIfMissing('orders', 'amount_paid', 'REAL DEFAULT 0'); // total abonado hasta ahora
+addColumnIfMissing('orders', 'amount_remaining', 'REAL DEFAULT 0'); // saldo pendiente
 
 // ================= PLANES (creados por el administrador maestro) =================
 db.exec(`
