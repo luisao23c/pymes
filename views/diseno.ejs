@@ -2127,7 +2127,7 @@
     var hr = parseInt(parts[0], 10);
     var mn = parseInt(parts[1], 10) || 0;
     if (isNaN(hr)) return h;
-    var ampm = hr >= 12 ? 'PM' : 'AM';
+    var ampm = hr >= 12 ? 'pm' : 'am';
     var h12 = hr % 12 || 12;
     return h12 + ':' + String(mn).padStart(2, '0') + ' ' + ampm;
   }

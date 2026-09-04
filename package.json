@@ -1,16 +1,11 @@
 {
-  "name": "nessik-catalogo-digital",
+  "name": "catamanager",
   "version": "1.0.0",
-  "description": "Catálogo Digital por Nessik con pedidos por WhatsApp para pymes de La Laguna",
+  "description": "Catálogo digital + WhatsApp para pymes de La Laguna",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js",
-    "check": "node --check server.js && node --check db.js && node --test test/*.test.js",
-    "test": "node --test test/*.test.js"
-  },
-  "engines": {
-    "node": ">=22 <23"
+    "dev": "node server.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
@@ -19,10 +14,7 @@
     "exceljs": "^4.4.0",
     "express": "^4.21.2",
     "multer": "^2.2.0",
-    "qrcode": "^1.5.4"
-  },
-  "overrides": {
-    "qs": "6.16.0",
-    "uuid": "11.1.1"
+    "qrcode": "^1.5.4",
+    "xlsx": "^0.18.5"
   }
 }

@@ -24,7 +24,7 @@
     var hr = parseInt(parts[0], 10);
     var mn = parseInt(parts[1], 10) || 0;
     if (isNaN(hr)) return h;
-    var ampm = hr >= 12 ? 'PM' : 'AM';
+    var ampm = hr >= 12 ? 'pm' : 'am';
     var h12 = hr % 12 || 12;
     return h12 + ':' + String(mn).padStart(2, '0') + ' ' + ampm;
   }
@@ -591,7 +591,9 @@
                   <% if (p.old_price) { %><span style="font-size:12px;color:var(--muted,#64748b);text-decoration:line-through;"><%= money(p.old_price) %></span><% } %>
                   <span style="font-size:15px;font-weight:800;color:var(--accent,#2563eb);"><%= money(p.price) %></span>
                 </div>
-                <% var _pp2 = null; try { _pp2 = JSON.parse(p.payment_plan || 'null'); } catch(e) {} if (_pp2 && _pp2.amount && _pp2.freq) { %><div style="font-size:11px;color:#10b981;font-weight:600;margin-top:4px;">💳 $<%= _pp2.amount %> / <%= _pp2.freq %></div><% } %>
+                <% if (p.allow_installments) { %>
+                  <div style="margin-top:6px;"><span style="display:inline-block;font-size:10px;font-weight:800;color:#059669;background:rgba(16,185,129,.12);padding:2px 8px;border-radius:99px;">◐ <%= (p.installment_count || 6) %> abonos de <%= money(p.price / (p.installment_count || 6)) %></span></div>
+                <% } %>
               </div>
             </a>
           <% }) %>
@@ -627,6 +629,9 @@
                   <span style="font-size:12px;color:var(--muted,#64748b);text-decoration:line-through;"><%= money(p.old_price) %></span>
                   <span style="font-size:15px;font-weight:800;color:var(--accent,#2563eb);"><%= money(p.price) %></span>
                 </div>
+                <% if (p.allow_installments) { %>
+                  <div style="margin-top:6px;"><span style="display:inline-block;font-size:10px;font-weight:800;color:#059669;background:rgba(16,185,129,.12);padding:2px 8px;border-radius:99px;">◐ <%= (p.installment_count || 6) %> abonos de <%= money(p.price / (p.installment_count || 6)) %></span></div>
+                <% } %>
               </div>
             </a>
           <% }) %>
@@ -1152,6 +1157,7 @@
                     <div class="text-right shrink-0">
                       <% if (p.old_price) { %><span class="block text-xs line-through" style="color:var(--muted,#64748b);"><%= money(p.old_price) %></span><% } %>
                       <span class="font-black text-base"><%= money(p.price) %></span>
+                      <% if (p.allow_installments) { %><span class="block mt-0.5 text-[10px] font-black" style="color:#059669;">◐ <%= (p.installment_count || 6) %> abonos de <%= money(p.price / (p.installment_count || 6)) %></span><% } %>
                     </div>
                   </div>
                   <p class="text-xs mt-0.5" style="color:var(--muted,#64748b);"><%= p.shortDesc || p.description %></p>
@@ -1176,6 +1182,9 @@
                       <% if (p.old_price) { %><span class="block text-xs line-through" style="color:var(--muted,#64748b);"><%= money(p.old_price) %></span><% } %>
                       <span class="font-extrabold text-base"><%= money(p.price) %></span>
                     </div>
+                    <% if (p.allow_installments) { %>
+                      <span class="inline-block text-[10px] font-black px-2 py-0.5 rounded-full" style="color:#059669;background:rgba(16,185,129,.12);">◐ <%= (p.installment_count || 6) %> abonos de <%= money(p.price / (p.installment_count || 6)) %></span>
+                    <% } %>
                   </div>
                 </div>
               </div>

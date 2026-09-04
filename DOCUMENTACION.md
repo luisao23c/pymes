@@ -1,4 +1,4 @@
-# Documentación del proyecto — Catálogo Digital por Nessik
+# Documentación del proyecto — Catálogo WhatsApp para PYMES
 
 Documento de entrega para el equipo externo (desarrolladores / diseñador de páginas).
 
@@ -6,7 +6,7 @@ Documento de entrega para el equipo externo (desarrolladores / diseñador de pá
 
 ## 1. Qué es
 
-**Catálogo Digital** es un producto de **Nessik** para PYMES (ferreterías, tiendas, restaurantes…). Cada negocio tiene su catálogo público con filtros, variantes, promociones y pedido por WhatsApp. El dueño administra todo desde un panel y el equipo de Nessik gestiona las tiendas y planes desde el panel maestro.
+Plataforma multi-tienda tipo Mercado Libre para PYMES (ferreterías, tiendas, restaurantes…). Cada negocio tiene su **catálogo público** con filtros, variantes, promociones y **pedido por WhatsApp**. El dueño administra todo desde un **panel** (productos, pedidos, clientes, proveedores, empleados, reportes, diseño). Hay un **panel maestro** que gestiona todas las tiendas y los planes.
 
 No es un e-commerce con pasarela de pago: la "venta" se cierra por WhatsApp (el pedido abre un chat con el mensaje armado).
 
@@ -52,7 +52,7 @@ npm start        # o: node server.js
 
 ### Secretos
 
-- `.env` (NO versionar): contiene una `MASTER_KEY` privada de al menos 32 caracteres. Nunca debe escribirse en documentación ni subirse a GitHub.
+- `.env` (NO versionar): contiene `MASTER_KEY=mk-8RtjToiUenhG5rwcVIfb` (código maestro para resetear PINs).
 - `data.db`, `data.db-shm`, `data.db-wal` (NO versionar): la base de datos.
 
 ---

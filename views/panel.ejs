@@ -12,7 +12,7 @@
       <!-- Encabezado compacto -->
       <div class="flex items-center justify-between flex-wrap gap-2 mb-3">
         <div>
-          <h1 class="text-lg md:text-xl font-bold tracking-tight" style="color:var(--ap-text);font-family:'Inter',sans-serif">Hola, <%= biz.name.split(' ')[0] %> 👋</h1>
+          <h1 class="text-lg md:text-xl font-bold tracking-tight" style="color:var(--ap-text);font-family:'Playfair Display',serif">Hola, <%= biz.name.split(' ')[0] %> 👋</h1>
           <p class="text-xs mt-0.5" style="color:var(--ap-text-sec)">Resumen de tu catálogo hoy.</p>
         </div>
         <div class="flex items-center gap-2">
@@ -60,7 +60,7 @@
             </div>
           </div>
           <% if (typeof qrUrl !== 'undefined' && qrUrl) { %>
-            <div class="bg-white rounded-2xl p-2 shrink-0 mx-auto md:mx-0">
+            <div class="rounded-2xl p-2 shrink-0 mx-auto md:mx-0" style="background:var(--ap-card)">
               <img src="<%= qrUrl %>" alt="Código QR del catálogo" class="w-24 h-24">
             </div>
           <% } %>
@@ -71,12 +71,12 @@
       <section class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 mb-3">
         <% const cards = [
           { label: 'Visitas hoy', value: stats.today, isNum: true, delta: stats.weekDelta, deltaLabel: 'vs semana pasada', icon: 'M15 12a3 3 0 11-6 0 3 3 0 016 0zM2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z', tint: 'text-blue-600 bg-blue-50' },
-          { label: 'Ingresos', value: stats.revenue, isMoney: true, delta: stats.revenueDelta, deltaLabel: 'vs semana pasada', icon: 'M12 8c-2.2 0-4 1.1-4 2.5S9.8 13 12 13s4-1.1 4-2.5S14.2 8 12 8zM5 13.5c.5 1.9 3.4 3.1 7 3.1s6.5-1.2 7-3.1M5 17.5c.5 1.9 3.4 3.1 7 3.1s6.5-1.2 7-3.1', tint: 'text-emerald-600 bg-emerald-50' },
+          { label: 'Ingresos (cobrado)', value: stats.revenue, isMoney: true, delta: stats.revenueDelta, deltaLabel: 'vs semana pasada', title: 'Dinero que realmente entró: abonos cobrados + pedidos de contado cobrados (sin pendientes ni cancelados)', icon: 'M12 8c-2.2 0-4 1.1-4 2.5S9.8 13 12 13s4-1.1 4-2.5S14.2 8 12 8zM5 13.5c.5 1.9 3.4 3.1 7 3.1s6.5-1.2 7-3.1M5 17.5c.5 1.9 3.4 3.1 7 3.1s6.5-1.2 7-3.1', tint: 'text-emerald-600 bg-emerald-50' },
           { label: 'Pedidos WhatsApp', value: stats.waClicks, isNum: true, icon: 'M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z', tint: 'text-indigo-600 bg-indigo-50' },
           { label: 'Conversión', value: stats.conv, isPct: true, icon: 'M3 13h4v8H3zM10 5h4v16h-4zM17 9h4v12h-4z', tint: 'text-fuchsia-600 bg-fuchsia-50' }
         ]; %>
         <% cards.forEach((c, i) => { %>
-          <div class="metric-card <%= ['blue','green','purple','gold'][i] %> p-3.5 cursor-pointer">
+          <div class="metric-card <%= ['blue','green','purple','gold'][i] %> p-3.5 cursor-pointer" title="<%= c.title || '' %>">
             <div class="flex items-center justify-between gap-2">
               <div class="min-w-0">
                 <p class="text-[10px] font-bold uppercase tracking-wider" style="color:var(--ap-text-sec)"><%= c.label %></p>
@@ -118,7 +118,7 @@
           <div class="space-y-1 max-h-64 overflow-y-auto m-scroll">
             <% priceHistory.forEach(h => { %>
               <div class="flex items-center gap-2 text-xs py-1.5" style="border-bottom:1px solid var(--ap-border)">
-                <span class="shrink-0 w-32" style="color:var(--ap-text-sec)"><%= (h.created_at || '').slice(0, 16) %></span>
+                <span class="shrink-0 w-32" style="color:var(--ap-text-sec)"><%= fmtFecha(h.created_at) %></span>
                 <span class="font-semibold truncate flex-1" style="color:var(--ap-text)"><%= h.name %></span>
                 <span class="font-black shrink-0" style="color:var(--ap-text)"><%= money(h.price) %></span>
                 <% if (h.old_price) { %><span class="line-through shrink-0" style="color:var(--ap-text-sec);opacity:0.5"><%= money(h.old_price) %></span><% } %>
@@ -137,7 +137,7 @@
               <h2 class="font-bold text-sm" style="color:var(--ap-text)">Funnel de ventas</h2>
               <p class="text-[11px]" style="color:var(--ap-text-sec)">De la visita al pedido</p>
             </div>
-            <span class="m-badge m-badge-success"><%= money(stats.revenueWeek) %> esta semana</span>
+            <span class="m-badge m-badge-success" title="Abonos cobrados + contado cobrado en los últimos 7 días"><%= money(stats.revenueWeek) %> cobrado esta semana</span>
             <span class="m-badge m-badge-primary">Ticket prom. <%= money(stats.avgOrder) %></span>
           </div>
           <% const steps = [
@@ -249,9 +249,10 @@
               <% }) %>
             </div>
           <% } else { %>
-            <div class="text-center py-6">
+            <div class="text-center py-6 px-3">
               <p class="text-2xl mb-1">📈</p>
-              <p class="text-xs font-semibold" style="color:var(--ap-text-sec)">Aún no hay visitas esta semana</p>
+              <p class="text-xs font-bold" style="color:var(--ap-text)">Aún no hay visitas esta semana</p>
+              <p class="text-[11px] mt-0.5" style="color:var(--ap-text-sec)">Comparte tu catálogo para comenzar a recibir visitas.</p>
             </div>
           <% } %>
         </section>
@@ -269,7 +270,10 @@
               <% }) %>
             </div>
           <% } else { %>
-            <p class="text-xs font-semibold py-6 text-center" style="color:var(--ap-text-sec)">Sin pedidos esta semana todavía.</p>
+            <div class="text-center py-6 px-3">
+              <p class="text-xs font-bold" style="color:var(--ap-text)">Sin pedidos esta semana todavía</p>
+              <p class="text-[11px] mt-0.5" style="color:var(--ap-text-sec)">Los pedidos por WhatsApp aparecerán aquí apenas lleguen.</p>
+            </div>
           <% } %>
         </section>
       </div>
@@ -292,8 +296,9 @@
         <% const estados = [
           { f: 'all', label: 'Todos', n: orders.length, cl: 'm-badge-neutral' },
           { f: 'nuevo', label: 'Nuevos', n: orders.filter(o => o.status === 'nuevo').length, cl: 'm-badge-primary' },
-          { f: 'pendiente', label: 'Por cobrar', n: orders.filter(o => !o.paid && o.status !== 'cancelado').length, cl: 'm-badge-warn' },            { f: 'parcial', label: 'Parcial', n: orders.filter(o => o.status === 'parcial').length, cl: 'm-badge-warn' },
-            { f: 'pagado', label: 'Pagados', n: orders.filter(o => o.status === 'pagado').length, cl: 'm-badge-success' },
+          { f: 'pendiente', label: 'Por cobrar', n: orders.filter(o => !o.paid && o.status !== 'cancelado').length, cl: 'm-badge-warn' },
+          { f: 'abonos', label: 'Abonos', n: orders.filter(o => o.is_installment && (o.installment_paid || 0) < o.total && o.status !== 'cancelado').length, cl: 'm-badge-primary' },
+          { f: 'pagado', label: 'Pagados', n: orders.filter(o => o.status === 'pagado').length, cl: 'm-badge-success' },
           { f: 'entregado', label: 'Entregados', n: orders.filter(o => o.status === 'entregado').length, cl: 'm-badge-success' },
           { f: 'cancelado', label: 'Cancelados', n: orders.filter(o => o.status === 'cancelado').length, cl: 'm-badge-error' }
         ]; %>
@@ -318,83 +323,89 @@
         </div>
 
         <% if (orders.length === 0) { %>
-          <div class="text-center py-8 rounded-xl" style="border:2px dashed var(--ap-border)">
+          <div class="text-center py-10 px-4 rounded-xl" style="border:2px dashed var(--ap-border)">
             <p class="text-3xl mb-2">🧾</p>
-            <p class="text-xs font-semibold" style="color:var(--ap-text-sec)">Aún no hay pedidos</p>
+            <p class="text-sm font-bold" style="color:var(--ap-text)">Aún no hay pedidos</p>
+            <p class="text-xs mt-1 mb-3" style="color:var(--ap-text-sec)">Tu catálogo está listo. Comparte el enlace y recibe tu primer pedido por WhatsApp.</p>
+            <button type="button" onclick="document.querySelector('.share-card').scrollIntoView({behavior:'smooth'})" class="m-btn m-btn-filled m-btn-sm">📣 Compartir mi catálogo</button>
           </div>
         <% } else { %>
           <div class="divide-y divide-slate-100" id="order-list">            <% orders.forEach(o => { %>
+              <% var oRest = Math.max(0, (o.total || 0) - (o.installment_paid || 0));
+                 var oPend = o.is_installment && oRest > 0;
+                 var sNext = null, sOverdue = 0;
+                 if (o.schedule) { o.schedule.forEach(function(s){ if (!s.covered && !sNext) sNext = s; if (s.overdue) sOverdue++; }); } %>
               <div class="m-list-item m-ripple px-2 first:pt-1 last:pb-1" data-active-layer
                    data-order-status="<%= o.status %>" data-paid="<%= o.paid ? 1 : 0 %>" data-confirm-anchor
+                   data-installment="<%= o.is_installment ? 1 : 0 %>"
                    data-search="<%= (o.items + ' ' + (o.customer_name || '')).toLowerCase().replace(/"/g, '&quot;') %>" data-created="<%= o.created_at %>">
                 <div class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style="background:rgba(26,60,94,0.06);color:var(--ap-accent)">
                   <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13l-1 5h12M7 13L5.4 5M7 13l.4 2M10 21a1 1 0 100-2 1 1 0 000 2zm8 0a1 1 0 100-2 1 1 0 000 2z"/></svg>
                 </div>
                 <div class="min-w-0 flex-1">
                   <div class="flex items-center justify-between gap-2">
+                    <% var oBadgeTxt = o.status === 'entregado' ? (oPend ? '✓ ENTREGADO · POR COBRAR' : '✓ ENTREGADO')
+                       : ({ nuevo: '● NUEVO', pagado: '● PAGADO', cancelado: '✕ CANCELADO' })[o.status] || '○ POR COBRAR';
+                       var oBadgeCls = o.status === 'cancelado' ? 'm-badge-error'
+                         : o.status === 'entregado' ? (oPend ? 'm-badge-warn' : 'm-badge-success')
+                         : o.paid ? 'm-badge-success' : 'm-badge-warn'; %>
                     <p class="font-bold text-sm" style="color:var(--ap-text)"><%= money(o.total) %></p>
-                    <span class="m-badge <%= o.status === 'entregado' ? 'm-badge-success' : o.status === 'cancelado' ? 'm-badge-error' : o.status === 'parcial' ? 'm-badge-warn' : o.paid ? 'm-badge-success' : 'm-badge-warn' %> !h-5 !text-[10px] shrink-0"><%= ({ nuevo: '● NUEVO', pagado: '✓ PAGADO', entregado: '✓ ENTREGADO', cancelado: '✕ CANCELADO', parcial: '◐ PARCIAL' })[o.status] || '○ POR COBRAR' %></span>
+                    <span class="m-badge <%= oBadgeCls %> !h-5 !text-[10px] shrink-0"><%= oBadgeTxt %></span>
                   </div>
                   <p class="text-[11px] truncate mt-0.5" style="color:var(--ap-text-sec)"><%= o.items %></p>
-                  <% if (o.payment_method && o.payment_method !== 'contado') { %>
-                    <div class="flex items-center gap-2 mt-1">
-                      <% var _pmLabel = ({ efectivo: '💵 Efectivo', tarjeta: '💳 Tarjeta', transferencia: '🏦 Transferencia', parcial: '◐ A plazos', credito: '🕐 Crédito' })[o.payment_method] || o.payment_method; %>
-                      <span class="text-[10px] px-1.5 py-0.5 rounded-full" style="background:rgba(26,60,94,0.08);color:var(--ap-accent)"><%= _pmLabel %></span>
-                      <% if (o.amount_paid > 0 && o.amount_remaining > 0) { %>
-                        <% var _abonos = o.payments ? o.payments.length : 0; %>
-                        <span class="text-[10px]" style="color:var(--ap-text-sec)"><%= money(o.amount_paid) %> pagado · <%= money(o.amount_remaining) %> restante</span>
-                        <% if (_abonos > 0) { %><span class="text-[10px] font-bold" style="color:#f59e0b">(<%= _abonos %> abono<%= _abonos > 1 ? 's' : '' %>)</span><% } %>
-                      <% } else if (o.amount_paid > 0) { %>
-                        <span class="text-[10px]" style="color:#16a34a">✓ Pagado completo</span>
-                      <% } %>
-                    </div>
-                  <% } %>
                   <% if (o.customer_name) { %>
                     <p class="text-[11px] text-blue-600 font-semibold truncate mt-0.5">👤 <%= o.customer_name %></p>
                   <% } %>
-                  <p class="text-[10px] mt-0.5" style="color:var(--ap-text-sec)"><%= o.created_at %></p>
-                  <% if (o.payments && o.payments.length > 0) { %>
-                    <details class="mt-1">
-                      <summary class="text-[10px] font-bold cursor-pointer" style="color:var(--ap-accent)">📜 Historial de abonos (<%= o.payments.length %>)</summary>
-                      <div class="mt-1 space-y-0.5">
-                        <% o.payments.forEach(function(pay) { %>
-                          <div class="flex items-center gap-2 text-[10px]" style="color:var(--ap-text-sec)">
-                            <span style="color:#16a34a;font-weight:600">+<%= money(pay.amount) %></span>
-                            <span><%= ({abono:'◐', contado:'💰', credito:'🕐'})[pay.method] || '◐' %> <%= pay.method %></span>
-                            <span class="flex-1 truncate"><%= pay.note || '' %></span>
-                            <span><%= pay.created_at ? pay.created_at.substring(5,16) : '' %></span>
-                          </div>
+                  <% if (o.is_installment && o.total > 0) { 
+                    var pct = Math.round(((o.installment_paid || 0) / o.total) * 100);
+                  %>
+                    <div style="margin-top:6px;">
+                      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--ap-text-sec);margin-bottom:3px;">
+                        <span>Abonado: <%= money(o.installment_paid || 0) %> / <%= money(o.total) %></span>
+                        <span><%= pct %>%</span>
+                      </div>
+                      <div style="height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden;">
+                        <div style="height:100%;width:<%= pct %>%;background:#10b981;border-radius:3px;"></div>
+                      </div>
+                    </div>
+                  <% } %>
+                  <% if (o.schedule && o.schedule.length) { %>
+                    <div style="margin-top:6px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:6px 8px;">
+                      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                        <span style="font-size:10px;font-weight:700;color:var(--ap-text-sec)">📅 Abonos <%= o.schedule.length %></span>
+                        <% if (sNext) { %>
+                          <span style="font-size:10px;font-weight:700;color:<%= sNext.overdue ? '#dc2626' : '#2563eb' %>">
+                            <%= sNext.overdue ? '⚠ Vencido' : '★ Próximo' %>: <%= fmtFecha(sNext.date, true) %> · <%= money(sNext.amount) %>
+                          </span>
+                        <% } else { %>
+                          <span style="font-size:10px;font-weight:700;color:#059669">✓ Todos al día</span>
+                        <% } %>
+                      </div>
+                      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:5px;">
+                        <% o.schedule.forEach(function(s){ %>
+                          <span title="Abono <%= s.i %> de <%= o.schedule.length %>: <%= money(s.amount) %> el <%= fmtFecha(s.date, 'fecha') %><%= s.early ? ' · pagado antes de tiempo' : '' %>"
+                                style="display:inline-flex;align-items:center;padding:1px 6px;border-radius:6px;font-size:9px;font-weight:700;<%= s.covered ? 'background:#d1fae5;color:#047857' : (s.overdue ? 'background:#fee2e2;color:#b91c1c' : (s.next ? 'background:#dbeafe;color:#1d4ed8' : 'background:#f1f5f9;color:#64748b')) %>">
+                            <%= s.i %>·<%= fmtFecha(s.date, true) %><%= s.covered ? (s.early ? ' ⤴' : ' ✓') : '' %>
+                          </span>
                         <% }) %>
                       </div>
-                    </details>
+                    </div>
                   <% } %>
+                  <% if (oPend) { %>
+                    <p class="text-[10px] font-bold mt-1" style="color:#d97706">⚠️ Quedan <%= money(oRest) %> por cobrar</p>
+                  <% } %>
+                  <p class="text-[10px] mt-0.5" style="color:var(--ap-text-sec)"><%= fmtFecha(o.created_at) %></p>
                 </div>
                 <div class="flex flex-wrap items-center gap-1 shrink-0 justify-end">
+                  <% if (o.is_installment && o.status !== 'cancelado' && oRest > 0) { %>
+                    <button type="button" class="m-btn m-btn-sm m-btn-tonal !min-h-0 !py-1.5 !text-emerald-600 !border-emerald-200 hover:!bg-emerald-50" 
+                            onclick="modalAbono(<%= o.id %>, <%= oRest %>, <%= sNext ? sNext.amount : 0 %>, '<%= sNext ? fmtFecha(sNext.date, true) : '' %>')">
+                      Abono
+                    </button>
+                  <% } %>
                   <% if (o.status !== 'entregado' && o.status !== 'cancelado') { %>
-                    <% if (o.status === 'parcial') { %>
-                    <form method="POST" action="/<%= biz.slug %>/admin/order/<%= o.id %>/pagado" class="inline" style="display:inline">
-                      <input type="number" name="amount_paid" value="<%= o.amount_remaining %>" min="0" step="0.01" style="width:80px;font-size:10px;padding:3px 6px;border:1px solid var(--ap-border);border-radius:6px;background:var(--ap-surface);color:var(--ap-text)" placeholder="Monto">
-                      <input type="hidden" name="payment_method" value="parcial">
-                      <button class="m-btn m-btn-sm m-btn-outlined !min-h-0 !py-1.5" style="font-size:10px">Abonar</button>
-                    </form>
-                    <a href="https://wa.me/<%= biz.whatsapp.startsWith('52') ? biz.whatsapp : '52' + biz.whatsapp %>?text=<%= encodeURIComponent('Hola ' + (o.customer_name || 'cliente') + ', te recordamos que tu pedido de ' + money(o.total) + ' tiene un saldo pendiente de ' + money(o.amount_remaining) + '. ¿Cuándo podrías hacer el siguiente abono? Gracias.') %>" target="_blank" class="m-btn m-btn-sm m-btn-outlined !min-h-0 !py-1.5" style="font-size:10px;color:#25d366;border-color:#25d366">📱 Recordar</a>
-                    <% } else if (o.status !== 'pagado') { %>
-                    <form method="POST" action="/<%= biz.slug %>/admin/order/<%= o.id %>/pagado" class="inline flex items-center gap-1" style="display:inline">
-                      <select name="payment_method" id="pm-<%= o.id %>" onchange="onPaymentMethodChange(<%= o.id %>, <%= o.total %>)" style="font-size:10px;padding:2px 4px;border:1px solid var(--ap-border);border-radius:6px;background:var(--ap-surface);color:var(--ap-text)">
-                        <option value="efectivo">💵 Efectivo</option>
-                        <option value="tarjeta">💳 Tarjeta</option>
-                        <option value="transferencia">🏦 Transferencia</option>
-                      </select>
-                      <select name="payment_schedule" id="ps-<%= o.id %>" onchange="onPaymentScheduleChange(<%= o.id %>, <%= o.total %>)" style="font-size:10px;padding:2px 4px;border:1px solid var(--ap-border);border-radius:6px;background:var(--ap-surface);color:var(--ap-text)">
-                        <option value="contado">De contado</option>
-                        <option value="plazos">A plazos</option>
-                      </select>
-                      <input type="number" name="amount_paid" id="ap-<%= o.id %>" value="<%= o.total %>" min="0" step="0.01" style="width:80px;font-size:10px;padding:3px 6px;border:1px solid var(--ap-border);border-radius:6px;background:var(--ap-surface);color:var(--ap-text);display:none" placeholder="Monto">
-                      <button type="submit" class="m-btn m-btn-sm m-btn-outlined !min-h-0 !py-1.5" style="font-size:10px">Pagar</button>
-                    </form>
-                    <% } %>
-                    <form method="POST" action="/<%= biz.slug %>/admin/order/<%= o.id %>/entregado" class="inline" data-confirm="Marcar como ENTREGADO?" data-confirm-ok="Sí, entregado">
-                      <button class="m-btn m-btn-sm m-btn-outlined !min-h-0 !py-1.5">✓ Entregado</button>
+                    <form method="POST" action="/<%= biz.slug %>/admin/order/<%= o.id %>/entregado" class="inline" data-confirm="<%= oPend ? '¿Entregar el pedido? Quedan ' + money(oRest) + ' por cobrar: se entrega pero NO se marca como pagado. Se registra el abono después.' : 'Marcar como ENTREGADO y cobrado?' %>" data-confirm-ok="Sí, entregar">
+                      <button class="m-btn m-btn-sm m-btn-outlined !min-h-0 !py-1.5"><%= oPend ? 'Entregar · falta ' + money(oRest) : '✓ Entregado' %></button>
                     </form>
                     <form method="POST" action="/<%= biz.slug %>/admin/order/<%= o.id %>/cancelado" class="inline" data-confirm="¿Cancelar este pedido?">
                       <button class="m-btn m-btn-sm m-btn-outlined !min-h-0 !py-1.5 !text-red-500 !border-red-200 hover:!bg-red-50">✕ Cancelar</button>
@@ -414,10 +425,54 @@
     </div>
   </main>
 
+  <!-- Modal Registrar Abono -->
+  <div id="modal-abono" class="hidden fixed inset-0 z-[200] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+    <div class="rounded-2xl shadow-2xl w-full max-w-sm p-5 mx-4" style="background:var(--ap-card)">
+      <h3 class="font-bold text-sm mb-3" style="color:var(--ap-text)">Registrar abono</h3>
+      <form method="POST" id="abono-form">
+        <div class="m-field">
+          <label>Monto</label>
+          <input name="amount" id="abono-amount" type="number" min="0.01" step="0.01" required>
+          <p class="text-[10px] mt-1" style="color:var(--ap-text-sec)">Pendiente: <span id="abono-pending"></span></p>
+          <p class="text-[10px] mt-1 font-bold" style="color:#2563eb" id="abono-next"></p>
+          <p class="text-[10px] mt-1" style="color:var(--ap-text-sec)">💡 Si el cliente viene <b>antes</b> de su fecha, puedes <b>adelantar el abono</b>: escribe el monto que te paga.</p>
+        </div>
+        <div class="m-field">
+          <label>Nota (opcional)</label>
+          <input name="note" placeholder="Ej: Abono semana 3">
+        </div>
+        <div class="flex gap-2 mt-3">
+          <button type="button" onclick="document.getElementById('modal-abono').classList.add('hidden')" class="m-btn m-btn-outlined flex-1">Cancelar</button>
+          <button type="submit" class="m-btn m-btn-filled flex-1" style="background:#10b981!important;color:#fff!important;">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <%- include('admin/panel-ajax') %>
   <%- include('admin/toast') %>
 
   <script>
+    // Formato de moneda para el modal de abono (no hay helper en esta página)
+    function money(n) {
+      var sym = (typeof CURRENCY_SYMBOL !== 'undefined') ? CURRENCY_SYMBOL : '$';
+      return sym + Number(n || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    }
+
+    // Modal de abono
+    function modalAbono(orderId, pending, nextAmt, nextDate) {
+      document.getElementById('abono-form').action = '/<%= biz.slug %>/admin/order/' + orderId + '/abono';
+      document.getElementById('abono-amount').max = pending;
+      // Prefill con el monto del siguiente abono programado (o el pendiente si es menor)
+      var amt = (nextAmt && nextAmt <= pending) ? nextAmt : Math.min(pending, 100);
+      document.getElementById('abono-amount').value = amt ? amt.toFixed(2) : '';
+      document.getElementById('abono-pending').textContent = money(pending);
+      var elNext = document.getElementById('abono-next');
+      if (elNext) elNext.textContent = nextDate ? ('📅 Próximo abono: ' + nextDate + ' · ' + money(nextAmt)) : '';
+      document.getElementById('modal-abono').classList.remove('hidden');
+      document.getElementById('abono-amount').focus();
+    }
+
     // Filtros de pedidos por estado + paginación
     var ORDER_PAGE_SIZE = 8;
     function initOrderFilter() {
@@ -433,9 +488,11 @@
         return rows.filter(function (row) {
           var st = row.getAttribute('data-order-status');
           var paid = row.getAttribute('data-paid');
+          var isInst = row.getAttribute('data-installment');
           var okStatus = f === 'all'
             || (f === 'nuevo' && st === 'nuevo')
             || (f === 'pendiente' && paid !== '1' && st !== 'cancelado')
+            || (f === 'abonos' && isInst === '1' && st !== 'cancelado' && paid !== '1')
             || (f === st);
           var okSearch = !q || (row.getAttribute('data-search') || '').indexOf(q) !== -1;
           var created = (row.getAttribute('data-created') || '').slice(0, 10);
@@ -483,23 +540,6 @@
       if (desde) desde.onchange = function () { page = 1; show(); };
       if (hasta) hasta.onchange = function () { page = 1; show(); };
       show();
-    }
-    function onPaymentMethodChange(orderId, total) {
-      onPaymentScheduleChange(orderId, total);
-    }
-    function onPaymentScheduleChange(orderId, total) {
-      var ps = document.getElementById('ps-' + orderId);
-      var ap = document.getElementById('ap-' + orderId);
-      if (!ps || !ap) return;
-      if (ps.value === 'plazos') {
-        ap.style.display = '';
-        ap.value = '';
-        ap.placeholder = 'Abono';
-        ap.focus();
-      } else {
-        ap.style.display = 'none';
-        ap.value = total;
-      }
     }
     function limpiarFiltrosPedidos() {
       var s = document.getElementById('order-search');

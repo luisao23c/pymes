@@ -74,7 +74,7 @@
                   <p class="text-[11px] text-slate-400 mt-0.5">
                     <%= c.orderCount %> pedido<%= c.orderCount === 1 ? '' : 's' %> ·
                     <% if (c.totalSpent > 0) { %><b class="text-slate-600"><%= money(c.totalSpent) %></b> comprado<% } else { %>sin compras aún<% } %>
-                    <% if (c.orders.length) { %> · último: <%= c.orders[0].created_at.slice(0, 10) %><% } %>
+                    <% if (c.orders.length) { %> · último: <%= fmtFecha(c.orders[0].created_at, 'fecha') %><% } %>
                     <% if (c.notes) { %> · <span class="text-amber-600"><%= c.notes %></span><% } %>
                   </p>
                 </div>

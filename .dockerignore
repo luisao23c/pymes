@@ -1,8 +1,0 @@
-node_modules
-.git
-.env
-data.db*
-backups
-cookies*.txt
-public/uploads
-*.log

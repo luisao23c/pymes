@@ -96,7 +96,7 @@
                     <div class="flex justify-between gap-2"><span>• <%= it.qty %> x <%= it.name %><% if (it.variant) { %> <span class="text-slate-400">(<%= it.variant %>)</span><% } %></span><span class="text-slate-400"><%= money(it.cost * it.qty) %></span></div>
                   <% }) %>
                 </div>
-                <p class="text-[10px] text-slate-400 mt-1.5"><%= po.created_at %></p>
+                <p class="text-[10px] text-slate-400 mt-1.5"><%= fmtFecha(po.created_at) %></p>
                 <div class="flex flex-wrap items-center gap-1.5 mt-2">
                   <% if (po.supplier_phone) { %>
                     <a href="https://wa.me/<%= po.supplier_phone.startsWith('52') ? po.supplier_phone : '52' + po.supplier_phone %>?text=<%= po.msg %>" target="_blank" class="m-btn m-btn-sm m-btn-tonal !min-h-0 !py-1.5">💬 Pedir por WhatsApp</a>

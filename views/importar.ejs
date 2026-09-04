@@ -41,7 +41,7 @@
           <div class="w-9 h-9 rounded-full bg-[var(--md-primary)] text-white flex items-center justify-center font-black text-sm shrink-0">1</div>
           <div>
             <h2 class="font-extrabold text-slate-900">Sube tu archivo</h2>
-            <p class="text-xs text-slate-400">Excel (.xlsx) o CSV</p>
+            <p class="text-xs text-slate-400">Excel (.xlsx, .xls) o CSV</p>
           </div>
         </div>
         <p class="text-sm text-slate-600 mb-4">
@@ -51,7 +51,7 @@
         </p>
         <form method="POST" action="/<%= biz.slug %>/admin/importar/vista-previa" enctype="multipart/form-data" class="space-y-3">
           <label class="m-ripple block border-2 border-dashed border-slate-200 hover:border-[var(--md-primary)] hover:bg-blue-50/30 rounded-2xl p-6 text-center cursor-pointer transition">
-            <input type="file" name="archivo" accept=".xlsx,.csv" class="hidden" required>
+            <input type="file" name="archivo" accept=".xlsx,.xls,.csv" class="hidden" required>
             <div class="w-12 h-12 mx-auto rounded-2xl bg-blue-50 text-blue-500 flex items-center justify-center text-xl mb-2">📄</div>
             <p class="font-bold text-sm text-slate-700">Haz clic para elegir tu archivo</p>
             <p class="text-xs text-slate-400 mt-0.5">O arrastra y suelta aquí</p>

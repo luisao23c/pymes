@@ -14,6 +14,7 @@
         <span class="text-xs text-slate-400 line-through"><%= money(ad.old_price) %></span>
       <% } %>
       <span class="font-extrabold text-slate-900 block"><%= money(ad.price) %></span>
+      <% if (ad.allow_installments) { %><span class="block mt-0.5 text-[10px] font-black" style="color:#059669;">◐ <%= (ad.installment_count || 6) %> abonos de <%= money(ad.price / (ad.installment_count || 6)) %></span><% } %>
     </div>
     <div class="flex items-center gap-1.5 mt-auto pt-2">
       <button type="button" onclick="event.preventDefault();event.stopPropagation();addAdToCart(this)"

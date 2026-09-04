@@ -1,25 +1,14 @@
+# Dependencias
 node_modules/
-.env
-.env.*
-!.env.example
 
-# Datos y sesiones locales
-data.db
+# Archivos transitorios de SQLite (no son datos: cambian a cada instante)
 data.db-shm
 data.db-wal
-backups/
-cookies*.txt
 
-# Archivos subidos por usuarios
-public/uploads/*
-!public/uploads/.gitkeep
+# Herramienta (previews, run-doc, logs de sesión)
+.freebuff/
 
-# Logs y archivos de herramientas
-*.log
-*.log.err
-.impeccable/
-
-# Sistema operativo y editores
+# Sistema
 .DS_Store
 Thumbs.db
-.vscode/
+npm-debug.log*

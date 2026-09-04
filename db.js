@@ -1,11 +1,7 @@
 const Database = require('better-sqlite3');
 const path = require('path');
-const fs = require('fs');
 
-const dataDir = path.resolve(process.env.DATA_DIR || __dirname);
-const databasePath = path.resolve(process.env.DATABASE_PATH || path.join(dataDir, 'data.db'));
-fs.mkdirSync(path.dirname(databasePath), { recursive: true });
-const db = new Database(databasePath);
+const db = new Database(path.join(__dirname, 'data.db'));
 
 db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
@@ -19,7 +15,7 @@ CREATE TABLE IF NOT EXISTS businesses (
   description TEXT DEFAULT '',
   logo TEXT DEFAULT '',
   banner TEXT DEFAULT '',
-  pin TEXT DEFAULT '',
+  pin TEXT DEFAULT '1234',
   active INTEGER DEFAULT 1,
   created_at TEXT DEFAULT (datetime('now'))
 );
@@ -173,7 +169,10 @@ addColumnIfMissing('products', 'tags', "TEXT DEFAULT ''"); // etiquetas separada
 addColumnIfMissing('products', 'video', "TEXT DEFAULT ''"); // URL de video (limitado, 1 por producto)
 addColumnIfMissing('products', 'specs', "TEXT DEFAULT ''"); // características (una por línea: Clave: Valor)
 addColumnIfMissing('products', 'barcode', "TEXT DEFAULT ''"); // código de barras (opcional)
-addColumnIfMissing('products', 'payment_plan', "TEXT DEFAULT ''"); // sugerencia de pago visible al cliente, ej: 'Abonos de $200 semanales'
+addColumnIfMissing('products', 'allow_installments', 'INTEGER DEFAULT 0'); // 1 = permite abonos
+addColumnIfMissing('products', 'installment_count', 'INTEGER DEFAULT 6'); // número de abonos sugeridos
+addColumnIfMissing('products', 'installment_min_down', 'REAL DEFAULT 0'); // enganche mínimo (monto)
+addColumnIfMissing('products', 'installment_frequency', "TEXT DEFAULT 'semanal'"); // semanal | quincenal | mensual
 
 // Proveedores y pedidos de compra
 db.exec(`
@@ -198,6 +197,25 @@ CREATE TABLE IF NOT EXISTS purchase_orders (
 );
 `);
 addColumnIfMissing('purchase_orders', 'received', 'INTEGER DEFAULT 0');
+addColumnIfMissing('orders', 'customer_phone', "TEXT DEFAULT ''");
+addColumnIfMissing('orders', 'is_installment', 'INTEGER DEFAULT 0'); // 1 = pedido a abonos
+addColumnIfMissing('orders', 'installment_paid', 'REAL DEFAULT 0'); // total ya abonado
+addColumnIfMissing('orders', 'installment_count', 'INTEGER DEFAULT 0'); // abonos configurados
+addColumnIfMissing('orders', 'installment_frequency', "TEXT DEFAULT 'semanal'"); // semanal | quincenal | mensual (para calcular las fechas de pago)
+
+// Historial de abonos (pagos parciales)
+db.exec(`
+CREATE TABLE IF NOT EXISTS abonos (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  business_id INTEGER NOT NULL,
+  order_id INTEGER NOT NULL,
+  amount REAL NOT NULL,
+  note TEXT DEFAULT '',
+  created_at TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE,
+  FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
+);
+`);
 
 // Clientes (mini-CRM): contactos frecuentes con su historial de pedidos
 db.exec(`
@@ -225,18 +243,6 @@ CREATE TABLE IF NOT EXISTS orders (
   FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS payment_history (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  order_id INTEGER NOT NULL,
-  business_id INTEGER NOT NULL,
-  amount REAL NOT NULL,
-  method TEXT DEFAULT 'abono',  -- abono | contado | credito
-  note TEXT DEFAULT '',
-  created_at TEXT DEFAULT (datetime('now')),
-  FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
-  FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE
-);
-
 CREATE TABLE IF NOT EXISTS tracking (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   business_id INTEGER NOT NULL,
@@ -246,13 +252,9 @@ CREATE TABLE IF NOT EXISTS tracking (
   FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE
 );
 `);
-
-// Las migraciones de pedidos deben ejecutarse después de crear la tabla.
-// Así una instalación nueva funciona igual que una base existente.
-addColumnIfMissing('orders', 'customer_phone', "TEXT DEFAULT ''");
-addColumnIfMissing('orders', 'payment_method', "TEXT DEFAULT 'contado'"); // contado | parcial | credito
-addColumnIfMissing('orders', 'amount_paid', 'REAL DEFAULT 0'); // total abonado hasta ahora
-addColumnIfMissing('orders', 'amount_remaining', 'REAL DEFAULT 0'); // saldo pendiente
+// Cuándo se cobró/liquidó el pedido (para calcular ingresos reales por periodo: abonos + contado cobrado)
+addColumnIfMissing('orders', 'paid_at', 'TEXT');
+db.prepare("UPDATE orders SET paid_at = created_at WHERE paid = 1 AND (paid_at IS NULL OR paid_at = '')").run();
 
 // ================= PLANES (creados por el administrador maestro) =================
 db.exec(`
@@ -280,22 +282,19 @@ if (planCount === 0) {
 }
 
 function seed() {
-  const demoWhatsApp = String(process.env.DEMO_WHATSAPP || '').replace(/[^0-9]/g, '');
-  const demoPin = String(process.env.DEMO_PIN || '');
-  if (process.env.SEED_DEMO !== 'true' || !demoWhatsApp || !/^\d{6,12}$/.test(demoPin)) return;
   const existing = db.prepare('SELECT COUNT(*) AS c FROM businesses').get().c;
   if (existing > 0) return;
 
   const insertBiz = db.prepare(`
-    INSERT INTO businesses (slug, name, whatsapp, description, pin)
-    VALUES (?, ?, ?, ?, ?)
+    INSERT INTO businesses (slug, name, whatsapp, description, pin, plan)
+    VALUES (?, ?, ?, ?, ?, 'demo')
   `);
   const biz = insertBiz.run(
     'ferreteria-demo',
     'Ferretería El Toro',
-    demoWhatsApp,
+    '528719920338',
     'Todo para tu obra y hogar en Torreón. Envíos a toda La Laguna.',
-    demoPin
+    '1234'
   );
   const businessId = biz.lastInsertRowid;
 
@@ -406,6 +405,5 @@ function crearPaginasSugeridas(businessId, paginasSugeridas) {
 }
 
 module.exports = db;
-module.exports.databasePath = databasePath;
 module.exports.crearPaginasSugeridas = crearPaginasSugeridas;
-if (process.env.NODE_ENV !== 'production' && process.env.SEED_DEMO === 'true') require('./seed-demo');
+require('./seed-demo');

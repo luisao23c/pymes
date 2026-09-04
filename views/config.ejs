@@ -481,10 +481,9 @@
         <div class="border-t border-slate-200 dark:border-[#30363d] pt-4">
           <p class="text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">¿El dueño olvidó su PIN?</p>
           <form method="POST" action="/<%= biz.slug %>/admin/resetear-pin" class="flex flex-wrap gap-2">
-            <input type="hidden" name="_csrf" value="<%= csrf %>">
             <input name="master" type="password" placeholder="Código maestro" class="config-input flex-1 max-w-xs" required>
             <button class="m-btn m-btn-danger m-btn-sm dark:bg-[#8b2d32] dark:text-white dark:hover:bg-[#a03a3f]">
-              Generar PIN temporal
+              Resetear a 1234
             </button>
           </form>
         </div>
