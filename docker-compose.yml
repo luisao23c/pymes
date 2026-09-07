@@ -7,13 +7,14 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - NODE_ENV=production
-      - MASTER_KEY=${MASTER_KEY:-mk-8RtjToiUenhG5rwcVIfb}
-      - DB_HOST=mariadb
-      - DB_PORT=3306
-      - DB_USER=root
-      - DB_PASS=${MYSQL_ROOT_PASSWORD:-}
-      - DB_NAME=${DB_NAME:-catamanager}
+      DATABASE_URL: mysql://root:cambia-esta-clave@db:3306/multi_pos
+      NODE_ENV: production
+      MASTER_KEY: ${MASTER_KEY:-mk-8RtjToiUenhG5rwcVIfb}
+      # - DB_HOST=mariadb
+      # - DB_PORT=3306
+      # - DB_USER=root
+      # - DB_PASS=${MYSQL_ROOT_PASSWORD:-}
+      # - DB_NAME=${DB_NAME:-catamanager}
     depends_on:
       mariadb:
         condition: service_healthy
