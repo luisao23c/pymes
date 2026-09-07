@@ -60,9 +60,16 @@ async function execStatements(stmts) {
       if (await tableExists(name)) continue; // el esquema ya existe (migración previa)
     }
     if (/^\s*CREATE\s+TABLE/i.test(s)) {
-      await pool.query("SET SESSION sql_mode = ''");
+      const conn = await pool.getConnection();
+      try {
+        await conn.query("SET SESSION sql_mode = ''");
+        await conn.query(s);
+      } finally {
+        conn.release();
+      }
+    } else {
+      await pool.query(s);
     }
-    await pool.query(s);
   }
 }
 
