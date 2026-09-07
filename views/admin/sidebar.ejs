@@ -217,7 +217,7 @@ BARRA SUPERIOR MÓVIL (sin cambios, solo para móvil)
 ============================================================ -->
 <div class="md:hidden sticky top-0 z-40 backdrop-blur-sm" style="background:var(--ap-card);border-bottom:1px solid var(--ap-border);color:var(--ap-text);box-shadow:var(--ap-shadow)">
   <div class="flex items-center justify-between px-4 h-14">
-    <a href="/<%= biz.slug %>/admin/panel" class="flex items-center gap-2 min-w-0">
+    <a href="<%= items.length ? items[0].href : '/' + biz.slug + '/admin/panel' %>" class="flex items-center gap-2 min-w-0">
       <img src="<%= avatar %>" class="w-8 h-8 rounded-lg object-cover shrink-0">
       <span class="font-extrabold text-sm truncate"><%= biz.name %></span>
     </a>

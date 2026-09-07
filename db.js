@@ -1,10 +1,6 @@
-const Database = require('better-sqlite3');
-const path = require('path');
-
-const db = new Database(path.join(__dirname, 'data.db'));
-
-db.pragma('journal_mode = WAL');
-db.pragma('foreign_keys = ON');
+// Capa de datos: MariaDB vía adaptador síncrono (db-maria-sync.js).
+// Para volver a SQLite: git checkout -- db.js (o copiar db.js.sqlite.bak).
+const db = require('./db-maria-sync');
 
 db.exec(`
 CREATE TABLE IF NOT EXISTS businesses (
@@ -181,6 +177,7 @@ CREATE TABLE IF NOT EXISTS suppliers (
   business_id INTEGER NOT NULL,
   name TEXT NOT NULL,
   phone TEXT DEFAULT '',
+  email TEXT DEFAULT '',
   notes TEXT DEFAULT '',
   created_at TEXT DEFAULT (datetime('now')),
   FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE
@@ -197,6 +194,7 @@ CREATE TABLE IF NOT EXISTS purchase_orders (
 );
 `);
 addColumnIfMissing('purchase_orders', 'received', 'INTEGER DEFAULT 0');
+addColumnIfMissing('suppliers', 'email', "TEXT DEFAULT ''");
 addColumnIfMissing('orders', 'customer_phone', "TEXT DEFAULT ''");
 addColumnIfMissing('orders', 'is_installment', 'INTEGER DEFAULT 0'); // 1 = pedido a abonos
 addColumnIfMissing('orders', 'installment_paid', 'REAL DEFAULT 0'); // total ya abonado
@@ -394,6 +392,8 @@ CREATE TABLE IF NOT EXISTS custom_templates (
 addColumnIfMissing('custom_templates', 'is_default', 'INTEGER DEFAULT 0');
 db.exec("CREATE TABLE IF NOT EXISTS site_config (key TEXT PRIMARY KEY, value TEXT)");
 db.exec("INSERT OR IGNORE INTO site_config (key, value) VALUES ('default_template_id', '')");
+// Giro personalizados registrados por usuarios; se ofrecen como autocompletado a los demás
+db.exec("CREATE TABLE IF NOT EXISTS giros (name VARCHAR(80) PRIMARY KEY, used INTEGER DEFAULT 0)");
 
 function crearPaginasSugeridas(businessId, paginasSugeridas) {
   if (!Array.isArray(paginasSugeridas) || !paginasSugeridas.length) return;

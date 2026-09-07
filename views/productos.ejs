@@ -12,6 +12,14 @@
       <script type="application/json" id="cat-json"><%- safeJson(categories || []) %></script>
       <script type="application/json" id="formdata-json"><%- safeJson(typeof formdata !== 'undefined' ? formdata : null) %></script>
 
+      <!-- CRUD separado por tabs: Productos · Categorías · Atributos -->
+      <div class="prod-tabs" role="tablist" aria-label="Secciones del catálogo">
+        <button type="button" id="tabbtn-productos" class="prod-tab active" onclick="switchCrudTab('productos')">📦 Productos <span class="cnt" id="tabcnt-productos"><%= allProducts.length %></span></button>
+        <button type="button" id="tabbtn-categorias" class="prod-tab" onclick="switchCrudTab('categorias')">🗂 Categorías <span class="cnt" id="tabcnt-categorias"><%= categories.length %></span></button>
+        <button type="button" id="tabbtn-atributos" class="prod-tab" onclick="switchCrudTab('atributos')">🏷 Atributos <span class="cnt" id="tabcnt-atributos">0</span></button>
+      </div>
+      <div id="tabpane-productos" class="prod-tab-panel active">
+
       <!-- Encabezado -->
       <div class="flex items-center justify-between flex-wrap gap-2 mb-3">
         <div>
@@ -199,26 +207,33 @@
 
         <form method="POST" action="/<%= biz.slug %>/admin/producto" class="grid md:grid-cols-2 gap-x-4" id="pf-form">
           <div data-step-pane="1" class="md:col-span-2 grid md:grid-cols-2 gap-x-4">
+            <div class="md:col-span-2">
+              <label class="font-bold text-xs text-slate-600 mb-2 block">Tipo de producto</label>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2" id="f-tipo-cards">
+                <button type="button" data-tipo="unico" class="pf-tipo-card active" onclick="setTipo('unico')">
+                  <span class="pf-tipo-ico">📦</span>
+                  <span><span class="pf-tipo-tit">Producto único</span><span class="pf-tipo-sub">Se vende tal cual: 1 precio, 1 stock</span></span>
+                </button>
+                <button type="button" data-tipo="variantes" class="pf-tipo-card" onclick="setTipo('variantes')">
+                  <span class="pf-tipo-ico">🧩</span>
+                  <span><span class="pf-tipo-tit">Con variantes</span><span class="pf-tipo-sub">1 producto con tallas/colores…: cada variante con su propio precio y stock</span></span>
+                </button>
+              </div>
+              <input type="hidden" name="tipo" id="f-tipo" value="unico">
+            </div>
             <div class="m-field">
               <label for="f-name">Nombre *</label>
               <input name="name" id="f-name" required placeholder="Ej: Taladro percutor 13mm">
             </div>
             <div class="m-field">
               <label for="f-cat">Categoría</label>
-              <div class="flex items-center gap-2">
-                <select name="category_id" id="f-cat" class="flex-1 min-w-0">
-                  <option value="">Sin categoría</option>
-                  <% categories.forEach(c => { %>
-                    <option value="<%= c.id %>"><%= c.name %></option>
-                  <% }) %>
-                </select>
-                <button type="button" onclick="mostrarNuevaCategoria()" class="shrink-0 text-xs font-bold text-blue-600 hover:bg-blue-50 rounded-lg px-3 py-2">＋ Nueva</button>
-              </div>
-              <div id="cat-new-box" class="hidden mt-2 flex items-center gap-2">
-                <input id="cat-new-input" type="text" placeholder="Nombre de la categoría" class="flex-1 min-w-0 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <button type="button" onclick="crearCategoriaInline()" class="text-emerald-600 font-bold px-2">✓</button>
-                <button type="button" onclick="document.getElementById('cat-new-box').classList.add('hidden')" class="text-slate-400 font-bold px-2">✕</button>
-              </div>
+              <select name="category_id" id="f-cat">
+                <option value="">Sin categoría</option>
+                <% categories.forEach(c => { %>
+                  <option value="<%= c.id %>"><%= c.name %></option>
+                <% }) %>
+              </select>
+              <p id="f-cat-hint" class="text-[11px] text-slate-400 mt-1 <%= categories.length ? 'hidden' : '' %>">Aún no tienes categorías. Créala en la pestaña <button type="button" class="font-bold text-blue-600 hover:underline" onclick="switchCrudTab('categorias')">Categorías</button>.</p>
             </div>
             <div class="m-field">
               <label for="f-price">Precio *</label>
@@ -253,8 +268,8 @@
             </div>
             <div class="m-field" id="f-stock-wrap">
               <label for="f-stock" id="f-stock-label">Stock * <span class="font-normal text-slate-400">(0 = agotado)</span></label>
-              <input name="stock" id="f-stock" type="number" min="0" required placeholder="Piezas disponibles">
-              <p id="f-stock-note" class="hidden text-[11px] font-bold text-amber-600 mt-1">Este producto tiene atributos: el stock se define por cada combinación en el paso 3 (Atributos).</p>
+              <input name="stock" id="f-stock" type="number" min="0" placeholder="Piezas disponibles">
+              <p id="f-stock-note" class="hidden text-[11px] font-bold text-amber-600 mt-1">Con variantes, el stock se llena por cada variante en el paso 2 (Variantes) — 0 significa agotada.</p>
             </div>
             <div class="m-field">
               <label for="f-sku">SKU / código interno <span class="font-normal text-slate-400">(opcional)</span></label>
@@ -267,6 +282,10 @@
             <div class="m-field md:col-span-2">
               <label for="f-tags">Etiquetas <span class="font-normal text-slate-400">(separadas por coma — mejoran la búsqueda)</span></label>
               <input name="tags" id="f-tags" placeholder="Ej: taladro, inalámbrico, batería">
+            </div>
+            <div class="m-field md:col-span-2">
+              <label for="f-video">Video <span class="font-normal text-slate-400">(opcional, 1 por producto — pega una URL)</span></label>
+              <input name="video" id="f-video" placeholder="https://… (YouTube, Vimeo o .mp4)">
             </div>
             <div class="m-field md:col-span-2">
               <label for="f-specs">Características <span class="font-normal text-slate-400">(una por línea: "Marca: Bosch")</span></label>
@@ -315,17 +334,13 @@
               <p class="text-xs font-bold text-slate-600">Subir fotos</p>
               <p class="text-[10px] text-slate-400 mt-0.5">Elige varias a la vez · .jpg .png .webp (máx 5MB c/u)</p>
             </label>
-            <div class="mt-3">
-              <label class="font-bold text-xs text-slate-600 mb-1.5 block">Video <span class="font-normal text-slate-400">(opcional, 1 por producto — pega una URL)</span></label>
-              <input name="video" id="f-video" placeholder="https://… (YouTube, Vimeo o .mp4)" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
-            </div>
             <input type="hidden" name="image" id="f-image">
             <input type="hidden" name="galeria" id="f-galeria">
           </div>
 
           <div data-step-pane="3" class="md:col-span-2 hidden">
             <div class="rounded-2xl border border-slate-200 p-3 mb-4">
-              <p class="font-bold text-xs text-slate-700 mb-2">1 · Elige los atributos de este producto</p>
+              <p class="font-bold text-xs text-slate-700 mb-2">1 · Elige los atributos (Talla, Color…)</p>
               <div id="f-tpl-pills" class="flex flex-wrap gap-2 items-center"></div>
               <p id="f-tpl-empty" class="text-[11px] text-slate-400 mt-1.5"></p>
             </div>
@@ -336,7 +351,7 @@
             </div>
 
             <div>
-              <p class="font-bold text-xs text-slate-700 mb-2">3 · Combinaciones <span class="font-normal text-slate-400">(toca cada una para subirle su foto — si no le pones, usa la del producto)</span></p>
+              <p class="font-bold text-xs text-slate-700 mb-2">3 · Variantes generadas <span class="font-normal text-slate-400">(stock obligatorio en cada una; toca la foto para cambiarla si quieres)</span></p>
               <div id="f-combo-box"></div>
             </div>
             <input type="hidden" name="variants" id="f-var-hidden">
@@ -353,11 +368,12 @@
           </div>
         </form>
       </section>
+      </div><!-- /tabpane-productos -->
 
-      <!-- Categorías -->
+      <div id="tabpane-categorias" class="prod-tab-panel">
       <section id="categorias" class="m-card p-4 mb-3">
         <div class="flex items-center justify-between flex-wrap gap-2 mb-3">
-          <h3 class="font-bold text-sm text-slate-700">Categorías <span class="m-badge m-badge-neutral !ml-1.5"><%= categories.length %></span></h3>
+          <h3 class="font-bold text-sm text-slate-700">Categorías <span class="m-badge m-badge-neutral !ml-1.5"><span id="cat-count"><%= categories.length %></span></span></h3>
           <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             <input id="cat-name" placeholder="Nueva categoría" class="w-full sm:w-52 border border-slate-200 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
             <button type="button" onclick="agregarCategoria()" class="m-btn m-btn-tonal m-btn-sm shrink-0">Crear</button>
@@ -365,8 +381,9 @@
         </div>
         <div id="cat-list" class="flex flex-wrap gap-1.5"></div>
       </section>
+      </div><!-- /tabpane-categorias -->
 
-      <!-- Mis atributos -->
+      <div id="tabpane-atributos" class="prod-tab-panel">
       <section id="mis-atributos" class="m-card p-4 mb-3">
         <div class="flex items-center justify-between flex-wrap gap-2 mb-1">
           <h3 class="font-bold text-sm text-slate-700">Mis atributos <span class="m-badge m-badge-neutral !ml-1.5"><span id="attr-count">0</span></span></h3>
@@ -379,52 +396,17 @@
         <p class="text-[11px] text-slate-400 mb-3">Guárdalos una sola vez y úsalos en cualquier producto. Guardar con el mismo nombre actualiza los valores.</p>
         <div id="attr-list" class="flex flex-wrap gap-1.5"></div>
       </section>
+      </div><!-- /tabpane-atributos -->
 
     </div>
   </main>
 
-  <a href="#nuevo-producto" class="m-fab m-ripple" title="Agregar producto">
+  <a href="#nuevo-producto" class="m-fab m-ripple" title="Agregar producto" onclick="return irNuevoProducto(event)">
     <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
   </a>
 
-  <!-- Editor de imagen -->
-  <div id="img-editor" class="hidden fixed inset-0 z-[120] flex items-center justify-center bg-black/70 backdrop-blur-sm p-3">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-      <div class="flex items-center justify-between px-4 py-3 border-b border-slate-100">
-        <h3 class="font-bold text-sm text-slate-800">Editar imagen</h3>
-        <button type="button" onclick="cerrarEditorImagen()" class="text-slate-400 hover:text-slate-600 font-bold text-lg leading-none">✕</button>
-      </div>
-      <div class="p-4">
-        <div id="img-editor-wrap" class="relative w-full overflow-hidden rounded-xl bg-checker select-none flex items-center justify-center" style="max-height:52vh;">
-          <canvas id="img-editor-canvas" width="800" height="800" class="max-w-full max-h-[52vh] block"></canvas>
-        </div>
-        <div class="flex items-center gap-2 mt-3 flex-wrap">
-          <button type="button" id="img-btn-fit" onclick="imgModo('contain')" class="text-xs font-bold px-3 py-1.5 rounded-full border border-slate-200 text-slate-600 hover:bg-slate-50">Ajustar</button>
-          <button type="button" id="img-btn-cover" onclick="imgModo('cover')" class="text-xs font-bold px-3 py-1.5 rounded-full border border-blue-600 bg-blue-50 text-blue-700">Expandir</button>
-          <span class="text-[10px] text-slate-400 flex-1 text-right">Arrastra para mover</span>
-        </div>
-        <div class="flex items-center gap-1.5 mt-2 flex-wrap">
-          <span class="text-[10px] text-slate-400 mr-1">Aspecto</span>
-          <button type="button" class="img-aspect" data-a="1:1" onclick="imgAspect('1:1')">1:1</button>
-          <button type="button" class="img-aspect" data-a="4:3" onclick="imgAspect('4:3')">4:3</button>
-          <button type="button" class="img-aspect" data-a="16:9" onclick="imgAspect('16:9')">16:9</button>
-          <button type="button" class="img-aspect" data-a="3:4" onclick="imgAspect('3:4')">3:4</button>
-          <span class="mx-1 text-slate-200">|</span>
-          <button type="button" onclick="imgRotar()" title="Rotar 90°" class="text-xs font-bold px-2.5 py-1.5 rounded-full border border-slate-200 text-slate-600 hover:bg-slate-50">⟳ Rotar</button>
-          <button type="button" onclick="imgEspejo()" title="Voltear horizontal" class="text-xs font-bold px-2.5 py-1.5 rounded-full border border-slate-200 text-slate-600 hover:bg-slate-50">⇋ Voltear</button>
-          <button type="button" onclick="imgReset()" title="Restaurar original" class="text-xs font-bold px-2.5 py-1.5 rounded-full border border-slate-200 text-slate-600 hover:bg-slate-50">↺ Restaurar</button>
-        </div>
-        <div class="flex items-center gap-2 mt-2">
-          <span class="text-xs text-slate-400 shrink-0">Zoom</span>
-          <input id="img-zoom" type="range" min="1" max="3" step="0.01" value="1" class="flex-1" oninput="imgZoomChange(this.value)">
-        </div>
-        <div class="flex gap-2 mt-4">
-          <button type="button" onclick="cerrarEditorImagen()" class="flex-1 m-btn m-btn-outlined">Cancelar</button>
-          <button type="button" onclick="aplicarEditorImagen()" class="flex-1 m-btn m-btn-filled">Aplicar</button>
-        </div>
-      </div>
-    </div>
-  </div>
+  <%- include('partials/img-editor', { upUrl: '/' + biz.slug + '/admin/upload', z: 130 }) %>
+  <script>window.imgeContainerApplied = function () { if (typeof renderFotos === 'function') renderFotos('f'); };</script>
 
   <%- include('admin/panel-ajax') %>
   <%- include('admin/toast') %>
@@ -437,6 +419,22 @@
     .pf-step.done .pf-dot { background:var(--md-primary-container, #dbeafe); color:var(--md-on-primary-container, #1d4ed8); }
     .pf-lbl { font-size:10px; font-weight:700; color:#94a3b8; }
     .pf-step.on .pf-lbl { color:var(--md-primary, #2563eb); }
+    .pf-tipo-card { display:flex; align-items:center; gap:10px; text-align:left; padding:12px 14px; border-radius:14px; border:2px solid #e2e8f0; background:#fff; cursor:pointer; transition:all .18s ease; }
+    .pf-tipo-card:hover { border-color:#93c5fd; background:#f0f7ff; }
+    .pf-tipo-card.active { border-color:var(--md-primary, #2563eb); background:var(--md-primary-container, #dbeafe); box-shadow:0 2px 10px rgba(37,99,235,.15); }
+    .pf-tipo-ico { font-size:22px; line-height:1; }
+    .pf-tipo-tit { display:block; font-size:13px; font-weight:800; color:#1e293b; }
+    .pf-tipo-sub { display:block; font-size:10px; font-weight:600; color:#64748b; margin-top:1px; }
+    /* Tabs: Productos | Categorías | Atributos */
+    .prod-tabs { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; background:var(--ap-card); border:1px solid var(--ap-border); padding:6px; border-radius:var(--ap-radius); box-shadow:var(--ap-shadow); }
+    .prod-tab { display:inline-flex; align-items:center; gap:8px; padding:8px 14px; border-radius:12px; font-size:12px; font-weight:800; color:var(--ap-text-sec); background:transparent; border:none; cursor:pointer; transition:all .18s ease; }
+    .prod-tab:hover { background:rgba(26,60,94,.06); color:var(--ap-text); }
+    .prod-tab.active { background:var(--ap-accent); color:#fff; box-shadow:0 4px 10px rgba(26,60,94,.25); }
+    .prod-tab .cnt { background:rgba(100,116,139,.14); color:var(--ap-text-sec); font-size:10px; font-weight:900; padding:1px 7px; border-radius:999px; }
+    .prod-tab.active .cnt { background:rgba(255,255,255,.22); color:#fff; }
+    .prod-tab-panel { display:none; }
+    .prod-tab-panel.active { display:block; animation:prodFade .25s ease; }
+    @keyframes prodFade { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
     #prod-loading { display:none; }
     .bg-checker { background-image: linear-gradient(45deg,#eef1f6 25%,transparent 25%),linear-gradient(-45deg,#eef1f6 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#eef1f6 75%),linear-gradient(-45deg,transparent 75%,#eef1f6 75%); background-size:16px 16px; background-position:0 0,0 8px,8px -8px,-8px 0; }
     .img-aspect { font-size:10px; font-weight:700; padding:4px 8px; border-radius:999px; border:1px solid #e2e8f0; color:#64748b; }
@@ -446,6 +444,26 @@
   <script>
     var CURRENCY_SYMBOL = '<%= typeof currencySymbol !== "undefined" && currencySymbol ? currencySymbol : "$" %>';
     function money(n) { return CURRENCY_SYMBOL + (Number(n || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')); }
+
+    // Tabs: Productos | Categorías | Atributos
+    function switchCrudTab(name) {
+      ['productos', 'categorias', 'atributos'].forEach(function (n) {
+        var b = document.getElementById('tabbtn-' + n);
+        if (b) b.classList.toggle('active', n === name);
+        var p = document.getElementById('tabpane-' + n);
+        if (p) p.classList.toggle('active', n === name);
+      });
+      if (name === 'categorias') renderCatList();
+      if (name === 'atributos') renderAttrCatalog();
+    }
+
+    function irNuevoProducto(e) {
+      if (e && e.preventDefault) e.preventDefault();
+      switchCrudTab('productos');
+      var w = document.getElementById('nuevo-producto');
+      if (w) setTimeout(function () { w.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 60);
+      return false;
+    }
 
     // ====== Componente de variantes (atributos + combinaciones con foto) ======
     function initVariantes(pref, valor) {
@@ -506,8 +524,7 @@
           row.className = 'rounded-xl border border-slate-200 p-2.5';
           row.innerHTML =
             '<div class="flex items-center gap-2 mb-2">' +
-              '<input type="text" value="' + esc(attr.name) + '" placeholder="Nombre del atributo (ej: Talla)" class="var-attr-name flex-1 text-xs font-bold bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-blue-400">' +
-              '<button type="button" class="var-attr-save text-[11px] font-bold text-emerald-600 hover:bg-emerald-50 rounded-md px-1.5 py-0.5 shrink-0" title="Guardar en tus atributos para reutilizarlo en otros productos">💾</button>' +
+              '<span class="var-attr-name flex-1 text-xs font-bold text-slate-700 truncate">' + (esc(attr.name) || '(atributo)') + '</span>' +
               '<button type="button" class="var-attr-del text-slate-400 hover:text-red-500 font-bold px-1.5 shrink-0" title="Quitar atributo">✕</button>' +
             '</div>' +
             '<div class="var-values flex flex-wrap gap-1.5 items-center">' +
@@ -525,8 +542,6 @@
               valuesWrap.insertBefore(chip, valInput);
             });
           }
-          row.querySelector('.var-attr-name').addEventListener('input', function () { attr.name = this.value.trim(); save(); });
-          row.querySelector('.var-attr-save').onclick = function () { guardarPlantillaAtributo(attr); };
           valInput.addEventListener('keydown', function (e) {
             if (e.key === 'Enter' || e.key === ',') {
               e.preventDefault();
@@ -551,9 +566,13 @@
         cbox.innerHTML = '';
         var cs = combos();
         if (!cs.length) return;
+        var m = document.createElement('p');
+        m.className = 'text-[11px] font-bold text-blue-600 bg-blue-50 border border-blue-100 rounded-lg px-2.5 py-1.5 mb-2';
+        m.textContent = 'Sigue siendo 1 producto: una descripción para todos, y cada variante con su propia foto, precio y stock. Los atributos crean ' + cs.length + ' variante' + (cs.length === 1 ? '' : 's') + '.';
+        cbox.appendChild(m);
         var t = document.createElement('p');
         t.className = 'text-xs font-bold text-slate-600 mb-2';
-        t.textContent = 'Fotos por combinación (opcional — si no pones foto se usa la del producto)';
+        t.textContent = 'Fotos por combinación (opcional — la primera con foto será la portada del producto)';
         cbox.appendChild(t);
         var grid = document.createElement('div');
         grid.className = 'grid grid-cols-3 sm:grid-cols-4 gap-2';
@@ -578,8 +597,8 @@
               '<input type="number" min="0" step="0.01" placeholder="Precio" value="' + esc(pr) + '" class="combo-price w-full text-[10px] border border-slate-200 rounded px-1 py-0.5 focus:outline-none focus:border-blue-400" title="Precio de esta combinación (vacío = usa el del producto)">' +
             '</div>' +
             '<div class="flex items-center gap-1 px-1 py-1 bg-slate-50 border-t border-slate-100">' +
-              '<span class="text-[9px] font-bold text-slate-400">Stock</span>' +
-              '<input type="number" min="0" placeholder="—" value="' + esc(st) + '" class="combo-stock w-full text-[10px] border border-slate-200 rounded px-1 py-0.5 focus:outline-none focus:border-blue-400" title="Stock de esta combinación (vacío = sin control)">' +
+              '<span class="text-[9px] font-bold text-slate-400">Stock*</span>' +
+              '<input type="number" min="0" placeholder="0" value="' + esc(st) + '" class="combo-stock w-full text-[10px] border border-slate-200 rounded px-1 py-0.5 focus:outline-none focus:border-blue-400" title="Stock obligatorio de esta variante (0 = agotada)">' +
             '</div>' +
             '<div class="flex items-center gap-1 px-1 py-1 bg-slate-50 border-t border-slate-100">' +
               '<span class="text-[9px] font-bold text-slate-400">SKU</span>' +
@@ -590,11 +609,28 @@
               '<input type="text" placeholder="—" value="' + esc(bc) + '" class="combo-barcode w-full text-[10px] border border-slate-200 rounded px-1 py-0.5 focus:outline-none focus:border-blue-400">' +
             '</div>';
           cell.querySelector('.aspect-square').onclick = function () { subirCombo(key); };
-          cell.querySelector('.combo-stock').addEventListener('input', function () {
-            var v = this.value;
-            if (v === '') delete model.stock[key]; else model.stock[key] = parseInt(v) || 0;
-            save();
-          });
+          var stInp = cell.querySelector('.combo-stock');
+          (function (inp) {
+            function syncSt() {
+              var missing = inp.value.trim() === '';
+              inp.style.borderColor = missing ? '#f87171' : '';
+              inp.style.boxShadow = missing ? '0 0 0 2px rgba(248,113,113,.15)' : '';
+              var tag = inp.parentNode.querySelector('.combo-stock-warn');
+              if (missing && !tag) {
+                tag = document.createElement('span');
+                tag.className = 'combo-stock-warn text-[8px] font-black text-red-500';
+                tag.textContent = '¡Falta stock!';
+                inp.parentNode.appendChild(tag);
+              } else if (!missing && tag) tag.remove();
+            }
+            inp.addEventListener('input', function () {
+              var v = this.value;
+              if (v === '') delete model.stock[key]; else model.stock[key] = parseInt(v) || 0;
+              save();
+              syncSt();
+            });
+            syncSt();
+          })(stInp);
           cell.querySelector('.combo-price').addEventListener('input', function () {
             var v = this.value;
             if (v === '') delete model.prices[key]; else model.prices[key] = parseFloat(v) || 0;
@@ -625,17 +661,6 @@
           model.attrs.forEach(function (a, i) { if ((a.name || '').toLowerCase() === String(name).toLowerCase()) idx = i; });
           if (idx >= 0) { model.attrs.splice(idx, 1); }
           else { model.attrs.push({ name: String(name || '').trim(), values: (values || []).slice() }); }
-          render(); save(); renderTplPills(pref);
-        },
-        addAttr: function (name, values) {
-          var idx = -1;
-          model.attrs.forEach(function (a, i) { if ((a.name || '').toLowerCase() === String(name).toLowerCase()) idx = i; });
-          if (idx >= 0) { mostrarToast('"' + name + '" ya está en este producto', 'info'); return; }
-          model.attrs.push({ name: String(name || '').trim(), values: (values || []).slice() });
-          render(); save(); renderTplPills(pref);
-        },
-        addNewAttr: function () {
-          model.attrs.push({ name: '', values: [] });
           render(); save(); renderTplPills(pref);
         }
       };
@@ -819,35 +844,73 @@
     var PF_STEPS = [
       { n: 1, t: 'Información' },
       { n: 2, t: 'Fotos' },
-      { n: 3, t: 'Atributos' },
+      { n: 3, t: 'Variantes' },
       { n: 4, t: 'Guardar' }
     ];
     var pfStep = 1;
     var pfMode = 'crear';
+    var pfTipo = 'unico';
 
     function setVal(id, v) { var el = document.getElementById(id); if (el) el.value = v; }
+
+    function setTipo(t) {
+      pfTipo = t;
+      setVal('f-tipo', t);
+      document.querySelectorAll('#f-tipo-cards .pf-tipo-card').forEach(function (b) {
+        b.classList.toggle('active', b.getAttribute('data-tipo') === t);
+      });
+      if (t === 'unico') {
+        var ed = window.VAR_EDITORS && window.VAR_EDITORS.f;
+        if (ed && ed.model && ed.model.attrs.length) {
+          var hayValores = ed.model.attrs.some(function (a) { return (a.values || []).length; });
+          if (hayValores && !window.confirm('Si eliges "Producto único" se quitarán los atributos ya seleccionados. ¿Continuar?')) {
+            pfTipo = 'variantes';
+            setVal('f-tipo', 'variantes');
+            document.querySelectorAll('#f-tipo-cards .pf-tipo-card').forEach(function (b) { b.classList.toggle('active', b.getAttribute('data-tipo') === 'variantes'); });
+            return;
+          }
+          ed.model.attrs = [];
+          ed.model.stock = {}; ed.model.prices = {}; ed.model.images = {}; ed.model.skus = {}; ed.model.barcodes = {};
+          if (typeof ed.save === 'function') ed.save();
+          if (typeof ed.render === 'function') ed.render();
+        }
+      }
+      if (pfStep === 3 && t === 'unico') goStep(2);
+      else if (pfStep === 2 && t === 'variantes') goStep(3);
+      else {
+        renderSteps();
+        if (pfStep === PF_STEPS.length) renderResumen();
+      }
+      syncStockField();
+    }
 
     function renderSteps() {
       var box = document.getElementById('pf-steps');
       if (!box) return;
       box.innerHTML = '';
-      PF_STEPS.forEach(function (s) {
+      var vis = PF_STEPS.filter(function (s) { return !(pfTipo === 'unico' && s.n === 3) && !(pfTipo === 'variantes' && s.n === 2); });
+      var idx = 0;
+      vis.forEach(function (s, i) { if (s.n === pfStep) idx = i; });
+      vis.forEach(function (s, i) {
         var el = document.createElement('div');
-        el.className = 'pf-step' + (s.n === pfStep ? ' on' : (s.n < pfStep ? ' done' : ''));
-        el.innerHTML = '<div class="pf-dot">' + (s.n < pfStep ? '✓' : s.n) + '</div><div class="pf-lbl">' + s.t + '</div>';
+        el.className = 'pf-step' + (s.n === pfStep ? ' on' : (i < idx ? ' done' : ''));
+        el.innerHTML = '<div class="pf-dot">' + (i < idx ? '✓' : (i + 1)) + '</div><div class="pf-lbl">' + s.t + '</div>';
         el.onclick = function () { goStep(Number(s.n)); };
         box.appendChild(el);
       });
       var bar = document.getElementById('pf-bar');
-      if (bar) bar.style.width = (((pfStep - 1) / (PF_STEPS.length - 1)) * 100) + '%';
-      document.getElementById('pf-back').classList.toggle('hidden', pfStep === 1);
-      document.getElementById('pf-next').classList.toggle('hidden', pfStep === PF_STEPS.length);
-      document.getElementById('pf-save').classList.toggle('hidden', pfStep !== PF_STEPS.length);
+      if (bar) bar.style.width = (idx / (vis.length - 1) * 100) + '%';
+      var first = vis[0].n, last = vis[vis.length - 1].n;
+      document.getElementById('pf-back').classList.toggle('hidden', pfStep === first);
+      document.getElementById('pf-next').classList.toggle('hidden', pfStep === last);
+      document.getElementById('pf-save').classList.toggle('hidden', pfStep !== last);
     }
 
     function goStep(n) {
       if (n < 1) n = 1;
       if (n > PF_STEPS.length) n = PF_STEPS.length;
+      if (pfTipo === 'unico' && n === 3) n = n < pfStep ? 2 : 4;
+      if (pfTipo === 'variantes' && n === 2) n = n < pfStep ? 1 : 3;
       if (n > 1 && !validarPaso1()) { n = 1; }
       pfStep = n;
       document.querySelectorAll('#nuevo-producto [data-step-pane]').forEach(function (p) {
@@ -932,10 +995,8 @@
       var note = document.getElementById('f-stock-note');
       var input = document.getElementById('f-stock');
       var label = document.getElementById('f-stock-label');
-      var ed = window.VAR_EDITORS && window.VAR_EDITORS.f;
-      var hasVars = !!(ed && ed.model.attrs.length);
       if (!wrap) return;
-      if (hasVars) {
+      if (pfTipo === 'variantes') {
         input.value = '';
         input.classList.add('hidden');
         if (label) label.classList.add('hidden');
@@ -962,9 +1023,13 @@
       var promo = document.getElementById('f-promo').value;
       var featured = document.getElementById('f-featured').checked;
       var fotoEls = document.querySelectorAll('#f-fotos [data-url]');
-      var portada = fotoEls.length ? fotoEls[0].getAttribute('data-url') : '/img/sin-imagen.svg';
       var ed = window.VAR_EDITORS && window.VAR_EDITORS.f;
       var attrs = (ed && ed.model.attrs) || [];
+      var portada = fotoEls.length ? fotoEls[0].getAttribute('data-url') : '/img/sin-imagen.svg';
+      if (!fotoEls.length && attrs.length && ed && ed.model.images) {
+        var imgsR = Object.keys(ed.model.images).map(function (k) { return ed.model.images[k]; }).filter(Boolean);
+        if (imgsR.length) portada = imgsR[0];
+      }
 
       var titulo = pfMode === 'editar' ? '✏️ Editando producto' : pfMode === 'duplicar' ? '📄 Duplicando producto' : '🛒 Producto listo para guardar';
 
@@ -994,7 +1059,23 @@
         });
         var nCombos = 1;
         attrs.forEach(function (a) { nCombos *= (a.values && a.values.length) || 1; });
-        h += '<div class="mt-2 text-xs text-slate-500 font-bold">' + nCombos + ' combinación' + (nCombos === 1 ? '' : 'es') + ' posibles</div>';
+        h += '<div class="mt-2 text-xs text-slate-500 font-bold">1 producto · ' + nCombos + ' variante' + (nCombos === 1 ? '' : 's') + ' (misma descripción; cada variante con su propia foto, precio y stock)</div>';
+        var stok = (ed && ed.model && ed.model.stock) || {};
+        var stockVals = [];
+        var totalStock = 0, sinStock = 0;
+        (function walk(i, prefix) {
+          if (i === attrs.length) {
+            var k = prefix.join('|');
+            var s = stok[k];
+            if (s === undefined || s === '') sinStock++;
+            else { stockVals.push(Number(s)); totalStock += Number(s); }
+            return;
+          }
+          var vals = (attrs[i].values && attrs[i].values.length) ? attrs[i].values : [''];
+          vals.forEach(function (v) { walk(i + 1, prefix.concat([v])); });
+        })(0, []);
+        if (stockVals.length) h += '<div class="text-xs text-slate-500 mt-0.5">Stock por variante: <b class="text-slate-700">' + stockVals.join(', ') + '</b> · Total <b class="text-slate-700">' + totalStock + '</b></div>';
+        if (sinStock) h += '<div class="text-xs font-bold text-amber-600 mt-1">⚠ ' + sinStock + ' variante' + (sinStock === 1 ? '' : 's') + ' sin stock definido — revísalo en el paso 2 (Variantes)</div>';
         var thumbs = [];
         Object.keys(ed.model.images || {}).forEach(function (k) { if (ed.model.images[k]) thumbs.push(ed.model.images[k]); });
         if (thumbs.length) {
@@ -1037,6 +1118,8 @@
       onPromoTypeChange();
       initVariantes('f', decodeURIComponent(card.getAttribute('data-edit-variants') || ''));
       initFotos('f', card.getAttribute('data-edit-image'), card.getAttribute('data-edit-galeria'));
+      var edTipo = window.VAR_EDITORS && window.VAR_EDITORS.f;
+      setTipo((edTipo && edTipo.model && edTipo.model.attrs.length) ? 'variantes' : 'unico');
     }
 
     function editarProducto(card) {
@@ -1073,6 +1156,7 @@
       document.getElementById('f-fotos').innerHTML = '';
       setVal('f-image', ''); setVal('f-galeria', '');
       initVariantes('f', '');
+      setTipo('unico');
       document.getElementById('f-installments').checked = false;
       toggleInstallmentFields();
       onPromoTypeChange();
@@ -1096,6 +1180,36 @@
     function initStepper() {
       document.getElementById('pf-next').onclick = function () { goStep(pfStep + 1); };
       document.getElementById('pf-back').onclick = function () { goStep(pfStep - 1); };
+      document.getElementById('pf-form').addEventListener('submit', function (e) {
+        if (pfTipo !== 'variantes') return;
+        var ed = window.VAR_EDITORS && window.VAR_EDITORS.f;
+        var faltan = [];
+        if (ed && ed.model && ed.model.attrs.length) {
+          (function walk(i, prefix) {
+            if (i === ed.model.attrs.length) {
+              var k = prefix.join('|');
+              var s = ed.model.stock && ed.model.stock[k];
+              if (s === undefined || s === '') faltan.push(prefix.join(' / ') || '(variante)');
+              return;
+            }
+            var vals = (ed.model.attrs[i].values && ed.model.attrs[i].values.length) ? ed.model.attrs[i].values : [''];
+            vals.forEach(function (v) { walk(i + 1, prefix.concat([v])); });
+          })(0, []);
+        }
+        if (faltan.length) {
+          e.preventDefault();
+          e.stopPropagation();
+          if (window.mostrarToast) window.mostrarToast('⚠ Falta stock en ' + faltan.slice(0, 3).join(', ') + (faltan.length > 3 ? ' y ' + (faltan.length - 3) + ' más' : '') + ' — complétalo en el paso 2 (Variantes)', 'error');
+          goStep(3);
+        }
+        // Portada automática: si no se subieron fotos de producto, la portada es la primera foto de variante.
+        var ed0 = window.VAR_EDITORS && window.VAR_EDITORS.f;
+        var fotoEls0 = document.querySelectorAll('#f-fotos [data-url]');
+        if (!fotoEls0.length && ed0 && ed0.model && ed0.model.images) {
+          var imgs0 = Object.keys(ed0.model.images).map(function (k) { return ed0.model.images[k]; }).filter(Boolean);
+          if (imgs0.length) setVal('f-image', imgs0[0]);
+        }
+      });
       renderSteps();
     }
 
@@ -1131,6 +1245,7 @@
         setVal('f-promo-type', fd.promo_type || '');
         setVal('f-promo-value', fd.promo_value || '');
         setVal('f-promo-gift', fd.promo_gift || '');
+        setVal('f-promo', fd.promo_ends_at || '');
         document.getElementById('f-featured').checked = fd.featured === '1' || fd.featured === 1;
         document.getElementById('f-installments').checked = fd.allow_installments === '1' || fd.allow_installments === 1;
         setVal('f-inst-count', fd.installment_count || '6');
@@ -1138,6 +1253,12 @@
         setVal('f-inst-freq', fd.installment_frequency || 'semanal');
         toggleInstallmentFields();
         onPromoTypeChange();
+        // Restaurar tipo de producto y variantes (si el usuario iba con variantes, no perderlas)
+        initVariantes('f', fd.variants || '');
+        var edFd = window.VAR_EDITORS && window.VAR_EDITORS.f;
+        if (edFd && typeof edFd.save === 'function') edFd.save();
+        var tipoFd = fd.tipo === 'variantes' ? 'variantes' : 'unico';
+        setTipo(tipoFd);
         setVal('f-image', fd.image || '');
         setVal('f-galeria', fd.galeria || '');
         initFotos('f', fd.image || '', fd.galeria || '');
@@ -1179,36 +1300,20 @@
         cont.appendChild(b);
       });
 
-      var nuevo = document.createElement('button');
-      nuevo.type = 'button';
-      nuevo.className = 'inline-flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-full border border-dashed border-slate-300 text-slate-500 hover:border-blue-400 hover:text-blue-600 transition';
-      nuevo.textContent = '＋ Crear atributo nuevo';
-      nuevo.onclick = function () {
-        if (!ed) return;
-        ed.addNewAttr();
-        renderTplPills(pref);
-      };
-      cont.appendChild(nuevo);
-
       var empty = document.getElementById(pref + '-tpl-empty');
-      if (empty) empty.textContent = list.length ? '' : 'Aún no tienes atributos guardados. Crea el primero en la tarjeta "Mis atributos" (abajo) o con "＋ Crear atributo nuevo".';
-    }
-
-    function guardarPlantillaAtributo(attr) {
-      if (!attr.name.trim()) { mostrarToast('Ponle un nombre al atributo primero', 'error'); return; }
-      if (!attr.values.length) { mostrarToast('Agrega al menos un valor (ej: XS, M, L)', 'error'); return; }
-      fetch('/<%= biz.slug %>/admin/atributo/guardar', {
-        method: 'POST',
-        body: new URLSearchParams({ name: attr.name, values: JSON.stringify(attr.values) }),
-        headers: { 'x-csrf-token': (window.__csrfValue && window.__csrfValue()) || '' }
-      }).then(function (r) { return r.json(); }).then(function (d) {
-        if (d.ok) {
-          upsertLocalTemplate(d);
-          mostrarToast(d.updated ? 'Atributo actualizado ✓' : 'Atributo guardado ✓', 'ok');
-        } else {
-          mostrarToast(d.error || 'No se pudo guardar', 'error');
+      if (empty) {
+        empty.innerHTML = '';
+        if (!list.length) {
+          empty.textContent = 'Aún no tienes atributos guardados. Créalos en la pestaña ';
+          var go = document.createElement('button');
+          go.type = 'button';
+          go.className = 'font-bold text-blue-600 hover:underline';
+          go.textContent = 'Atributos';
+          go.onclick = function () { switchCrudTab('atributos'); };
+          empty.appendChild(go);
+          empty.appendChild(document.createTextNode('.'));
         }
-      }).catch(function () { mostrarToast('Error de red', 'error'); });
+      }
     }
 
     function agregarAtributo() {
@@ -1262,6 +1367,8 @@
       var box = document.getElementById('attr-list');
       var count = document.getElementById('attr-count');
       if (count) count.textContent = String(list.length);
+      var tc = document.getElementById('tabcnt-atributos');
+      if (tc) tc.textContent = String(list.length);
       if (!box) return;
       box.innerHTML = '';
       if (!list.length) {
@@ -1274,16 +1381,6 @@
         var info = document.createElement('span');
         info.className = 'text-xs';
         info.innerHTML = '<b class="text-slate-700">' + escHTML(t.name) + '</b> <span class="text-slate-300">·</span> <span class="text-slate-500">' + t.values.map(escHTML).join(', ') + '</span>';
-        var usar = document.createElement('button');
-        usar.type = 'button';
-        usar.className = 'text-[11px] font-bold text-blue-600 hover:bg-blue-50 rounded-full px-2 py-0.5 transition';
-        usar.title = 'Usar en el producto que estás creando';
-        usar.textContent = '＋ usar';
-        usar.onclick = function () {
-          var ed = window.VAR_EDITORS && window.VAR_EDITORS.f;
-          if (!ed) return;
-          ed.addAttr(t.name, t.values);
-        };
         var editar = document.createElement('button');
         editar.type = 'button';
         editar.className = 'text-slate-400 hover:text-blue-500 font-bold px-0.5';
@@ -1296,32 +1393,9 @@
         del.title = 'Eliminar atributo';
         del.textContent = '✕';
         del.onclick = function () { eliminarAtributo(t.id); };
-        chip.appendChild(info); chip.appendChild(usar); chip.appendChild(editar); chip.appendChild(del);
+        chip.appendChild(info); chip.appendChild(editar); chip.appendChild(del);
         box.appendChild(chip);
       });
-    }
-
-    function mostrarNuevaCategoria() { document.getElementById('cat-new-box').classList.remove('hidden'); var i = document.getElementById('cat-new-input'); if (i) i.focus(); }
-    function crearCategoriaInline() {
-      var inp = document.getElementById('cat-new-input');
-      var name = (inp.value || '').trim();
-      if (!name) { mostrarToast('Escribe el nombre de la categoría', 'error'); return; }
-      fetch('/<%= biz.slug %>/admin/categoria', {
-        method: 'POST',
-        body: new URLSearchParams({ name: name }),
-        headers: { 'x-csrf-token': (window.__csrfValue && window.__csrfValue()) || '' }
-      }).then(function (r) { return r.json(); }).then(function (d) {
-        if (d.ok) {
-          window.ATTR_CATEGORIES = (window.ATTR_CATEGORIES || []).concat([d]);
-          repopulateCatSelects();
-          var sel = document.getElementById('f-cat');
-          if (sel) sel.value = String(d.id);
-          inp.value = '';
-          document.getElementById('cat-new-box').classList.add('hidden');
-          renderCatList();
-          mostrarToast('Categoría creada ✓', 'ok');
-        } else { mostrarToast(d.error || 'No se pudo crear', 'error'); }
-      }).catch(function () { mostrarToast('Error de red', 'error'); });
     }
 
     function agregarCategoria() {
@@ -1362,6 +1436,10 @@
       var list = window.ATTR_CATEGORIES || [];
       var box = document.getElementById('cat-list');
       if (!box) return;
+      var cnt = document.getElementById('tabcnt-categorias');
+      if (cnt) cnt.textContent = String(list.length);
+      var hdr = document.getElementById('cat-count');
+      if (hdr) hdr.textContent = String(list.length);
       box.innerHTML = '';
       if (!list.length) { box.innerHTML = '<p class="text-xs text-slate-400">Sin categorías. Crea la primera arriba.</p>'; return; }
       list.forEach(function (c) {
@@ -1390,7 +1468,10 @@
 
     function repopulateCatSelects() {
       var opts = '<option value="">Sin categoría</option>';
-      (window.ATTR_CATEGORIES || []).forEach(function (c) { opts += '<option value="' + c.id + '">' + escHTML(c.name) + '</option>'; });
+      var list = window.ATTR_CATEGORIES || [];
+      list.forEach(function (c) { opts += '<option value="' + c.id + '">' + escHTML(c.name) + '</option>'; });
+      var hint = document.getElementById('f-cat-hint');
+      if (hint) hint.classList.toggle('hidden', list.length > 0);
       ['f-cat'].forEach(function (id) {
         var sel = document.getElementById(id);
         if (!sel) return;
@@ -1475,181 +1556,7 @@
       };
     }
 
-    // ====== Editor de imagen (zoom / ajustar / expandir / recortar / rotar) ======
-    var imgEditor = { img: null, mode: 'cover', zoom: 1, panX: 0, panY: 0, target: null, baseScale: 1, rotation: 0, flip: false, aspect: '1:1' };
 
-    function imgOutSize() {
-      switch (imgEditor.aspect) {
-        case '4:3': return { W: 800, H: 600 };
-        case '16:9': return { W: 800, H: 450 };
-        case '3:4': return { W: 600, H: 800 };
-        default: return { W: 800, H: 800 };
-      }
-    }
-    function imgEff() {
-      var img = imgEditor.img;
-      var rotated = imgEditor.rotation % 180 !== 0;
-      return { iw: rotated ? img.height : img.width, ih: rotated ? img.width : img.height };
-    }
-
-    function abrirEditorImagen(container) {
-      var url = container.getAttribute('data-url');
-      if (!url) return;
-      imgEditor.target = container;
-      var img = new Image();
-      img.onload = function () {
-        imgEditor.img = img;
-        imgEditor.zoom = 1; imgEditor.panX = 0; imgEditor.panY = 0;
-        imgEditor.mode = 'cover'; imgEditor.rotation = 0; imgEditor.flip = false; imgEditor.aspect = '1:1';
-        document.getElementById('img-zoom').value = 1;
-        document.querySelectorAll('.img-aspect').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-a') === '1:1'); });
-        document.getElementById('img-editor').classList.remove('hidden');
-        document.body.style.overflow = 'hidden';
-        imgModo('cover');
-      };
-      img.onerror = function () { mostrarToast('No se pudo cargar la imagen', 'error'); };
-      img.src = url;
-    }
-    function imgRecalc() {
-      var img = imgEditor.img; if (!img) return;
-      var sz = imgOutSize();
-      var eff = imgEff();
-      var s;
-      if (imgEditor.mode === 'contain') { s = Math.min(sz.W / eff.iw, sz.H / eff.ih); document.getElementById('img-zoom').disabled = true; }
-      else { s = Math.max(sz.W / eff.iw, sz.H / eff.ih); document.getElementById('img-zoom').disabled = false; }
-      imgEditor.baseScale = s;
-      imgEditor.panX = 0; imgEditor.panY = 0;
-      imgDraw();
-    }
-    function imgModo(m) {
-      imgEditor.mode = m;
-      var fit = document.getElementById('img-btn-fit');
-      var cover = document.getElementById('img-btn-cover');
-      if (fit) fit.className = 'text-xs font-bold px-3 py-1.5 rounded-full border ' + (m === 'contain' ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-slate-200 text-slate-600 hover:bg-slate-50');
-      if (cover) cover.className = 'text-xs font-bold px-3 py-1.5 rounded-full border ' + (m === 'cover' ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-slate-200 text-slate-600 hover:bg-slate-50');
-      imgEditor.zoom = 1;
-      document.getElementById('img-zoom').value = 1;
-      imgRecalc();
-    }
-    function imgAspect(a) {
-      imgEditor.aspect = a;
-      document.querySelectorAll('.img-aspect').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-a') === a); });
-      imgEditor.zoom = 1;
-      document.getElementById('img-zoom').value = 1;
-      imgRecalc();
-    }
-    function imgRotar() {
-      imgEditor.rotation = (imgEditor.rotation + 90) % 360;
-      imgRecalc();
-    }
-    function imgEspejo() {
-      imgEditor.flip = !imgEditor.flip;
-      imgDraw();
-    }
-    function imgReset() {
-      imgEditor.rotation = 0; imgEditor.flip = false; imgEditor.aspect = '1:1';
-      document.querySelectorAll('.img-aspect').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-a') === '1:1'); });
-      imgEditor.mode = 'cover';
-      imgModo('cover');
-    }
-    function imgZoomChange(v) {
-      imgEditor.zoom = parseFloat(v);
-      imgClamp();
-      imgDraw();
-    }
-    function imgDraw() {
-      var canvas = document.getElementById('img-editor-canvas');
-      var img = imgEditor.img;
-      if (!canvas || !img) return;
-      var sz = imgOutSize();
-      if (canvas.width !== sz.W) canvas.width = sz.W;
-      if (canvas.height !== sz.H) canvas.height = sz.H;
-      var ctx = canvas.getContext('2d');
-      var eff = imgEff();
-      var scale = imgEditor.baseScale * imgEditor.zoom;
-      ctx.clearRect(0, 0, sz.W, sz.H);
-      ctx.fillStyle = '#fff';
-      ctx.fillRect(0, 0, sz.W, sz.H);
-      ctx.save();
-      ctx.translate(sz.W / 2, sz.H / 2);
-      if (imgEditor.flip) ctx.scale(-1, 1);
-      if (imgEditor.rotation) ctx.rotate(imgEditor.rotation * Math.PI / 180);
-      ctx.drawImage(img, imgEditor.panX - (eff.iw * scale) / 2, imgEditor.panY - (eff.ih * scale) / 2, eff.iw * scale, eff.ih * scale);
-      ctx.restore();
-    }
-    function imgClamp() {
-      var img = imgEditor.img; if (!img) return;
-      if (imgEditor.mode !== 'cover') { imgEditor.panX = 0; imgEditor.panY = 0; return; }
-      var sz = imgOutSize();
-      var eff = imgEff();
-      var scale = imgEditor.baseScale * imgEditor.zoom;
-      var w = eff.iw * scale, h = eff.ih * scale;
-      var maxX = Math.max(0, (w - sz.W) / 2);
-      var maxY = Math.max(0, (h - sz.H) / 2);
-      imgEditor.panX = Math.min(maxX, Math.max(-maxX, imgEditor.panX));
-      imgEditor.panY = Math.min(maxY, Math.max(-maxY, imgEditor.panY));
-    }
-    function imgInitDrag() {
-      var wrap = document.getElementById('img-editor-wrap');
-      if (!wrap) return;
-      var dragging = false, sx = 0, sy = 0, sox = 0, soy = 0;
-      function start(e) {
-        if (imgEditor.mode !== 'cover') return;
-        dragging = true;
-        var p = e.touches && e.touches.length ? e.touches[0] : e;
-        sx = p.clientX; sy = p.clientY;
-        sox = imgEditor.panX; soy = imgEditor.panY;
-        e.preventDefault();
-      }
-      function move(e) {
-        if (!dragging) return;
-        var p = e.touches && e.touches.length ? e.touches[0] : e;
-        var sz = imgOutSize();
-        var rect = wrap.getBoundingClientRect();
-        var kx = sz.W / rect.width;
-        var ky = sz.H / rect.height;
-        imgEditor.panX = sox + (p.clientX - sx) * kx;
-        imgEditor.panY = soy + (p.clientY - sy) * ky;
-        imgClamp();
-        imgDraw();
-      }
-      function end() { dragging = false; }
-      wrap.addEventListener('mousedown', start);
-      window.addEventListener('mousemove', move);
-      window.addEventListener('mouseup', end);
-      wrap.addEventListener('touchstart', start, { passive: false });
-      window.addEventListener('touchmove', move, { passive: false });
-      window.addEventListener('touchend', end);
-    }
-    function aplicarEditorImagen() {
-      var canvas = document.getElementById('img-editor-canvas');
-      if (!canvas || !imgEditor.img) return;
-      canvas.toBlob(function (blob) {
-        if (!blob) { mostrarToast('No se pudo procesar la imagen', 'error'); return; }
-        var fd = new FormData();
-        fd.append('foto', blob, 'editada.png');
-        var tok = (window.__csrfValue && window.__csrfValue()) || '';
-        if (tok) fd.append('_csrf', tok);
-        fetch('/<%= biz.slug %>/admin/upload', { method: 'POST', body: fd, headers: tok ? { 'x-csrf-token': tok } : {} })
-          .then(function (r) { return r.json(); })
-          .then(function (d) {
-            if (d.url && imgEditor.target) {
-              imgEditor.target.setAttribute('data-url', d.url);
-              var im = imgEditor.target.querySelector('img');
-              if (im) im.src = d.url;
-              renderFotos('f');
-              mostrarToast('Imagen aplicada ✓', 'ok');
-            } else { mostrarToast('No se pudo guardar la imagen', 'error'); }
-            cerrarEditorImagen();
-          })
-          .catch(function () { mostrarToast('Error al guardar la imagen', 'error'); cerrarEditorImagen(); });
-      }, 'image/png');
-    }
-    function cerrarEditorImagen() {
-      document.getElementById('img-editor').classList.add('hidden');
-      document.body.style.overflow = '';
-    }
-    imgInitDrag();
 
   </script>
 </body>

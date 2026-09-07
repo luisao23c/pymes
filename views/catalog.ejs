@@ -3,4 +3,4 @@
   const ctorTemplates = ['fotografia'];
   const tpl = 'constructor';
 %>
-<%- include('templates/' + tpl, { biz, categories, products, estilo, components, pages, theme: typeof theme !== 'undefined' ? theme : null, editMode: typeof editMode !== 'undefined' ? editMode : undefined, mascaraCss: typeof mascaraCss !== 'undefined' ? mascaraCss : '', mascaraConfig: typeof mascaraConfig !== 'undefined' ? mascaraConfig : null, adsEnabled: typeof adsEnabled !== 'undefined' ? adsEnabled : false, sponsoredAds: typeof sponsoredAds !== 'undefined' ? sponsoredAds : [] }) %>
+<%- include('templates/' + tpl, { biz, categories, products, estilo, components, pages, theme: typeof theme !== 'undefined' ? theme : null, editMode: typeof editMode !== 'undefined' ? editMode : undefined, mascaraCss: typeof mascaraCss !== 'undefined' ? mascaraCss : '', mascaraConfig: typeof mascaraConfig !== 'undefined' ? mascaraConfig : null, adsEnabled: typeof adsEnabled !== 'undefined' ? adsEnabled : false, sponsoredAds: typeof sponsoredAds !== 'undefined' ? sponsoredAds : [], adminLink: typeof adminLink !== 'undefined' ? adminLink : null }) %>

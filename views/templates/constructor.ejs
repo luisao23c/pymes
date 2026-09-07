@@ -24,6 +24,10 @@
   try { _gallery = JSON.parse(biz.galeria || '[]'); } catch(e) {}
   var _redes = {};
   try { _redes = JSON.parse(biz.redes || '{}'); } catch(e) {}
+  var _faq = [];
+  try { var _fq = JSON.parse(biz.faq || '[]'); if (Array.isArray(_fq)) _faq = _fq.filter(function(x){ return x && (x.q || '').toString().trim() && (x.a || '').toString().trim(); }); } catch(e) {}
+  var _address = biz.address || '';
+  var _addressEnc = encodeURIComponent(_address);
   var _gridCols = biz.grid_cols || 3;
 
   // Build horario display string
@@ -118,6 +122,15 @@
     .hero-status { display:inline-flex; align-items:center; gap:5px; margin-top:10px; padding:5px 14px; border-radius:999px; font-size:11px; font-weight:600; background:var(--bg-card); border:1px solid var(--border); animation:heroTextIn .8s .35s cubic-bezier(.22,1,.36,1) both; }
     .hero-status.open { color:#16a34a; }
     .hero-status.closed { color:var(--text-secondary); }
+    /* Con banner: el banner manda en grande; el logo queda como insignia pequeña y el texto siempre legible */
+    .hero.has-banner .hero-overlay { background:linear-gradient(180deg, rgba(10,10,14,.18) 0%, rgba(10,10,14,.60) 62%, rgba(10,10,14,.80) 100%); }
+    .hero.has-banner .hero-logo { width:64px; height:64px; border:3px solid rgba(255,255,255,.92); box-shadow:0 6px 20px rgba(0,0,0,.35); }
+    .hero.has-banner .hero-name { color:#fff; text-shadow:0 2px 14px rgba(0,0,0,.5); }
+    .hero.has-banner .hero-name span { color:#ffd77a; }
+    .hero.has-banner .hero-desc { color:rgba(255,255,255,.92); text-shadow:0 1px 8px rgba(0,0,0,.45); }
+    .hero.has-banner .hero-status { background:rgba(255,255,255,.14); border-color:rgba(255,255,255,.4); color:#fff; backdrop-filter:blur(6px); }
+    .hero.has-banner .hero-status.open { color:#7ef0a4; }
+    .hero.has-banner .hero-status.closed { color:rgba(255,255,255,.88); }
     @keyframes heroLogoIn {
       0% { opacity:0; transform:scale(.7) translateY(20px); }
       100% { opacity:1; transform:scale(1) translateY(0); }
@@ -154,7 +167,7 @@
       box-shadow:var(--shadow);
       transform:translateY(-1px);
     }
-    .hdr-cart:active { transform:scale(0.97); }
+    .hdr-cart:active { transform:scale(.94); background:var(--accent-light); color:#fff; border-color:var(--accent); }
     .hdr-cart-count { display:none; position:absolute; top:-5px; right:-5px; background:var(--accent); color:#fff; font-size:10px; font-weight:800; min-width:18px; height:18px; border-radius:99px; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(26,60,94,.25); }
     .wa-pill {
       display:inline-flex;
@@ -175,6 +188,25 @@
       box-shadow:0 8px 24px rgba(37,211,102,.3);
     }
     .wa-pill:active { transform:scale(0.97); }
+    .admin-pill {
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      background:var(--accent);
+      color:#fff;
+      padding:8px 16px;
+      border-radius:12px;
+      font-weight:700;
+      font-size:13px;
+      text-decoration:none;
+      box-shadow:0 4px 14px rgba(26,60,94,.18);
+      transition:all .25s cubic-bezier(0.4,0,0.2,1);
+    }
+    .admin-pill:hover {
+      transform:translateY(-2px) scale(1.02);
+      box-shadow:0 8px 22px rgba(26,60,94,.28);
+    }
+    .admin-pill:active { transform:scale(0.97); }
 
     /* ===== OFERTAS SLIDER ===== */
     .ofertas-section { margin:20px 0 6px; position:relative; }
@@ -375,6 +407,21 @@
     .prod-prices { display:flex; align-items:baseline; gap:8px; margin-bottom:12px; margin-top:auto; }
     .prod-price { font-family:'Playfair Display',serif; font-size:1.1rem; font-weight:700; color:var(--accent); }
     .prod-old { font-size:12px; color:var(--text-secondary); text-decoration:line-through; opacity:.5; }
+    .prod-promo-strip {
+      display:flex;
+      align-items:center;
+      gap:5px;
+      margin-top:6px;
+      padding:5px 8px;
+      border-radius:7px;
+      font-size:11px;
+      font-weight:700;
+      background:linear-gradient(135deg,rgba(239,68,68,.12),rgba(255,87,34,.14));
+      color:#dc2626;
+      border:1px dashed rgba(239,68,68,.35);
+      line-height:1.3;
+    }
+    .prod-promo-strip i { font-size:11px; }
     .prod-btn {
       display:flex;
       align-items:center;
@@ -565,7 +612,9 @@
     .filter-range.active { background:var(--accent); color:#fff; border-color:var(--accent); }
     .filter-clear { width:100%; padding:9px; border:1px solid var(--border); border-radius:var(--radius); font-size:12px; font-weight:600; cursor:pointer; background:none; color:var(--text-secondary); transition:all .2s; margin-top:10px; }
     .filter-clear:hover { border-color:#ef4444; color:#ef4444; }
-    .filter-fab { display:none; position:fixed; left:12px; bottom:80px; z-index:100; background:var(--accent); color:#fff; border:none; border-radius:999px; padding:12px 20px; font-size:13px; font-weight:700; cursor:pointer; box-shadow:0 4px 16px rgba(26,60,94,.2); }
+    .filter-fab { display:none; position:fixed; left:12px; bottom:80px; z-index:100; background:#111; color:#fff; border:none; border-radius:999px; padding:12px 20px; font-size:13px; font-weight:700; cursor:pointer; box-shadow:0 4px 16px rgba(0,0,0,.3); transition:transform .18s cubic-bezier(.22,1,.36,1), background .2s; }
+    .filter-fab:hover { background:#000; }
+    .filter-fab:active { transform:scale(.94); }
     .main-content { flex:1; min-width:0; }
 
     /* ===== ANIMATIONS ===== */
@@ -725,6 +774,9 @@
     /* Slider ofertas: las cards también entran stagger */
     .oferta-card { opacity:0; transform:translateY(20px); }
     .oferta-card.visible { opacity:1; transform:translateY(0); transition:opacity .45s cubic-bezier(.22,1,.36,1), transform .45s cubic-bezier(.22,1,.36,1), box-shadow .35s, border-color .35s; }
+    /* Al deslizar, las tarjetas que van apareciendo entran animadas */
+    @keyframes cardIn { from { opacity:0; transform:translateX(28px) scale(.96); } to { opacity:1; transform:none; } }
+    .oferta-card.slider-in { animation:cardIn .45s cubic-bezier(.22,1,.36,1) backwards; }
 
     /* Contact form: entrada suave */
     .contact-form-wrap { opacity:0; transform:translateY(24px); }
@@ -783,7 +835,7 @@
 <body>
 
   <% if (biz.banner) { %>
-  <div class="hero">
+  <div class="hero<%= biz.banner ? ' has-banner' : '' %>">
     <img src="<%= biz.banner %>" class="bg" alt="banner" onerror="this.onerror=null;this.style.display='none'">
     <div class="hero-overlay">
       <% if (biz.logo) { %><img src="<%= biz.logo %>" class="hero-logo" alt="logo" onerror="this.onerror=null;this.style.display='none'"><% } %>
@@ -834,6 +886,7 @@
         <span class="hdr-title"><%= biz.name %></span>
       </div>
       <div class="hdr-right">
+        <% if (adminLink) { %><a href="<%= adminLink %>" class="admin-pill"><i class="bi bi-speedometer2"></i> Panel</a><% } %>
         <% if (_whatsapp) { %><a href="https://wa.me/<%= _whatsapp %>" target="_blank" rel="noopener" class="wa-pill"><i class="bi bi-whatsapp"></i> Pedir</a><% } %>
       </div>
     </div>
@@ -867,12 +920,15 @@
               <span class="oferta-old"><%= _money(p.old_price) %></span>
               <span class="oferta-new"><%= _money(p) %></span>
             </div>
+            <% if (p.promo_desc && p.promo_desc.indexOf('Precio rebajado') !== 0) { %>
+              <div style="margin-top:6px;padding:5px 8px;border-radius:7px;font-size:11px;font-weight:700;background:linear-gradient(135deg,rgba(239,68,68,.12),rgba(255,87,34,.14));color:#dc2626;border:1px dashed rgba(239,68,68,.35);line-height:1.3;"><i class="bi bi-tag-fill"></i> <%= p.promo_desc %></div>
+            <% } %>
             <% if (p.allow_installments) { %>
               <div style="margin-top:5px;"><span style="display:inline-block;font-size:10px;font-weight:800;color:#059669;background:rgba(16,185,129,.12);padding:2px 8px;border-radius:99px;">◐ <%= (p.installment_count || 6) %> abonos de <%= _rawMoney((p.price / (p.installment_count || 6)).toFixed(2)) %></span></div>
             <% } %>
             <div style="display:flex;gap:4px;margin-top:6px;">
-              <button class="prod-btn" style="flex:1;font-size:11px;padding:6px;" onclick="event.stopPropagation();addToCart(<%= p.id %>,'<%= p.name.replace(/'/g,"\\'").replace(/"/g,'&quot;') %>',<%= parseFloat(p.price)||0 %>,'',{slug:'<%= biz.slug %>',name:'<%= biz.name.replace(/'/g,"\\'") %>',whatsapp:'<%= _whatsapp %>',logo:'<%= (biz.logo||'').replace(/'/g,"\\'") %>'},'<%= (p.image||'').replace(/'/g,"\\'") %>');this.classList.add('added');this.innerHTML='<i class=\'bi bi-check-lg\'></i> Agregado';setTimeout(()=>{this.classList.remove('added');this.innerHTML='<i class=\'bi bi-bag-plus\'></i> Agregar';},1200);"><i class="bi bi-bag-plus"></i> Agregar</button>
-              <button class="prod-share-btn" style="padding:6px 8px;font-size:11px;" onclick="event.stopPropagation();shareProduct(<%= p.id %>,'<%= p.name.replace(/'/g,"\\'").replace(/"/g,'&quot;') %>',<%= parseFloat(p.price)||0 %>)" title="Compartir"><i class="bi bi-share"></i></button>
+              <button class="prod-btn" style="flex:1;font-size:11px;padding:6px;" onclick="event.stopPropagation();addToCart(<%= p.id %>,'<%= p.name.replace(/'/g,"\\'") %>',<%= parseFloat(p.price)||0 %>,'',{slug:'<%= biz.slug %>',name:'<%= biz.name.replace(/'/g,"\\'") %>',whatsapp:'<%= _whatsapp %>',logo:'<%= (biz.logo||'').replace(/'/g,"\\'") %>'},'<%= (p.image||'').replace(/'/g,"\\'") %>');this.classList.add('added');this.innerHTML='<i class=\'bi bi-check-lg\'></i> Agregado';setTimeout(()=>{this.classList.remove('added');this.innerHTML='<i class=\'bi bi-bag-plus\'></i> Agregar';},1200);"><i class="bi bi-bag-plus"></i> Agregar</button>
+              <button class="prod-share-btn" style="padding:6px 8px;font-size:11px;" onclick="event.stopPropagation();shareProduct(<%= p.id %>,'<%= p.name.replace(/'/g,"\\'") %>',<%= parseFloat(p.price)||0 %>)" title="Compartir"><i class="bi bi-share"></i></button>
             </div>
           </div>
         </div>
@@ -952,7 +1008,7 @@
                 <% if (p.old_price && p.old_price > p.price) { %><span class="prod-badge-offer">-<%= Math.round((1-p.price/p.old_price)*100) %>%</span><% } %>
                 <% if (p.promo_badge) { %><span class="prod-badge-promo"><%= p.promo_badge %></span><% } %>
               </div>
-              <button class="prod-share-btn" onclick="event.stopPropagation();shareProduct(<%= p.id %>,'<%= p.name.replace(/'/g,"\\'").replace(/"/g,"&quot;") %>',<%= parseFloat(p.price)||0 %>)" title="Compartir"><i class="bi bi-share"></i></button>
+              <button class="prod-share-btn" onclick="event.stopPropagation();shareProduct(<%= p.id %>,'<%= p.name.replace(/'/g,"\\'") %>',<%= parseFloat(p.price)||0 %>)" title="Compartir"><i class="bi bi-share"></i></button>
             </div>
             <div class="prod-body">
               <div class="prod-name"><%= p.name %></div>
@@ -961,13 +1017,14 @@
                 <span class="prod-price"><%= _money(p) %></span>
                 <% if (p.old_price && p.old_price > p.price) { %><span class="prod-old"><%= _money(p.old_price) %></span><% } %>
               </div>
+              <% if (p.promo_desc) { %><div class="prod-promo-strip"><i class="bi bi-tag-fill"></i> <%= p.promo_desc %></div><% } %>
               <% if (p.allow_installments) { var instPrice = (p.price / (p.installment_count || 6)).toFixed(2); %>
                 <span style="display:inline-block;font-size:11px;font-weight:700;color:#10b981;background:rgba(16,185,129,.1);padding:2px 8px;border-radius:6px;margin-top:4px;"><%= p.installment_count || 6 %> abonos de <%= _rawMoney(instPrice) %></span>
               <% } %>
               <div style="display:flex;gap:6px;margin-top:8px;">
-                <button class="prod-btn" style="flex:1;" onclick="event.stopPropagation();addToCart(<%= p.id %>,'<%= p.name.replace(/'/g,"\\'").replace(/"/g,'&quot;') %>',<%= parseFloat(p.price)||0 %>,'',{slug:'<%= biz.slug %>',name:'<%= biz.name.replace(/'/g,"\\'") %>',whatsapp:'<%= _whatsapp %>',logo:'<%= (biz.logo||'').replace(/'/g,"\\'") %>'},'<%= (p.image||'').replace(/'/g,"\\'") %>');this.classList.add('added');this.innerHTML='<i class=\'bi bi-check-lg\'></i> Agregado';setTimeout(()=>{this.classList.remove('added');this.innerHTML='<i class=\'bi bi-bag-plus\'></i> Agregar';},1200);"><i class="bi bi-bag-plus"></i> Agregar</button>
+                <button class="prod-btn" style="flex:1;" onclick="event.stopPropagation();addToCart(<%= p.id %>,'<%= p.name.replace(/'/g,"\\'") %>',<%= parseFloat(p.price)||0 %>,'',{slug:'<%= biz.slug %>',name:'<%= biz.name.replace(/'/g,"\\'") %>',whatsapp:'<%= _whatsapp %>',logo:'<%= (biz.logo||'').replace(/'/g,"\\'") %>'},'<%= (p.image||'').replace(/'/g,"\\'") %>');this.classList.add('added');this.innerHTML='<i class=\'bi bi-check-lg\'></i> Agregado';setTimeout(()=>{this.classList.remove('added');this.innerHTML='<i class=\'bi bi-bag-plus\'></i> Agregar';},1200);"><i class="bi bi-bag-plus"></i> Agregar</button>
                 <a class="prod-view-btn" href="/<%= biz.slug %>/p/<%= p.id %>" onclick="event.stopPropagation();" title="Ver producto"><i class="bi bi-eye"></i> Ver</a>
-                <button class="prod-share-btn" onclick="event.stopPropagation();shareProduct(<%= p.id %>,'<%= p.name.replace(/'/g,"\\'").replace(/"/g,'&quot;') %>',<%= parseFloat(p.price)||0 %>)" title="Compartir"><i class="bi bi-share"></i></button>
+                <button class="prod-share-btn" onclick="event.stopPropagation();shareProduct(<%= p.id %>,'<%= p.name.replace(/'/g,"\\'") %>',<%= parseFloat(p.price)||0 %>)" title="Compartir"><i class="bi bi-share"></i></button>
               </div>
             </div>
           </div>
@@ -1007,6 +1064,40 @@
         <% _gallery.forEach(function(url) { %>
         <img src="<%= url %>" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='/img/sin-imagen.svg'" onclick="openLB(this.src)">
         <% }) %>
+      </div>
+    </div>
+  </div>
+  <% } %>
+
+  <!-- ===== PREGUNTAS FRECUENTES ===== -->
+  <% if (_faq.length) { %>
+  <style>#faqBlock details[open] .faq-x { transform:rotate(45deg); } .faq-x { transition:transform .2s; }</style>
+  <div style="padding:14px 0 8px;">
+    <div class="wrap">
+      <div class="sec-title" style="font-size:19px;"><i class="bi bi-question-circle"></i> Preguntas frecuentes</div>
+      <div id="faqBlock" style="display:flex;flex-direction:column;gap:10px;padding-bottom:10px;">
+        <% _faq.forEach(function(item){ %>
+        <details style="background:var(--bg-card,#fff);border:1px solid var(--border,rgba(26,60,94,.08));border-radius:14px;overflow:hidden;box-shadow:var(--shadow,0 8px 32px rgba(0,0,0,.06));transition:box-shadow .2s;">
+          <summary style="padding:15px 18px;font-weight:700;cursor:pointer;font-size:15px;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:10px;color:var(--text,#1e1b1a);"><span><%= item.q %></span><span class="faq-x" style="color:var(--text-secondary,#6b6562);font-size:20px;line-height:1;flex:none;">+</span></summary>
+          <div style="padding:0 18px 17px;color:var(--text-secondary,#6b6562);font-size:14px;line-height:1.65;"><%= item.a %></div>
+        </details>
+        <% }) %>
+      </div>
+    </div>
+  </div>
+  <% } %>
+
+  <!-- ===== UBICACIÓN / MAPA (solo si el negocio puso dirección) ===== -->
+  <% if (_address) { %>
+  <div style="padding:14px 0 8px;">
+    <div class="wrap">
+      <div class="sec-title" style="font-size:19px;"><i class="bi bi-geo-alt"></i> ¿Dónde estamos?</div>
+      <div style="background:var(--bg-card,#fff);border:1px solid var(--border,rgba(26,60,94,.08));border-radius:16px;overflow:hidden;box-shadow:var(--shadow,0 8px 32px rgba(0,0,0,.06));margin-bottom:14px;">
+        <iframe title="Ubicación de <%= biz.name %>" src="https://maps.google.com/maps?q=<%= _addressEnc %>&z=16&output=embed" style="width:100%;height:360px;border:0;display:block;" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>
+        <div style="padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+          <span style="font-size:13px;color:var(--text,#1e1b1a);font-weight:600;"><i class="bi bi-pin-map" style="color:var(--accent,#1a3c5e);margin-right:6px;"></i><%= _address %></span>
+          <a href="https://www.google.com/maps/search/?api=1&query=<%= _addressEnc %>" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;background:var(--accent,#1a3c5e);color:#fff;padding:8px 16px;border-radius:99px;font-weight:700;font-size:12px;text-decoration:none;">Cómo llegar <i class="bi bi-box-arrow-up-right" style="font-size:11px;"></i></a>
+        </div>
       </div>
     </div>
   </div>
@@ -1121,6 +1212,7 @@
     .pd-img-col { position:relative; overflow:hidden; border-radius:16px 0 0 0; }
     .pd-img-col img { width:100%; height:100%; object-fit:cover; min-height:340px; }
     .pd-badge-offer { position:absolute; top:12px; left:12px; background:#ef4444; color:#fff; font-size:13px; font-weight:800; padding:4px 14px; border-radius:8px; box-shadow:0 4px 16px rgba(239,68,68,.3); }
+    .pd-promo { display:inline-flex; align-items:center; gap:6px; margin:10px 0 4px; padding:7px 12px; border-radius:9px; font-size:12px; font-weight:700; color:#dc2626; background:linear-gradient(135deg,rgba(239,68,68,.1),rgba(255,87,34,.13)); border:1px dashed rgba(239,68,68,.4); line-height:1.35; }
     .pd-info-col { padding:28px 32px; display:flex; flex-direction:column; }
     .pd-cat { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:var(--accent-light); margin-bottom:6px; }
     .pd-title { font-family:'Playfair Display',serif; font-size:1.6rem; font-weight:700; color:var(--text); line-height:1.25; margin-bottom:10px; }
@@ -1164,7 +1256,7 @@
     ];
     var _PRODS = [
       <% _realProds.forEach(function(p) { %>
-      {id:<%- p.id %>,name:<%- JSON.stringify(p.name||'') %>,desc:<%- JSON.stringify(p.description||'') %>,price:<%- parseFloat(p.price)||0 %>,oldPrice:<%- parseFloat(p.old_price)||0 %>,image:<%- JSON.stringify(p.image||'') %>,cat:<%- p.category_id||0 %>,sku:<%- JSON.stringify(p.sku||'') %>,barcode:<%- JSON.stringify(p.barcode||'') %>,tags:<%- JSON.stringify(p.tags||'') %>,specs:<%- JSON.stringify(p.specs||'') %>},
+      {id:<%- p.id %>,name:<%- JSON.stringify(p.name||'') %>,desc:<%- JSON.stringify(p.description||'') %>,price:<%- parseFloat(p.price)||0 %>,oldPrice:<%- parseFloat(p.old_price)||0 %>,image:<%- JSON.stringify(p.image||'') %>,cat:<%- p.category_id||0 %>,sku:<%- JSON.stringify(p.sku||'') %>,barcode:<%- JSON.stringify(p.barcode||'') %>,tags:<%- JSON.stringify(p.tags||'') %>,specs:<%- JSON.stringify(p.specs||'') %>,promoType:<%- JSON.stringify(p.promo_type||'') %>,promoGift:<%- JSON.stringify(p.promo_gift||'') %>,promoDesc:<%- JSON.stringify(p.promo_desc||'') %>},
       <% }) %>
     ];
     var _galUrls=[], _galIdx=0;
@@ -1273,6 +1365,12 @@
       var shopWa = '<%- _whatsapp %>';
       var shopLogo = '<%- (biz.logo||"" ).replace(/'/g,"\\'") %>';
       var badgeHtml = pct ? '<span class="pd-badge-offer">-' + pct + '% OFF</span>' : '';
+      var promoHtml = '';
+      if (p.promoDesc) {
+        promoHtml = '<div class="pd-promo"><i class="bi bi-tag-fill"></i> ' + p.promoDesc + '</div>';
+      } else if (p.promoType === 'regalo') {
+        promoHtml = '<div class="pd-promo"><i class="bi bi-gift"></i> ' + (p.promoGift ? 'Lleva de regalo: ' + p.promoGift : 'Lleva un regalo sorpresa') + '</div>';
+      }
       var specsTable = specsHtml ? '<table class="pd-specs"><thead><tr><th>Caracter\u00edstica</th><th>Valor</th></tr></thead><tbody>' + specsHtml + '</tbody></table>' : '';
       var tagsHtml = p.tags ? '<div class="pd-tags">' + p.tags.split(',').map(function(t){return '<span class="pd-tag">' + t.trim() + '</span>';}).join('') + '</div>' : '';
       var skuHtml = p.sku ? '<div class="pd-meta">SKU: ' + p.sku + '</div>' : '';
@@ -1294,7 +1392,7 @@
         + catHtml
         + '<h2 class="pd-title">' + p.name + '</h2>'
         + '<div class="pd-prices"><span class="pd-price">$' + p.price.toFixed(2) + '</span>' + oldPriceHtml + '</div>'
-        + descHtml + skuHtml + tagsHtml + specsTable
+        + promoHtml + descHtml + skuHtml + tagsHtml + specsTable
         + '<div class="pd-actions">'
         + '<button class="pd-btn-cart" onclick="addToCart(' + p.id + ',' + JSON.stringify(p.name) + ',' + p.price + ',\'\',{slug:\'' + shopSlug + '\',name:\'' + shopName + '\',whatsapp:\'' + shopWa + '\',logo:\'' + shopLogo + '\'},\'' + prodImgSafe + '\');this.innerHTML=\'\u2713 Agregado\';setTimeout(closeProductDetail,800);"><i class="bi bi-bag-plus"></i> Agregar al carrito</button>'
         + '<button class="pd-btn-wa" onclick="sendWhatsApp(\'' + prodNameSafe + '\',' + p.price + ')"><i class="bi bi-whatsapp"></i> Preguntar</button>'
@@ -1339,6 +1437,22 @@
         c.style.transitionDelay = (i % 6) * 0.06 + 's';
         observer.observe(c);
       });
+
+      /* Slider de ofertas: las tarjetas que van apareciendo al deslizar entran animadas */
+      var oTrack = document.getElementById('ofertas-track');
+      if (oTrack) {
+        var oCheck = function() {
+          var oRect = oTrack.getBoundingClientRect();
+          oTrack.querySelectorAll('.oferta-card:not(.slider-in)').forEach(function(c, i) {
+            var r = c.getBoundingClientRect();
+            if (r.right >= oRect.left - 20 && r.left <= oRect.right + 20) {
+              c.style.animationDelay = ((i % 5) * 0.05) + 's';
+              c.classList.add('slider-in');
+            }
+          });
+        };
+        oTrack.addEventListener('scroll', oCheck, { passive: true });
+      }
 
       /* Section titles */
       document.querySelectorAll('.sec-title').forEach(function(el) { observer.observe(el); });

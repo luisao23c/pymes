@@ -43,47 +43,41 @@
       <div class="space-y-4">
         <div>
           <label class="block text-sm font-bold mb-1.5">Nombre del negocio *</label>
-          <input name="name" required placeholder="Ej: Ferretería El Toro" class="w-full border rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <input name="name" required value="<%= form ? form.name : '' %>" placeholder="Ej: Ferretería El Toro" class="w-full border rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
         </div>
 
         <div>
           <label class="block text-sm font-bold mb-1.5">Enlace (solo letras y números) *</label>
           <div class="flex items-center border rounded-xl px-4 py-2.5 focus-within:ring-2 focus-within:ring-blue-500">
             <span class="text-slate-400 text-sm font-medium">nessik.net/</span>
-            <input name="slug" required pattern="[a-z0-9-]+" placeholder="ferreteria-eltoro" class="flex-1 focus:outline-none ml-1">
+            <input name="slug" required pattern="[a-z0-9-]+" value="<%= form ? form.slug : '' %>" placeholder="ferreteria-eltoro" class="flex-1 focus:outline-none ml-1">
           </div>
           <p class="text-xs text-slate-400 mt-1">El enlace público de tu tienda. Único y fácil de recordar.</p>
         </div>
 
         <div>
           <label class="block text-sm font-bold mb-1.5">WhatsApp de ventas (10 dígitos) *</label>
-          <input name="whatsapp" required type="tel" inputmode="numeric" placeholder="8719920338" class="w-full border rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <input name="whatsapp" required type="tel" inputmode="numeric" value="<%= form ? form.whatsapp : '' %>" placeholder="8719920338" class="w-full border rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
           <p class="text-xs text-slate-400 mt-1">Los pedidos llegarán a este número.</p>
         </div>
 
         <div>
           <label class="block text-sm font-bold mb-1.5">Descripción corta</label>
-          <textarea name="description" rows="2" placeholder="Ej: Todo para tu obra y hogar en Torreón." class="w-full border rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+          <textarea name="description" rows="2" placeholder="Ej: Todo para tu obra y hogar en Torreón." class="w-full border rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"><%= form ? form.description : '' %></textarea>
         </div>
 
         <div>
           <label class="block text-sm font-bold mb-1.5">Giro del negocio</label>
-          <select id="giro-select" name="giro" onchange="document.getElementById('giro-custom').classList.toggle('hidden',this.value!=='otro')" class="w-full border rounded-xl px-4 py-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <option value="">Selecciona el giro…</option>
-            <% GIROS.forEach(g => { %>
-              <option value="<%= g %>"><%= g %></option>
-            <% }) %>
-            <option value="otro">✏️ Otro (escribir el mío)…</option>
-          </select>
-          <div id="giro-custom" class="hidden mt-2">
-            <input type="text" name="giro_custom" placeholder="Escribe tu giro, ej: veternaria, taller mecánico…" class="w-full border rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500" maxlength="40">
-          </div>
-          <p class="text-xs text-slate-400 mt-1">Se usa para recomendar negocios complementarios entre la red.</p>
+          <input name="giro" list="giros-list" value="<%= form ? form.giro : '' %>" placeholder="Ej: ferretería, papelería, taller mecánico…" autocomplete="off" class="w-full border rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500" maxlength="40">
+          <datalist id="giros-list">
+            <% GIROS.forEach(g => { %><option value="<%= g %>"><% }) %>
+          </datalist>
+          <p class="text-xs text-slate-400 mt-1">Escribe tu giro: si no existe, se agrega automáticamente y queda disponible para otros negocios. Se usa para recomendar negocios complementarios.</p>
         </div>
 
         <div>
           <label class="block text-sm font-bold mb-1.5">PIN de acceso (el dueño lo puede cambiar)</label>
-          <input name="pin" type="text" inputmode="numeric" maxlength="12" placeholder="6 a 12 dígitos" class="w-full border rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <input name="pin" type="text" inputmode="numeric" maxlength="12" value="<%= form ? form.pin : '' %>" placeholder="6 a 12 dígitos" class="w-full border rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
           <p class="text-xs text-slate-400 mt-1">Mínimo 6 dígitos. Es tu contraseña para entrar al panel.</p>
         </div>
 
