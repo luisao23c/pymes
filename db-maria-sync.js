@@ -12,11 +12,11 @@ const { Worker, receiveMessageOnPort, MessageChannel } = require('worker_threads
 const path = require('path');
 
 const CFG = {
-  host: process.env.DB_HOST || '127.0.0.1',
-  port: Number(process.env.DB_PORT || 3306),
-  user: process.env.DB_USER || 'catamanager',
-  password: process.env.DB_PASS || 'catamanager_local_2026',
-  database: process.env.DB_NAME || 'catamanager',
+  host: process.env.DB_HOST || process.env.MYSQLHOST || '127.0.0.1',
+  port: Number(process.env.DB_PORT || process.env.MYSQLPORT || 3306),
+  user: process.env.DB_USER || process.env.MYSQLUSER || 'catamanager',
+  password: process.env.DB_PASS || process.env.MYSQLPASSWORD || 'catamanager_local_2026',
+  database: process.env.DB_NAME || process.env.MYSQLDATABASE || 'catamanager',
 };
 
 let worker = null;

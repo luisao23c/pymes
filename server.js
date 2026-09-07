@@ -31,6 +31,8 @@ const ah = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch
 const MASTER_KEY = process.env.MASTER_KEY || crypto.randomBytes(12).toString('hex');
 const BASE_URL = process.env.BASE_URL || '';
 
+app.get('/health', (req, res) => res.send('ok'));
+
 // ================= PLANES (configurables desde el panel maestro) =================
 function getPlan(biz) {
   const p = db.prepare('SELECT * FROM plans WHERE key = ?').get((biz && biz.plan) || 'demo');
