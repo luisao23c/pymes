@@ -1967,6 +1967,8 @@ const EMPLOYEE_PERMS = [
   { key: 'productos.crear', module: 'Productos', label: 'Crear productos' },
   { key: 'productos.editar', module: 'Productos', label: 'Editar productos' },
   { key: 'productos.eliminar', module: 'Productos', label: 'Eliminar productos' },
+  { key: 'categorias.gestionar', module: 'Catálogo', label: 'Gestionar categorías (crear/editar/borrar)' },
+  { key: 'atributos.gestionar', module: 'Catálogo', label: 'Gestionar atributos (crear/editar/borrar)' },
   { key: 'pedidos.gestionar', module: 'Pedidos', label: 'Gestionar pedidos (entregar/cancelar)' },
   { key: 'clientes', module: 'Clientes', label: 'Ver y gestionar clientes' },
   { key: 'reportes', module: 'Panel', label: 'Ver panel y reportes' },
@@ -2015,9 +2017,9 @@ function can(perm) {
   const need = Array.isArray(perm) ? perm : [perm];
   return (req, res, next) => {
     if (!req.perms || need.some(p => req.perms.includes(p))) return next();
-    // Peticiones API/JSON: respuesta JSON; páginas: vista amigable con qué hacer.
-    if (req.path.startsWith('/api') || (req.get('accept') || '').includes('application/json')) {
-      return res.status(403).json({ error: 'No tienes permiso para hacer esto.' });
+    // Peticiones AJAX/API/JSON: respuesta JSON; páginas: vista amigable con qué hacer.
+    if (req.path.startsWith('/api') || req.get('x-csrf-token') || (req.get('accept') || '').includes('application/json')) {
+      return res.status(403).json({ error: 'No tienes permiso para hacer esto.', permiso: need[0] });
     }
     const labels = EMPLOYEE_PERMS.filter(p => req.perms.includes(p.key)).map(p => p.label);
     const home = firstEmployeePage(req.perms);
@@ -2499,7 +2501,7 @@ app.post('/:slug/admin/producto/:id/duplicar', requireAuth, can('productos.crear
 });
 
 // ================= CRUD CATEGORÍAS (JSON, no recarga el formulario) =================
-app.post('/:slug/admin/categoria', requireAuth, can('productos.editar'), (req, res) => {
+app.post('/:slug/admin/categoria', requireAuth, can('categorias.gestionar'), (req, res) => {
   const name = (req.body.name || '').trim();
   if (!name) return res.json({ ok: false, error: 'El nombre de la categoría es obligatorio.' });
   const dup = db.prepare('SELECT * FROM categories WHERE business_id = ? AND name = ? COLLATE NOCASE').get(req.biz.id, name);
@@ -2508,7 +2510,7 @@ app.post('/:slug/admin/categoria', requireAuth, can('productos.editar'), (req, r
   res.json({ ok: true, id: r.lastInsertRowid, name });
 });
 
-app.post('/:slug/admin/categoria/:id/eliminar', requireAuth, can('productos.editar'), (req, res) => {
+app.post('/:slug/admin/categoria/:id/eliminar', requireAuth, can('categorias.gestionar'), (req, res) => {
   const id = parseInt(req.params.id);
   const cat = db.prepare('SELECT * FROM categories WHERE id = ? AND business_id = ?').get(id, req.biz.id);
   if (cat) {
@@ -2518,7 +2520,7 @@ app.post('/:slug/admin/categoria/:id/eliminar', requireAuth, can('productos.edit
   res.json({ ok: true });
 });
 
-app.post('/:slug/admin/categoria/:id', requireAuth, can('productos.editar'), (req, res) => {
+app.post('/:slug/admin/categoria/:id', requireAuth, can('categorias.gestionar'), (req, res) => {
   const id = parseInt(req.params.id);
   const name = (req.body.name || '').trim();
   if (!name) return res.json({ ok: false, error: 'El nombre de la categoría es obligatorio.' });
@@ -2529,16 +2531,16 @@ app.post('/:slug/admin/categoria/:id', requireAuth, can('productos.editar'), (re
 });
 
 // ================= CATÁLOGO DE ATRIBUTOS (JSON, no recarga el formulario) =================
-app.post('/:slug/admin/atributo/guardar', requireAuth, can('productos.editar'), (req, res) => {
+app.post('/:slug/admin/atributo/guardar', requireAuth, can('atributos.gestionar'), (req, res) => {
   res.json(upsertAttributeTemplate(req.biz.id, req.body.name, req.body.values));
 });
 
-app.post('/:slug/admin/atributo/:id/eliminar', requireAuth, can('productos.editar'), (req, res) => {
+app.post('/:slug/admin/atributo/:id/eliminar', requireAuth, can('atributos.gestionar'), (req, res) => {
   db.prepare('DELETE FROM attribute_templates WHERE id = ? AND business_id = ?').run(parseInt(req.params.id), req.biz.id);
   res.json({ ok: true });
 });
 
-app.post('/:slug/admin/atributo/:id', requireAuth, can('productos.editar'), (req, res) => {
+app.post('/:slug/admin/atributo/:id', requireAuth, can('atributos.gestionar'), (req, res) => {
   const id = parseInt(req.params.id);
   const existing = db.prepare('SELECT * FROM attribute_templates WHERE id = ? AND business_id = ?').get(id, req.biz.id);
   if (!existing) return res.json({ ok: false, error: 'Atributo no encontrado.' });

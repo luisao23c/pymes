@@ -12,11 +12,20 @@
       <script type="application/json" id="cat-json"><%- safeJson(categories || []) %></script>
       <script type="application/json" id="formdata-json"><%- safeJson(typeof formdata !== 'undefined' ? formdata : null) %></script>
 
-      <!-- CRUD separado por tabs: Productos · Categorías · Atributos -->
+      <!-- CRUD separado por tabs: Productos · Categorías · Atributos (tabs según permiso) -->
+      <% const puedeCrear = perms.includes('productos.crear'); %>
+      <% const puedeEditarP = perms.includes('productos.editar'); %>
+      <% const puedeEliminarP = perms.includes('productos.eliminar'); %>
+      <% const puedeCategorias = perms.includes('categorias.gestionar'); %>
+      <% const puedeAtributos = perms.includes('atributos.gestionar'); %>
       <div class="prod-tabs" role="tablist" aria-label="Secciones del catálogo">
         <button type="button" id="tabbtn-productos" class="prod-tab active" onclick="switchCrudTab('productos')">📦 Productos <span class="cnt" id="tabcnt-productos"><%= allProducts.length %></span></button>
+        <% if (puedeCategorias) { %>
         <button type="button" id="tabbtn-categorias" class="prod-tab" onclick="switchCrudTab('categorias')">🗂 Categorías <span class="cnt" id="tabcnt-categorias"><%= categories.length %></span></button>
+        <% } %>
+        <% if (puedeAtributos) { %>
         <button type="button" id="tabbtn-atributos" class="prod-tab" onclick="switchCrudTab('atributos')">🏷 Atributos <span class="cnt" id="tabcnt-atributos">0</span></button>
+        <% } %>
       </div>
       <div id="tabpane-productos" class="prod-tab-panel active">
 
@@ -39,10 +48,12 @@
             Imprimir
           </a>
 
+          <% if (perms.includes('productos.crear')) { %>
           <a href="#nuevo-producto" class="m-btn m-btn-filled m-btn-sm">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
             Nuevo
           </a>
+          <% } %>
         </div>
       </div>
 
@@ -119,7 +130,7 @@
           <div class="text-center py-6 border-2 border-dashed border-slate-200 rounded-xl">
             <p class="text-2xl mb-1">📦</p>
             <p class="text-xs text-slate-500 font-semibold mb-3">Aún no tienes productos</p>
-            <a href="#nuevo-producto" class="m-btn m-btn-filled m-btn-sm">Agregar mi primer producto</a>
+            <% if (perms.includes('productos.crear')) { %><a href="#nuevo-producto" class="m-btn m-btn-filled m-btn-sm">Agregar mi primer producto</a><% } %>
           </div>
         <% } else { %>
           <div id="prod-grid" class="grid md:grid-cols-2 gap-2">
@@ -159,6 +170,7 @@
                 </div>
                 </div>
                 <div class="flex items-center gap-0.5 flex-wrap justify-start sm:justify-end w-full sm:w-auto sm:shrink-0">
+                  <% if (puedeEditarP) { %>
                   <form method="POST" action="/<%= biz.slug %>/admin/producto/<%= p.id %>/mover">
                     <input type="hidden" name="dir" value="up">
                     <button class="m-btn-icon !w-9 !h-9 hover:!bg-slate-100 !text-slate-500" title="Subir producto"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 15l7-7 7 7"/></svg></button>
@@ -170,9 +182,13 @@
                   <button class="m-btn-icon !w-8 !h-8 hover:!bg-blue-50 hover:!text-blue-600" title="Editar" onclick="editarProducto(this.closest('[data-edit-id]'))">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                   </button>
+                  <% } %>
+                  <% if (perms.includes('productos.crear')) { %>
                   <button type="button" class="m-btn-icon !w-8 !h-8 hover:!bg-indigo-50 hover:!text-indigo-600" title="Duplicar" onclick="duplicarProducto(this.closest('[data-edit-id]'))">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 8h12v12H8zM8 8V4h12v12h-4M4 12h4"/></svg>
                   </button>
+                  <% } %>
+                  <% if (puedeEditarP) { %>
                   <form method="POST" action="/<%= biz.slug %>/admin/producto/<%= p.id %>/featured">
                     <button class="m-btn-icon !w-8 !h-8 <%= p.featured ? '!text-amber-500' : '' %> hover:!bg-amber-50" title="Destacar"><%= p.featured ? '⭐' : '☆' %></button>
                   </form>
@@ -182,9 +198,12 @@
                       <span class="track"><span class="thumb"></span></span>
                     </label>
                   </form>
+                  <% } %>
+                  <% if (puedeEliminarP) { %>
                   <form method="POST" action="/<%= biz.slug %>/admin/producto/<%= p.id %>/eliminar" data-confirm="¿Eliminar <%= p.name.replace(/'/g, "\\'") %>?">
                     <button class="m-btn-icon !w-8 !h-8 hover:!bg-red-50 hover:!text-red-500" title="Eliminar">🗑</button>
                   </form>
+                  <% } %>
                 </div>
               </div>
             <% }) %>
@@ -193,6 +212,7 @@
         <% } %>
       </section>
 
+      <% if (perms.includes('productos.crear') || perms.includes('productos.editar')) { %>
       <!-- Agregar / editar producto (stepper) -->
       <section id="nuevo-producto" class="m-card p-4 mb-3" data-stepper>
         <div class="flex items-center justify-between flex-wrap gap-2 mb-3">
@@ -233,7 +253,7 @@
                   <option value="<%= c.id %>"><%= c.name %></option>
                 <% }) %>
               </select>
-              <p id="f-cat-hint" class="text-[11px] text-slate-400 mt-1 <%= categories.length ? 'hidden' : '' %>">Aún no tienes categorías. Créala en la pestaña <button type="button" class="font-bold text-blue-600 hover:underline" onclick="switchCrudTab('categorias')">Categorías</button>.</p>
+              <p id="f-cat-hint" class="text-[11px] text-slate-400 mt-1 <%= categories.length ? 'hidden' : '' %>"><% if (puedeCategorias) { %>Aún no tienes categorías. Créala en la pestaña <button type="button" class="font-bold text-blue-600 hover:underline" onclick="switchCrudTab('categorias')">Categorías</button>.<% } else { %>Aún no hay categorías. Pídele al dueño de la tienda que las cree.<% } %></p>
             </div>
             <div class="m-field">
               <label for="f-price">Precio *</label>
@@ -368,8 +388,10 @@
           </div>
         </form>
       </section>
+      <% } %>
       </div><!-- /tabpane-productos -->
 
+      <% if (puedeCategorias) { %>
       <div id="tabpane-categorias" class="prod-tab-panel">
       <section id="categorias" class="m-card p-4 mb-3">
         <div class="flex items-center justify-between flex-wrap gap-2 mb-3">
@@ -382,7 +404,9 @@
         <div id="cat-list" class="flex flex-wrap gap-1.5"></div>
       </section>
       </div><!-- /tabpane-categorias -->
+      <% } %>
 
+      <% if (puedeAtributos) { %>
       <div id="tabpane-atributos" class="prod-tab-panel">
       <section id="mis-atributos" class="m-card p-4 mb-3">
         <div class="flex items-center justify-between flex-wrap gap-2 mb-1">
@@ -397,13 +421,16 @@
         <div id="attr-list" class="flex flex-wrap gap-1.5"></div>
       </section>
       </div><!-- /tabpane-atributos -->
+      <% } %>
 
     </div>
   </main>
 
+  <% if (perms.includes('productos.crear') || perms.includes('productos.editar')) { %>
   <a href="#nuevo-producto" class="m-fab m-ripple" title="Agregar producto" onclick="return irNuevoProducto(event)">
     <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
   </a>
+  <% } %>
 
   <%- include('partials/img-editor', { upUrl: '/' + biz.slug + '/admin/upload', z: 130 }) %>
   <script>window.imgeContainerApplied = function () { if (typeof renderFotos === 'function') renderFotos('f'); };</script>
@@ -1215,15 +1242,17 @@
 
     function initProductos() {
       loadPageData();
-      initVariantes('f', '');
       initProdFilter();
+      renderCatList();
+      renderAttrCatalog();
+      // El wizard de captura solo existe si hay permiso de crear o editar productos.
+      if (!document.getElementById('pf-form')) return;
+      initVariantes('f', '');
       initStepper();
       onPromoTypeChange();
       bindValidation();
       syncStockField();
-      renderCatList();
       renderTplPills('f');
-      renderAttrCatalog();
       restoreFormOnError();
     }
 

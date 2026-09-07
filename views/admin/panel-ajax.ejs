@@ -74,8 +74,15 @@
       fetch(form.action, { method: 'POST', body: params, redirect: 'follow', credentials: 'same-origin', headers: headers })
         .then(function (r) {
           if (!r.ok) {
-            if (r.status === 403) return Promise.reject({ csrf: true });
             return r.text().then(function (t) {
+              // 403: puede ser token CSRF vencido O falta de permisos — no son lo mismo.
+              if (r.status === 403) {
+                var j403 = null;
+                try { j403 = JSON.parse(t); } catch (e) {}
+                if (j403 && j403.error) return Promise.reject({ msg: j403.error });
+                if (t.indexOf('token de seguridad') !== -1) return Promise.reject({ csrf: true });
+                return Promise.reject({ msg: 'No tienes permiso para hacer esto.' });
+              }
               var doc = new DOMParser().parseFromString(t, 'text/html');
               var err = doc.getElementById && doc.getElementById('panel-error');
               return Promise.reject({ msg: err ? err.textContent.replace(/^⚠️\s*/, '').trim() : 'No se pudo guardar.' });
