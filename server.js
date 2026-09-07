@@ -1,6 +1,19 @@
 const express = require('express');
-const db = require('./db');
 const path = require('path');
+
+// Carga variables de entorno desde .env ANTES de require('./db')
+try {
+  const fsEnv = require('fs');
+  const envPath = path.join(__dirname, '.env');
+  if (fsEnv.existsSync(envPath)) {
+    fsEnv.readFileSync(envPath, 'utf8').split(/\r?\n/).forEach(line => {
+      const m = line.match(/^\s*([\w.]+)\s*=\s*(.*)\s*$/);
+      if (m && !process.env[m[1]]) process.env[m[1]] = m[2].replace(/^["']|["']$/g, '');
+    });
+  }
+} catch (e) {}
+
+const db = require('./db');
 const { MASCARA_SIZES, SHAPE_DEFS, getShapeClip, MASCARA_CSS, EDITOR_ONLY_CSS } = require('./lib/mascara');
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
@@ -14,18 +27,6 @@ const app = express();
 // Express 4 no captura rechazos de handlers async: cualquier error de BD en uno
 // de ellos se convierte en 500 (next(err)) en lugar de tumbar el proceso.
 const ah = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
-
-// Carga variables de entorno desde .env (si existe), sin dependencias externas
-try {
-  const fsEnv = require('fs');
-  const envPath = path.join(__dirname, '.env');
-  if (fsEnv.existsSync(envPath)) {
-    fsEnv.readFileSync(envPath, 'utf8').split(/\r?\n/).forEach(line => {
-      const m = line.match(/^\s*([\w.]+)\s*=\s*(.*)\s*$/);
-      if (m && !process.env[m[1]]) process.env[m[1]] = m[2].replace(/^["']|["']$/g, '');
-    });
-  }
-} catch (e) {}
 
 const MASTER_KEY = process.env.MASTER_KEY || crypto.randomBytes(12).toString('hex');
 const BASE_URL = process.env.BASE_URL || '';
