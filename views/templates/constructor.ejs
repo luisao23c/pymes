@@ -908,7 +908,7 @@
     <div class="ofertas-track-wrap">
       <div class="ofertas-track" id="ofertas-track">
         <% _ofertas.forEach(function(p){ var _pct=Math.round((1-p.price/p.old_price)*100); %>
-        <div class="oferta-card">
+        <div class="oferta-card" onclick="openProductDetail(<%= p.id %>)" style="cursor:pointer;">
           <div class="oferta-img-wrap">
             <img src="<%= p.image||'/img/sin-imagen.svg' %>" loading="lazy" alt="<%= p.name %>" onerror="this.onerror=null;this.src='/img/sin-imagen.svg'">
             <span class="oferta-badge-pct">-<%= _pct %>%</span>
@@ -928,6 +928,7 @@
             <% } %>
             <div style="display:flex;gap:4px;margin-top:6px;">
               <button class="prod-btn" style="flex:1;font-size:11px;padding:6px;" onclick="event.stopPropagation();addToCart(<%= p.id %>,'<%= p.name.replace(/'/g,"\\'") %>',<%= parseFloat(p.price)||0 %>,'',{slug:'<%= biz.slug %>',name:'<%= biz.name.replace(/'/g,"\\'") %>',whatsapp:'<%= _whatsapp %>',logo:'<%= (biz.logo||'').replace(/'/g,"\\'") %>'},'<%= (p.image||'').replace(/'/g,"\\'") %>');this.classList.add('added');this.innerHTML='<i class=\'bi bi-check-lg\'></i> Agregado';setTimeout(()=>{this.classList.remove('added');this.innerHTML='<i class=\'bi bi-bag-plus\'></i> Agregar';},1200);"><i class="bi bi-bag-plus"></i> Agregar</button>
+              <a class="prod-view-btn" href="/<%= biz.slug %>/p/<%= p.id %>" onclick="event.stopPropagation();" title="Ver producto" style="font-size:11px;padding:6px 8px;"><i class="bi bi-eye"></i> Ver</a>
               <button class="prod-share-btn" style="padding:6px 8px;font-size:11px;" onclick="event.stopPropagation();shareProduct(<%= p.id %>,'<%= p.name.replace(/'/g,"\\'") %>',<%= parseFloat(p.price)||0 %>)" title="Compartir"><i class="bi bi-share"></i></button>
             </div>
           </div>

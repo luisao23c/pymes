@@ -578,7 +578,7 @@
           <style>.dest-scroll::-webkit-scrollbar{display:none;}</style>
           <% _dest.forEach(function (p) { %>
             <% var _pct = 0; var _raw = parseFloat(String(p.price||'').replace(/[^0-9.]/g,'')); if (p.old_price && _raw) _pct = Math.round((1 - _raw / p.old_price) * 100); %>
-            <a href="#" style="flex:0 0 220px;scroll-snap-align:start;background:var(--card,#fff);border:1px solid var(--border,#e2e8f0);border-radius:16px;overflow:hidden;text-decoration:none;color:inherit;display:block;transition:all .3s;box-shadow:0 2px 8px rgba(0,0,0,.03);" onmouseover="this.style.boxShadow='0 8px 24px rgba(0,0,0,.08)';this.style.transform='translateY(-3px)'" onmouseout="this.style.boxShadow='0 2px 8px rgba(0,0,0,.03)';this.style.transform='none'">
+            <a href="/<%= biz.slug %>/p/<%= p.id %>" style="flex:0 0 220px;scroll-snap-align:start;background:var(--card,#fff);border:1px solid var(--border,#e2e8f0);border-radius:16px;overflow:hidden;text-decoration:none;color:inherit;display:block;transition:all .3s;box-shadow:0 2px 8px rgba(0,0,0,.03);" onmouseover="this.style.boxShadow='0 8px 24px rgba(0,0,0,.08)';this.style.transform='translateY(-3px)'" onmouseout="this.style.boxShadow='0 2px 8px rgba(0,0,0,.03)';this.style.transform='none'">
               <div style="position:relative;">
                 <img src="<%= p.image || '/img/sin-imagen.svg' %>" style="width:100%;aspect-ratio:16/10;object-fit:cover;display:block;" alt="<%= p.name %>">
                 <% if (p.old_price && _pct > 0) { %><span style="position:absolute;top:8px;right:8px;background:#ef4444;color:#fff;font-size:11px;font-weight:800;padding:2px 8px;border-radius:99px;">-<%= _pct %>%</span><% } %>
@@ -616,7 +616,7 @@
         <div class="dest-scroll" style="display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x proximity;scrollbar-width:none;-ms-overflow-style:none;padding:2px 0 8px;">
           <% _dest.forEach(function (p) { %>
             <% var _pct = 0; var _raw = parseFloat(String(p.price||'').replace(/[^0-9.]/g,'')); if (p.old_price && _raw) _pct = Math.round((1 - _raw / p.old_price) * 100); %>
-            <a href="#" style="flex:0 0 220px;scroll-snap-align:start;background:var(--card,#fff);border:1px solid var(--border,#e2e8f0);border-radius:16px;overflow:hidden;text-decoration:none;color:inherit;display:block;transition:all .3s;box-shadow:0 2px 8px rgba(0,0,0,.03);" onmouseover="this.style.boxShadow='0 8px 24px rgba(0,0,0,.08)';this.style.transform='translateY(-3px)'" onmouseout="this.style.boxShadow='0 2px 8px rgba(0,0,0,.03)';this.style.transform='none'">
+            <a href="/<%= biz.slug %>/p/<%= p.id %>" style="flex:0 0 220px;scroll-snap-align:start;background:var(--card,#fff);border:1px solid var(--border,#e2e8f0);border-radius:16px;overflow:hidden;text-decoration:none;color:inherit;display:block;transition:all .3s;box-shadow:0 2px 8px rgba(0,0,0,.03);" onmouseover="this.style.boxShadow='0 8px 24px rgba(0,0,0,.08)';this.style.transform='translateY(-3px)'" onmouseout="this.style.boxShadow='0 2px 8px rgba(0,0,0,.03)';this.style.transform='none'">
               <div style="position:relative;">
                 <img src="<%= p.image || '/img/sin-imagen.svg' %>" style="width:100%;aspect-ratio:16/10;object-fit:cover;display:block;" alt="<%= p.name %>">
                 <% if (_pct > 0) { %><span style="position:absolute;top:8px;right:8px;background:#ef4444;color:#fff;font-size:11px;font-weight:800;padding:2px 8px;border-radius:99px;">-<%= _pct %>%</span><% } %>
