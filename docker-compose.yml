@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - MASTER_KEY=${MASTER_KEY:-mk-8RtjToiUenhG5rwcVIfb}
+      - DB_HOST=mariadb
+      - DB_PORT=3306
+      - DB_USER=root
+      - DB_PASS=${MYSQL_ROOT_PASSWORD:-}
+      - DB_NAME=${DB_NAME:-catamanager}
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    volumes:
+      - uploads_data:/app/public/uploads
+      - backups_data:/app/backups
+    networks:
+      - catamanager-net
+
+  mariadb:
+    image: mariadb:11.4
+    restart: unless-stopped
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-}
+      - MYSQL_DATABASE=${DB_NAME:-catamanager}
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    networks:
+      - catamanager-net
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+volumes:
+  mariadb_data:
+  uploads_data:
+  backups_data:
+
+networks:
+  catamanager-net:
+    driver: bridge
