@@ -59,6 +59,9 @@ async function execStatements(stmts) {
       const name = m[1].replace(/[`"']/g, '');
       if (await tableExists(name)) continue; // el esquema ya existe (migración previa)
     }
+    if (/^\s*CREATE\s+TABLE/i.test(s)) {
+      await pool.query("SET SESSION sql_mode = ''");
+    }
     await pool.query(s);
   }
 }
