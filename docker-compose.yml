@@ -1,51 +1,57 @@
-version: '3.8'
+# CataManager (catálogo digital + WhatsApp) — app Express + MySQL 8.
+# Uso local:  docker compose up --build
+#   - El contenedor MySQL crea la base y el esquema automáticamente la primera
+#     vez (monta catamanager-full.sql en /docker-entrypoint-initdb.d).
+#   - La app espera a que MySQL esté sano (depends_on + healthcheck).
+# En Dokploy/railway normalmente se usa una BD MySQL administrada y solo la app
+# desde el Dockerfile; este compose sirve para probar el stack completo.
 
 services:
+  db:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-cambia-esta-clave-root}
+      MYSQL_DATABASE: ${DB_NAME:-catamanager}
+      MYSQL_USER: ${DB_USER:-catamanager}
+      MYSQL_PASSWORD: ${DB_PASS:-cambia-esta-clave}
+    volumes:
+      - db_data:/var/lib/mysql
+      # Init del esquema (MySQL 8). Solo se ejecuta la primera vez.
+      - ./catamanager-full.sql:/docker-entrypoint-initdb.d/01-esquema.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-cambia-esta-clave-root}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
   app:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     restart: unless-stopped
     ports:
       - "3000:3000"
     environment:
-      DATABASE_URL: mysql://root:cambia-esta-clave@db:3306/multi_pos
+      PORT: "3000"
       NODE_ENV: production
-      MASTER_KEY: ${MASTER_KEY:-mk-8RtjToiUenhG5rwcVIfb}
-      # - DB_HOST=mariadb
-      # - DB_PORT=3306
-      # - DB_USER=root
-      # - DB_PASS=${MYSQL_ROOT_PASSWORD:-}
-      # - DB_NAME=${DB_NAME:-catamanager}
-    depends_on:
-      mariadb:
-        condition: service_healthy
+      DB_HOST: db
+      DB_PORT: "3306"
+      DB_USER: ${DB_USER:-catamanager}
+      DB_PASS: ${DB_PASS:-cambia-esta-clave}
+      DB_NAME: ${DB_NAME:-catamanager}
+      MASTER_KEY: ${MASTER_KEY:-mk-cambia-esta-clave-maestra}
+      # URL pública usada en links de compartir/SEO (vacía = relativa).
+      BASE_URL: ${BASE_URL:-}
     volumes:
       - uploads_data:/app/public/uploads
       - backups_data:/app/backups
-    networks:
-      - catamanager-net
-
-  mariadb:
-    image: mariadb:11.4
-    restart: unless-stopped
-    environment:
-      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-}
-      - MYSQL_DATABASE=${DB_NAME:-catamanager}
-    volumes:
-      - mariadb_data:/var/lib/mysql
-    networks:
-      - catamanager-net
-    healthcheck:
-      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
+    depends_on:
+      db:
+        condition: service_healthy
 
 volumes:
-  mariadb_data:
+  db_data:
   uploads_data:
   backups_data:
-
-networks:
-  catamanager-net:
-    driver: bridge

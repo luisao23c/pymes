@@ -22,3 +22,9 @@ docker-compose.yml
 .dockerignore
 server.out.log
 server.err.log
+catamanager-full.sql
+dokploy.json
+env.dokploy
+.env.dokploy
+railway.json
+tools/

@@ -1,4 +1,5 @@
-// Capa de datos: MariaDB vía adaptador síncrono (db-maria-sync.js).
+// Capa de datos: MySQL 8 vía adaptador síncrono (db-maria-sync.js, driver mysql2).
+// El mismo adaptador habló MariaDB antes de la migración a MySQL; es motor-agnóstico.
 // Para volver a SQLite: git checkout -- db.js (o copiar db.js.sqlite.bak).
 const db = require('./db-maria-sync');
 

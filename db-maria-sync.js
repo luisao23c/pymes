@@ -1,5 +1,7 @@
 'use strict';
-// db-maria-sync.js — Capa de datos síncrona sobre MariaDB.
+// db-maria-sync.js — Capa de datos síncrona sobre MySQL/MariaDB (driver mysql2).
+// El nombre conserva el origen (la migración inicial fue SQLite -> MariaDB); hoy
+// la app corre contra MySQL 8 con este mismo adaptador, que es motor-agnóstico.
 //
 // Sustituye a better-sqlite3 manteniendo la MISMA API que usa la app
 // (db.prepare(sql).get/all/run, db.exec, db.pragma) para que server.js y db.js
@@ -40,6 +42,14 @@ function translate(sql) {
   s = s.replace(/\bdatetime\s*\(\s*'now'\s*\)/gi, 'UTC_TIMESTAMP()');
   s = s.replace(/\bdate\s*\(\s*'now'\s*\)/gi, 'DATE(UTC_TIMESTAMP())');
   s = s.replace(/\s+COLLATE\s+NOCASE\b/gi, '');
+  // MySQL 8 rechaza `TEXT DEFAULT 'literal'` (MariaDB lo tolera). La forma
+  // `TEXT DEFAULT ('literal')` (expresión entre paréntesis) es válida en MySQL
+  // 8.0.13+ y en MariaDB, así que se envuelven los defaults de columnas largas
+  // que no estén ya entre paréntesis (p.ej. DEFAULT (UTC_TIMESTAMP())).
+  s = s.replace(
+    /(\b(?:TINYTEXT|TEXT|MEDIUMTEXT|LONGTEXT|TINYBLOB|BLOB|MEDIUMBLOB|LONGBLOB)\b\s+DEFAULT\s+)((?:'(?:[^']|'')*'|"[^"]*")|[A-Za-z_][\w]*(?:\([^)]*\))?)(?=\s*[,)]|$)/gi,
+    '$1($2)'
+  );
   // Columna reservada `key` (tablas plans y site_config)
   s = s.replace(/\bSELECT\s+key\b/gi, 'SELECT `key`');
   s = s.replace(/\bWHERE\s+key\s*=/gi, 'WHERE `key` =');

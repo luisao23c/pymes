@@ -1,7 +1,7 @@
 'use strict';
-// Worker de MariaDB para db-maria-sync.js.
-// Ejecuta las consultas de forma asíncrona (mysql2) y devuelve el resultado al
-// hilo principal por MessagePort + Atomics, lo que permite que el hilo principal
+// Worker de MySQL/MariaDB para db-maria-sync.js (driver mysql2).
+// Ejecuta las consultas de forma asíncrona y devuelve el resultado al hilo
+// principal por MessagePort + Atomics, lo que permite que el hilo principal
 // siga usando la API síncrona de siempre (prepare/exec/pragma).
 const { parentPort, workerData } = require('worker_threads');
 const mysql = require('mysql2/promise');

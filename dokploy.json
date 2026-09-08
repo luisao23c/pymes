@@ -1,0 +1,35 @@
+{
+  "$schema": "https://dokploy.com/docs/configuration/dokploy-json",
+  "name": "catamanager",
+  "description": "CataManager — catálogo digital + pedidos por WhatsApp (Express + MySQL)",
+  "compose": {
+    "services": {
+      "app": {
+        "build": {
+          "context": ".",
+          "dockerfile": "Dockerfile"
+        },
+        "ports": ["3000:3000"],
+        "volumes": [
+          "uploads:/app/public/uploads",
+          "backups:/app/backups"
+        ],
+        "environment": {
+          "NODE_ENV": "production",
+          "PORT": "3000",
+          "DB_HOST": "${DB_HOST}",
+          "DB_PORT": "${DB_PORT:-3306}",
+          "DB_USER": "${DB_USER}",
+          "DB_PASS": "${DB_PASS}",
+          "DB_NAME": "${DB_NAME:-catamanager}",
+          "MASTER_KEY": "${MASTER_KEY}",
+          "BASE_URL": "${BASE_URL:-}"
+        }
+      }
+    },
+    "volumes": {
+      "uploads": { "driver": "local" },
+      "backups": { "driver": "local" }
+    }
+  }
+}
