@@ -6,6 +6,10 @@
   <meta name="csrf" content="<%= csrf %>" />
   <title><%= list ? 'Panel maestro · Nessik' : 'Acceso maestro · Nessik' %></title>
   <script src="/vendor/tailwind.js"></script>
+  <script>
+    // Modo claro fijo: las clases dark: no siguen al dispositivo
+    tailwind.config = { darkMode: 'class' };
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800;14..32,900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/css/material.css" />

@@ -8,6 +8,9 @@
 <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.min.css">
 <script>
   tailwind.config = {
+    // Dark mode por CLASE (body.dark), controlado por el switch del panel —
+    // no por la preferencia del dispositivo ('media'), que pintaba páginas en negro con el modo claro activo.
+    darkMode: 'class',
     theme: {
       extend: {
         fontFamily: {

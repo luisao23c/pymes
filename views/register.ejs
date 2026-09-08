@@ -43,21 +43,21 @@
       <div class="space-y-4">
         <div>
           <label class="block text-sm font-bold mb-1.5">Nombre del negocio *</label>
-          <input name="name" required value="<%= form ? form.name : '' %>" placeholder="Ej: Ferretería El Toro" class="w-full border rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <input id="f-name" name="name" required value="<%= form ? form.name : '' %>" placeholder="Ej: Ferretería El Toro" class="w-full border rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
         </div>
 
         <div>
-          <label class="block text-sm font-bold mb-1.5">Enlace (solo letras y números) *</label>
+          <label class="block text-sm font-bold mb-1.5">Enlace (solo letras, números y guiones) *</label>
           <div class="flex items-center border rounded-xl px-4 py-2.5 focus-within:ring-2 focus-within:ring-blue-500">
             <span class="text-slate-400 text-sm font-medium">nessik.net/</span>
-            <input name="slug" required pattern="[a-z0-9-]+" value="<%= form ? form.slug : '' %>" placeholder="ferreteria-eltoro" class="flex-1 focus:outline-none ml-1">
+            <input id="f-slug" name="slug" required pattern="[a-z0-9-]+" maxlength="60" value="<%= form ? form.slug : '' %>" placeholder="ferreteria-eltoro" autocomplete="off" class="flex-1 focus:outline-none ml-1">
           </div>
-          <p class="text-xs text-slate-400 mt-1">El enlace público de tu tienda. Único y fácil de recordar.</p>
+          <p class="text-xs text-slate-400 mt-1">El enlace público de tu tienda. Se llena solo con el nombre del negocio; puedes editarlo si quieres otro.</p>
         </div>
 
         <div>
           <label class="block text-sm font-bold mb-1.5">WhatsApp de ventas (10 dígitos) *</label>
-          <input name="whatsapp" required type="tel" inputmode="numeric" value="<%= form ? form.whatsapp : '' %>" placeholder="8719920338" class="w-full border rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <input name="whatsapp" required type="tel" inputmode="numeric" maxlength="10" value="<%= form ? form.whatsapp : '' %>" placeholder="8719920338" class="w-full border rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
           <p class="text-xs text-slate-400 mt-1">Los pedidos llegarán a este número.</p>
         </div>
 
@@ -85,5 +85,29 @@
       </div>
     </form>
   </main>
+
+  <script>
+    // El enlace se llena solo con el nombre del negocio: minúsculas, sin acentos y espacios → guiones.
+    // Deja de autocompletar en cuanto el usuario escribe manualmente en el campo del enlace.
+    (function () {
+      var slugTouched = document.getElementById('f-slug').value.length > 0;
+      document.getElementById('f-slug').addEventListener('input', function () { slugTouched = true; });
+      document.getElementById('f-name').addEventListener('input', function () {
+        if (slugTouched) return;
+        document.getElementById('f-slug').value = this.value
+          .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+          .toLowerCase().trim()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-+|-+$/g, '');
+      });
+      // WhatsApp de ventas: máximo 10 dígitos, solo números
+      var wa = document.querySelector('input[name=whatsapp]');
+      if (wa) wa.addEventListener('input', function () {
+        var v = this.value.replace(/[^0-9]/g, '');
+        if (v.length > 10) v = v.slice(0, 10);
+        this.value = v;
+      });
+    })();
+  </script>
 </body>
 </html>

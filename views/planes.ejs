@@ -10,8 +10,8 @@
     <div class="px-4 md:px-8 py-4 md:py-6 pb-24 md:pb-6">
 
       <div class="text-center mb-6">
-        <h1 class="text-xl md:text-2xl font-black tracking-tight text-slate-900">Elige tu plan</h1>
-        <p class="text-sm text-slate-500 mt-1">Cambia de plan cuando quieras. El plan se aplica de inmediato.</p>
+        <h1 class="text-xl md:text-2xl font-black tracking-tight text-slate-900 dark:text-slate-100">Elige tu plan</h1>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Cambia de plan cuando quieras. El plan se aplica de inmediato.</p>
       </div>
 
       <% if (ok) { %>
@@ -23,14 +23,16 @@
           <% const esActual = biz.plan === p.key; %>
           <div class="m-card p-5 relative <%= esActual ? 'ring-2 ring-blue-500' : '' %>">
             <% if (esActual) { %>
-              <span class="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-[10px] font-black uppercase tracking-wide px-3 py-1 rounded-full">Tu plan</span>
+              <div class="bg-gradient-to-r from-blue-600 to-blue-500 text-white text-[11px] font-black uppercase tracking-wider px-4 py-2 rounded-xl mb-4 flex items-center gap-2 shadow-lg shadow-blue-500/25">
+                <i class="bi bi-patch-check-fill text-sm"></i> Tu plan actual
+              </div>
             <% } %>
-            <h2 class="font-black text-lg text-slate-900"><%= p.name %></h2>
+            <h2 class="font-black text-lg text-slate-900 dark:text-slate-100"><%= p.name %></h2>
             <div class="flex items-baseline gap-1 mt-1 mb-4">
-              <span class="text-2xl font-black text-slate-900">$<%= Number(p.price || 0).toFixed(0) %></span>
-              <span class="text-xs text-slate-400"><%= p.days > 0 ? '/ ' + p.days + ' días' : 'para siempre' %></span>
+              <span class="text-2xl font-black text-slate-900 dark:text-white">$<%= Number(p.price || 0).toFixed(0) %></span>
+              <span class="text-xs text-slate-400 dark:text-slate-500"><%= p.days > 0 ? '/ ' + p.days + ' días' : 'para siempre' %></span>
             </div>
-            <ul class="space-y-2 text-sm text-slate-600 mb-5">
+            <ul class="space-y-2 text-sm text-slate-600 dark:text-slate-300 mb-5">
               <li class="flex items-center gap-2">
                 <span class="<%= p.max_products === -1 ? 'text-emerald-500' : 'text-slate-400' %>">✓</span>
                 <%= p.max_products === -1 ? 'Productos ilimitados' : 'Hasta ' + p.max_products + ' productos' %>

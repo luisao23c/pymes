@@ -233,6 +233,103 @@
       border-color: #8b2d32;
       color: #f8a5a0;
     }
+
+    /* ===== Tarjetas de redes sociales ===== */
+    .social-field {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border: 1.5px solid var(--md-outline-soft);
+      border-radius: 14px;
+      background: var(--md-surface);
+      transition: border-color .2s, box-shadow .2s, transform .15s;
+      position: relative;
+    }
+    .social-field:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px -8px rgba(0,0,0,.12);
+    }
+    .social-field:focus-within {
+      border-color: var(--md-primary);
+      box-shadow: 0 0 0 4px rgba(79, 70, 229, .1);
+    }
+    .social-chip {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 19px;
+      flex-shrink: 0;
+      box-shadow: 0 4px 10px -3px rgba(0,0,0,.25);
+    }
+    .social-chip-ig {
+      background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%) !important;
+    }
+    .social-body {
+      flex: 1;
+      min-width: 0;
+    }
+    .social-name {
+      display: block;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      color: var(--md-on-surface-variant);
+      margin-bottom: 2px;
+    }
+    .social-field input {
+      width: 100%;
+      border: none;
+      background: transparent;
+      font-size: .85rem;
+      color: var(--md-on-surface);
+      outline: none;
+      padding: 0;
+      font-family: var(--md-font-family);
+    }
+    .social-field input::placeholder {
+      color: var(--md-on-surface-variant);
+      opacity: .5;
+    }
+    .social-done {
+      position: absolute;
+      top: -7px;
+      right: -7px;
+      font-size: 17px;
+      color: #22c55e;
+      background: var(--md-surface);
+      border-radius: 50%;
+      opacity: 0;
+      transform: scale(.4);
+      transition: opacity .25s, transform .25s cubic-bezier(.34,1.56,.64,1);
+      pointer-events: none;
+    }
+    .social-field[data-filled="1"] .social-done {
+      opacity: 1;
+      transform: scale(1);
+    }
+    body.dark .social-field {
+      background: #161b22;
+      border-color: #30363d;
+    }
+    body.dark .social-field:focus-within {
+      border-color: #8ab4f8;
+      box-shadow: 0 0 0 4px rgba(138, 180, 248, .12);
+    }
+    body.dark .social-name {
+      color: #9aa7b4;
+    }
+    body.dark .social-field input {
+      color: #e6edf3;
+    }
+    body.dark .social-done {
+      background: #161b22;
+    }
   </style>
 </head>
 <body class="m-material bg-slate-100 min-h-screen dark:bg-[#0d1117]">
@@ -250,7 +347,7 @@
   <% } %>
 
   <main class="transition-all duration-300">
-    <div class="max-w-4xl mx-auto px-4 md:px-8 py-5 md:py-7 space-y-4">
+    <div class="px-4 md:px-8 py-5 md:py-7 space-y-4">
 
       <!-- HEADER -->
       <div class="flex items-center justify-between flex-wrap gap-3">
@@ -300,7 +397,7 @@
             </div>
             <div>
               <label class="config-label">WhatsApp (10 dígitos) *</label>
-              <input name="whatsapp" value="<%= biz.whatsapp %>" type="tel" inputmode="numeric" class="config-input" placeholder="8712345678" required>
+              <input id="config-whatsapp" name="whatsapp" value="<%= biz.whatsapp %>" type="tel" inputmode="numeric" maxlength="10" class="config-input" placeholder="8712345678" required>
               <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">Los pedidos llegarán a este número.</p>
             </div>
             <div>
@@ -318,18 +415,30 @@
           <div class="border-t border-slate-200 dark:border-[#30363d] pt-4 mt-3">
             <label class="config-label">Redes sociales</label>
             <p class="text-xs text-slate-400 dark:text-slate-500 mb-3">Agrega los enlaces de tus redes para que aparezcan en tu catálogo.</p>
-            <div class="grid md:grid-cols-3 gap-4">
-              <div>
-                <label class="config-label !text-xs !mb-1"><i class="bi bi-facebook mr-1"></i> Facebook</label>
-                <input name="redes_facebook" value="<%= _redes.facebook || '' %>" class="config-input" placeholder="https://facebook.com/tu-pagina">
+            <div class="grid md:grid-cols-3 gap-3">
+              <div class="social-field" data-filled="<%= _redes.facebook ? '1' : '0' %>">
+                <span class="social-chip" style="background:#1877f2;"><i class="bi bi-facebook"></i></span>
+                <div class="social-body">
+                  <label class="social-name">Facebook</label>
+                  <input name="redes_facebook" value="<%= _redes.facebook || '' %>" placeholder="https://facebook.com/tu-pagina" autocomplete="off">
+                </div>
+                <i class="bi bi-check-circle-fill social-done" title="Configurada"></i>
               </div>
-              <div>
-                <label class="config-label !text-xs !mb-1"><i class="bi bi-instagram mr-1"></i> Instagram</label>
-                <input name="redes_instagram" value="<%= _redes.instagram || '' %>" class="config-input" placeholder="@tu-cuenta o enlace">
+              <div class="social-field" data-filled="<%= _redes.instagram ? '1' : '0' %>">
+                <span class="social-chip social-chip-ig"><i class="bi bi-instagram"></i></span>
+                <div class="social-body">
+                  <label class="social-name">Instagram</label>
+                  <input name="redes_instagram" value="<%= _redes.instagram || '' %>" placeholder="@tu-cuenta o enlace" autocomplete="off">
+                </div>
+                <i class="bi bi-check-circle-fill social-done" title="Configurada"></i>
               </div>
-              <div>
-                <label class="config-label !text-xs !mb-1"><i class="bi bi-tiktok mr-1"></i> TikTok</label>
-                <input name="redes_tiktok" value="<%= _redes.tiktok || '' %>" class="config-input" placeholder="@tu-cuenta o enlace">
+              <div class="social-field" data-filled="<%= _redes.tiktok ? '1' : '0' %>">
+                <span class="social-chip" style="background:#111111;"><i class="bi bi-tiktok"></i></span>
+                <div class="social-body">
+                  <label class="social-name">TikTok</label>
+                  <input name="redes_tiktok" value="<%= _redes.tiktok || '' %>" placeholder="@tu-cuenta o enlace" autocomplete="off">
+                </div>
+                <i class="bi bi-check-circle-fill social-done" title="Configurada"></i>
               </div>
             </div>
           </div>
@@ -849,6 +958,25 @@
       input.value = '';
     }
 
+  </script>
+
+  <script>
+    // WhatsApp de ventas: máximo 10 dígitos, solo números
+    (function () {
+      var wa = document.getElementById('config-whatsapp');
+      if (!wa) return;
+      wa.addEventListener('input', function () {
+        var v = this.value.replace(/[^0-9]/g, '');
+        if (v.length > 10) v = v.slice(0, 10);
+        this.value = v;
+      });
+    })();
+    // Redes sociales: marca la tarjeta como configurada cuando el campo tiene contenido
+    document.querySelectorAll('.social-field input').forEach(function (inp) {
+      inp.addEventListener('input', function () {
+        this.closest('.social-field').setAttribute('data-filled', this.value.trim() ? '1' : '0');
+      });
+    });
   </script>
 </body>
 </html>

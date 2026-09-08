@@ -92,6 +92,7 @@
               </div>
             <% }) %>
           </div>
+          <div id="cliente-pager"></div>
         <% } %>
       </section>
 
@@ -104,31 +105,69 @@
   <script>
     var CLIENTES = <%- safeJson(customers.map(c => ({ id: c.id, name: c.name, phone: c.phone, orderCount: c.orderCount }))) %>;
     function escHtml(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+    var promoState = { filtro: 'todos', page: 1, list: [] };
+    var PROMO_PAGE_SIZE = 8;
     function promoTexto(c) {
       var msg = (document.getElementById('promo-msg') || {}).value || '';
       var nombre = (c.name || '').trim().split(/\s+/)[0] || 'cliente';
       return msg.replace(/\{nombre\}/g, nombre);
     }
+    function promoUrl(c) {
+      var phone = (c.phone || '').replace(/[^0-9]/g, '');
+      if (!phone) return '';
+      return 'https://wa.me/' + (phone.indexOf('52') === 0 ? phone : '52' + phone) + '?text=' + encodeURIComponent(promoTexto(c));
+    }
     function prepararPromo(filtro) {
       var msg = (document.getElementById('promo-msg') || {}).value || '';
       if (!msg.trim()) { mostrarToast('Escribe el mensaje primero', 'error'); return; }
-      var list = CLIENTES.filter(function (c) { return filtro === 'todos' ? true : c.orderCount >= 2; });
+      promoState.filtro = filtro;
+      promoState.page = 1;
+      promoState.list = CLIENTES.filter(function (c) { return filtro === 'todos' ? true : c.orderCount >= 2; });
+      promoRender();
+    }
+    function promoRender() {
       var box = document.getElementById('promo-result');
+      var list = promoState.list;
       if (!list.length) {
-        box.innerHTML = '<p class="text-xs text-slate-400 mt-3">No hay clientes' + (filtro === 'frecuentes' ? ' frecuentes (2+ pedidos)' : '') + ' todavía.</p>';
+        box.innerHTML = '<p class="text-xs text-slate-400 mt-3">No hay clientes' + (promoState.filtro === 'frecuentes' ? ' frecuentes (2+ pedidos)' : '') + ' todavía.</p>';
         return;
       }
-      box.innerHTML = '<p class="text-xs text-slate-500 mb-2">Se preparó el envío para <b>' + list.length + '</b> cliente(s). Pica cada botón para abrir su chat:</p>'
-        + '<div class="space-y-1 max-h-72 overflow-y-auto m-scroll">'
-        + list.map(function (c) {
-            var phone = (c.phone || '').replace(/[^0-9]/g, '');
-            var url = phone ? 'https://wa.me/' + (phone.indexOf('52') === 0 ? phone : '52' + phone) + '?text=' + encodeURIComponent(promoTexto(c)) : '';
-            return '<div class="flex items-center justify-between gap-2 py-1.5 border-b border-slate-50">'
-              + '<span class="text-xs font-semibold text-slate-700 truncate">' + escHtml(c.name) + ' <span class="text-slate-400 font-normal">(' + c.orderCount + ' ped.)</span></span>'
-              + (phone ? '<a href="' + url + '" target="_blank" class="m-btn m-btn-sm !min-h-0 !py-1 !bg-emerald-500 !text-white shrink-0">💬 Enviar</a>' : '<span class="text-[11px] text-slate-400 shrink-0">sin teléfono</span>')
-              + '</div>';
-          }).join('')
-        + '</div>';
+      var conTel = list.filter(function (c) { return promoUrl(c); });
+      var pages = Math.max(1, Math.ceil(list.length / PROMO_PAGE_SIZE));
+      if (promoState.page > pages) promoState.page = pages;
+      var start = (promoState.page - 1) * PROMO_PAGE_SIZE;
+      var slice = list.slice(start, start + PROMO_PAGE_SIZE);
+      var h = '<p class="text-xs text-slate-500 mb-2">Se preparó el envío para <b>' + list.length + '</b> cliente(s)'
+        + (conTel.length < list.length ? ' · <span class="text-amber-600 font-bold">' + (list.length - conTel.length) + ' sin teléfono</span>' : '')
+        + '. Pica cada botón para abrir su chat:</p>';
+      h += '<div class="divide-y divide-slate-50">';
+      slice.forEach(function (c) {
+        var url = promoUrl(c);
+        h += '<div class="flex items-center justify-between gap-2 py-1.5">'
+          + '<span class="text-xs font-semibold text-slate-700 truncate">' + escHtml(c.name) + ' <span class="text-slate-400 font-normal">(' + c.orderCount + ' ped.)</span></span>'
+          + (url ? '<a href="' + url + '" target="_blank" class="m-btn m-btn-sm !min-h-0 !py-1 !bg-emerald-500 !text-white shrink-0">💬 Enviar</a>' : '<span class="text-[11px] text-slate-400 shrink-0">sin teléfono</span>')
+          + '</div>';
+      });
+      h += '</div>';
+      if (pages > 1) {
+        h += '<div class="flex items-center justify-center gap-2 mt-3">'
+          + '<button type="button" class="m-btn m-btn-outlined m-btn-sm" data-pg="prev">‹ Anterior</button>'
+          + '<span class="text-xs font-bold text-slate-500 px-2">Página ' + promoState.page + ' de ' + pages + '</span>'
+          + '<button type="button" class="m-btn m-btn-outlined m-btn-sm" data-pg="next">Siguiente ›</button>'
+          + '</div>';
+      }
+      h += '<button type="button" id="promo-open-page" class="m-btn m-btn-tonal m-btn-sm mt-3">🚀 Abrir los ' + slice.length + ' chats de esta página</button>';
+      box.innerHTML = h;
+      var prev = box.querySelector('[data-pg="prev"]');
+      var next = box.querySelector('[data-pg="next"]');
+      if (prev) prev.onclick = function () { if (promoState.page > 1) { promoState.page--; promoRender(); } };
+      if (next) next.onclick = function () { if (promoState.page < pages) { promoState.page++; promoRender(); } };
+      box.querySelector('#promo-open-page').onclick = function () {
+        var links = slice.map(promoUrl).filter(Boolean);
+        if (!links.length) { mostrarToast('Ningún cliente de esta página tiene teléfono', 'error'); return; }
+        links.forEach(function (u) { window.open(u, '_blank'); });
+        mostrarToast('Se abrieron ' + links.length + ' chats. Si tu navegador bloqueó algunos, usa sus botones 💬.', 'ok');
+      };
     }
     function copiarPromo() {
       var msg = (document.getElementById('promo-msg') || {}).value || '';
@@ -136,14 +175,41 @@
       else mostrarToast('Copia el texto manualmente', 'info');
     }
     var s = document.getElementById('cliente-search');
-    if (s) {
-      s.oninput = function () {
-        var q = (s.value || '').toLowerCase().trim();
-        document.querySelectorAll('#cliente-list [data-search]').forEach(function (row) {
-          row.style.display = (!q || (row.getAttribute('data-search') || '').indexOf(q) !== -1) ? '' : 'none';
-        });
-      };
+    // ====== Filtro en vivo + paginación de clientes (mismo patrón que productos) ======
+    var CLI_PAGE_SIZE = 20;
+    var cliPage = 1;
+    function cliAll() {
+      return Array.prototype.slice.call(document.querySelectorAll('#cliente-list [data-search]'));
     }
+    function cliShow() {
+      var q = (s && s.value || '').toLowerCase().trim();
+      var current = cliAll().filter(function (row) {
+        return !q || (row.getAttribute('data-search') || '').indexOf(q) !== -1;
+      });
+      var pages = Math.max(1, Math.ceil(current.length / CLI_PAGE_SIZE));
+      if (cliPage > pages) cliPage = pages;
+      var start = (cliPage - 1) * CLI_PAGE_SIZE;
+      cliAll().forEach(function (row) { row.classList.add('hidden'); });
+      current.slice(start, start + CLI_PAGE_SIZE).forEach(function (row) { row.classList.remove('hidden'); });
+      cliRenderPager(pages, current.length);
+    }
+    function cliRenderPager(pages, total) {
+      var box = document.getElementById('cliente-pager');
+      if (!box) return;
+      if (pages <= 1) { box.innerHTML = ''; return; }
+      var h = '<div class="flex items-center justify-center gap-2 mt-4">';
+      h += '<button type="button" class="m-btn m-btn-outlined m-btn-sm" data-pg="prev">‹ Anterior</button>';
+      h += '<span class="text-xs font-bold text-slate-500 px-2">Página ' + cliPage + ' de ' + pages + ' · ' + total + ' cliente' + (total === 1 ? '' : 's') + '</span>';
+      h += '<button type="button" class="m-btn m-btn-outlined m-btn-sm" data-pg="next">Siguiente ›</button>';
+      h += '</div>';
+      box.innerHTML = h;
+      box.querySelector('[data-pg="prev"]').onclick = function () { if (cliPage > 1) { cliPage--; cliShow(); } };
+      box.querySelector('[data-pg="next"]').onclick = function () { if (cliPage < pages) { cliPage++; cliShow(); } };
+    }
+    if (s) {
+      s.oninput = function () { cliPage = 1; cliShow(); };
+    }
+    cliShow();
   </script>
 </body>
 </html>

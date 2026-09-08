@@ -1327,6 +1327,9 @@ app.post('/registrar', rateLimit(10), (req, res) => {
   if (getBusiness(cleanSlug)) {
     return res.render('register', { TEMPLATES, COLORS, GIROS: getGiros(), ESTILOS, error: 'Ese enlace ya existe. Elige otro.', ok: null, form });
   }
+  if (String(whatsapp).replace(/[^0-9]/g, '').length !== 10) {
+    return res.render('register', { TEMPLATES, COLORS, GIROS: getGiros(), ESTILOS, error: 'El WhatsApp de ventas debe tener exactamente 10 dígitos.', ok: null, form });
+  }
   const cleanPin = (pin || '').trim();
   if (cleanPin.length < 6 || !/^\d+$/.test(cleanPin)) {
     return res.render('register', { TEMPLATES, COLORS, GIROS: getGiros(), ESTILOS, error: 'El PIN debe tener al menos 6 dígitos numéricos.', ok: null, form });
