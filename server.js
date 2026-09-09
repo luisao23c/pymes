@@ -36,7 +36,7 @@ app.get('/health', (req, res) => res.send('ok'));
 // ================= PLANES (configurables desde el panel maestro) =================
 function getPlan(biz) {
   const p = db.prepare('SELECT * FROM plans WHERE key = ?').get((biz && biz.plan) || 'demo');
-  // Plan único vigente: demo (ilimitado, sin diseño personalizable).
+  // Plan único vigente: demo (ilimitado).
   return p || { key: 'demo', name: 'Demo', price: 0, days: 0, max_products: -1, ads: 1, design: 0 };
 }
 // Fondo avanzado de la página: hex simple o JSON {type,bg,bg2,bgAngle,bgImage,bgPattern,bgPatternC}
@@ -132,9 +132,9 @@ const PLAN_MAX = (biz) => {
 function adsOn(biz) {
   return getPlan(biz).ads === 1;
 }
-// El plan decide si el dueño puede personalizar el diseño de su catálogo
+// El plan decide si el dueño puede personalizar el diseño de su catálogo (siempre: ya no depende del plan)
 function designAllowed(biz) {
-  return getPlan(biz).design === 1;
+  return true;
 }
 // Tienda bloqueada por suspensión o plan vencido
 function storeBlock(biz) {
@@ -1406,8 +1406,7 @@ app.get('/maestro/panel', maestroAuth, (req, res) => {
   const plans = db.prepare('SELECT * FROM plans ORDER BY active DESC, id ASC').all();
   const planUsage = {};
   stores.forEach(s => { planUsage[s.plan] = (planUsage[s.plan] || 0) + 1; });
-  const customTemplates = db.prepare('SELECT * FROM custom_templates WHERE active=1 ORDER BY category, name').all();
-  res.render('maestro', { error: null, list: stores, plans, planUsage, GIROS: getGiros(), customTemplates });
+  res.render('maestro', { error: null, list: stores, plans, planUsage, GIROS: getGiros() });
 });
 
 app.post('/maestro/:id/toggle', maestroAuth, (req, res) => {
@@ -1466,15 +1465,14 @@ app.post('/maestro/plan', maestroAuth, (req, res) => {
   if (!cleanName) return res.redirect('/maestro/panel');
   const key = 'p' + Date.now();
   db.prepare(
-    'INSERT INTO plans (key, name, price, days, max_products, ads, design, active) VALUES (?, ?, ?, ?, ?, ?, ?, 1)'
+    'INSERT INTO plans (key, name, price, days, max_products, ads, active) VALUES (?, ?, ?, ?, ?, ?, 1)'
   ).run(
     key,
     cleanName,
     Math.max(0, parseFloat(price) || 0),
     Math.max(0, parseInt(days) || 0),
     parseInt(max_products) === -1 ? -1 : Math.max(0, parseInt(max_products) || 0),
-    req.body.ads === 'on' ? 1 : 0,
-    req.body.design === 'on' ? 1 : 0
+    req.body.ads === 'on' ? 1 : 0
   );
   res.redirect('/maestro/panel?ok=' + encodeURIComponent('Plan creado'));
 });
@@ -1494,145 +1492,6 @@ app.post('/maestro/cerrar', (req, res) => {
   deleteSession(req.cookies && req.cookies.sid);
   res.clearCookie('sid', { path: '/' });
   res.redirect('/maestro');
-});
-
-// ================= PLANTILLAS PERSONALIZADAS DEL EQUIPO =================
-app.post('/maestro/plantilla/crear', maestroAuth, (req, res) => {
-  const { name, emoji, description, category, giro } = req.body;
-  const cleanName = (name || '').trim().slice(0, 80);
-  if (!cleanName) return res.redirect('/maestro/panel?tab=plantillas&err=' + encodeURIComponent('Nombre requerido'));
-  db.prepare('INSERT INTO custom_templates (name, emoji, description, category, giro) VALUES (?,?,?,?,?)').run(
-    cleanName, (emoji || '📄').slice(0, 4), (description || '').trim().slice(0, 200), (category || '').trim(), (giro || '').trim()
-  );
-  res.redirect('/maestro/panel?tab=plantillas&ok=' + encodeURIComponent('Plantilla creada'));
-});
-
-app.post('/maestro/plantilla/:tid/editar', maestroAuth, (req, res) => {
-  const { name, emoji, description, category, giro } = req.body;
-  const cleanName = (name || '').trim().slice(0, 80);
-  if (!cleanName) return res.redirect('/maestro/panel?tab=plantillas&err=' + encodeURIComponent('Nombre requerido'));
-  db.prepare('UPDATE custom_templates SET name=?, emoji=?, description=?, category=?, giro=? WHERE id=?').run(
-    cleanName, (emoji || '📄').slice(0, 4), (description || '').trim().slice(0, 200), (category || '').trim(), (giro || '').trim(), req.params.tid
-  );
-  res.redirect('/maestro/panel?tab=plantillas&ok=' + encodeURIComponent('Plantilla actualizada'));
-});
-
-app.post('/maestro/plantilla/:tid/eliminar', maestroAuth, (req, res) => {
-  db.prepare('DELETE FROM custom_templates WHERE id=?').run(req.params.tid);
-  res.redirect('/maestro/panel?tab=plantillas&ok=' + encodeURIComponent('Plantilla eliminada'));
-});
-
-app.post('/maestro/plantilla/:tid/default', maestroAuth, (req, res) => {
-  const tpl = db.prepare('SELECT id FROM custom_templates WHERE id=? AND active=1').get(req.params.tid);
-  if (!tpl) return res.redirect('/maestro/panel?tab=plantillas');
-  db.prepare('UPDATE custom_templates SET is_default = 0').run();
-  db.prepare('UPDATE custom_templates SET is_default = 1 WHERE id = ?').run(req.params.tid);
-  db.prepare("INSERT OR REPLACE INTO site_config (key, value) VALUES ('default_template_id', ?)").run(String(req.params.tid));
-  res.redirect('/maestro/panel?tab=plantillas&ok=' + encodeURIComponent('Plantilla marcada como predeterminada'));
-});
-
-app.post('/maestro/plantilla/:tid/quitar-default', maestroAuth, (req, res) => {
-  db.prepare('UPDATE custom_templates SET is_default = 0 WHERE id = ?').run(req.params.tid);
-  db.prepare("INSERT OR REPLACE INTO site_config (key, value) VALUES ('default_template_id', '')").run();
-  res.redirect('/maestro/panel?tab=plantillas&ok=' + encodeURIComponent('Plantilla predeterminada removida'));
-});
-
-// Guardar bloques del constructor como plantilla del equipo (JSON body)
-app.post('/maestro/plantilla/guardar', maestroAuth, (req, res) => {
-  try {
-    const { name, emoji, description, blocks_json, category, giro } = req.body;
-    const cleanName = (name || '').trim().slice(0, 80);
-    if (!cleanName) return res.json({ ok: false, error: 'Nombre requerido' });
-    const r = db.prepare('INSERT INTO custom_templates (name, emoji, description, category, giro, blocks_json) VALUES (?,?,?,?,?,?)').run(
-      cleanName, (emoji || '📄').slice(0, 4), (description || '').trim().slice(0, 200), (category || '').trim(), (giro || '').trim(), (blocks_json || '[]').slice(0, 500000)
-    );
-    const tpl = db.prepare('SELECT * FROM custom_templates WHERE id=?').get(r.lastInsertRowid);
-    res.json({ ok: true, tpl });
-  } catch (e) {
-    res.json({ ok: false, error: e.message });
-  }
-});
-
-// Actualizar bloques de una plantilla existente (JSON body)
-app.post('/maestro/plantilla/:tid/bloques', maestroAuth, (req, res) => {
-  try {
-    const { blocks_json } = req.body;
-    db.prepare('UPDATE custom_templates SET blocks_json=? WHERE id=?').run(
-      (blocks_json || '[]').slice(0, 500000), req.params.tid
-    );
-    res.json({ ok: true });
-  } catch (e) {
-    res.json({ ok: false, error: e.message });
-  }
-});
-
-// ================= EDITOR DE PLANTILLA DESDE EL MAESTRO =================
-app.get('/maestro/plantilla/:tid/diseno', maestroAuth, (req, res) => {
-  const row = db.prepare('SELECT * FROM custom_templates WHERE id=? AND active=1').get(req.params.tid);
-  if (!row) return res.redirect('/maestro/panel?tab=plantillas');
-  // Crear un "business virtual" con los datos de la plantilla para alimentar al editor
-  const biz = {
-    id: -(parseInt(row.id) || 0),  // id negativo para distinguir de businesses reales
-    slug: 'plantilla-' + row.id,
-    name: row.name,
-    description: row.description || '',
-    logo: '',
-    banner: '',
-    whatsapp: '',
-    giro: row.giro || '',
-    giros: row.giro ? JSON.stringify([row.giro]) : '[]',
-    template: '',
-    style: 'moderno',
-    color: 'blue',
-    color_hex: '#2563eb',
-    color_hex2: '',
-    color_mode: 'degradado',
-    bg: '',
-    card: '',
-    text: '',
-    muted: '',
-    border: '',
-    radius: '',
-    font: '',
-    accent: '',
-    accent2: '',
-    header: '',
-    header_text: '',
-    sections: '{}',
-    blocks: row.blocks_json || '[]',
-    horario: '[]',
-    horario_msg: '',
-    grid_cols: 3,
-    wa_message: '',
-    currency: 'MXN',
-    show_network: 0,
-    page_bg: '',
-    active: 1,
-    created_at: row.created_at
-  };
-  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
-  res.render('diseno', {
-    ...configLocals(biz, { esMaestro: true, editingCustomTpl: parseInt(row.id) }),
-    biz,
-    editingCustomTpl: parseInt(row.id),
-    money: '$',
-    currencySymbol: '$',
-    mascaraConfig: { MASCARA_SIZES, SHAPE_DEFS, getShapeClip: getShapeClip.toString(), MASCARA_CSS: MASCARA_CSS.replace(/\n\s*/g,'') }
-  });
-});
-
-// Guardar bloques de una plantilla del equipo desde el constructor
-app.post('/maestro/plantilla/:tid/diseno', maestroAuth, (req, res) => {
-  try {
-    const { blocks } = req.body;
-    const blocksJson = Array.isArray(blocks) ? JSON.stringify(blocks) : (blocks || '[]');
-    db.prepare('UPDATE custom_templates SET blocks_json=? WHERE id=?').run(
-      blocksJson.slice(0, 500000), req.params.tid
-    );
-    res.json({ ok: true });
-  } catch (e) {
-    res.json({ ok: false, error: e.message });
-  }
 });
 
 // ================= CATÁLOGO PÚBLICO =================
@@ -3201,7 +3060,6 @@ function configLocals(biz, opts) {
     diseno,
     TPL_META,
     TPL_CASOS,
-    customTemplates: db.prepare('SELECT * FROM custom_templates WHERE active=1 ORDER BY category, name').all(),
     template: biz.template || '',
     theme: theme,
     girosList,
@@ -3215,7 +3073,6 @@ function configLocals(biz, opts) {
     previewProducts,
     pal,
     esMaestro: !!(opts && opts.esMaestro),
-    editingCustomTpl: (opts && opts.editingCustomTpl) || null,
     canDesign: !!(opts && opts.esMaestro) || designAllowed(biz),
     error: (opts && opts.error) || null,
     ok: (opts && opts.ok) || null

@@ -1,14 +1,63 @@
-# Dependencias
+# ================= Dependencias =================
 node_modules/
 
-# Archivos transitorios de SQLite (no son datos: cambian a cada instante)
-data.db-shm
-data.db-wal
+# ================= Secretos / entorno =================
+.env
+.env.local
+.env.*.local
+# (la plantilla .env.example SÍ se versiona)
 
-# Herramienta (previews, run-doc, logs de sesión)
+# ================= Base de datos =================
+# Ya no se usa SQLite, pero si regresa no debe versionarse:
+*.db
+*.db-shm
+*.db-wal
+*.db.bak
+*.sqlite
+*.sqlite3
+# Respaldos (locales y de servidor)
+backups/
+*.sql.gz
+# Los dumps .sql de datos completos NO van al repo (catamanager-con-datos.sql);
+# el esquema limpio (catamanager-full.sql) sí se versiona a propósito.
+catamanager-con-datos.sql
+
+# ================= Archivos subidos por usuarios =================
+# Logos, banners, fotos de productos y archivos del constructor
+public/uploads/
+uploads/
+
+# ================= Logs =================
+*.log
+*.log.err
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ================= Sesiones de Freebuff (previews, run-doc, logs) =================
 .freebuff/
 
-# Sistema
+# ================= Archivos de trabajo temporales / basura =================
+cookies*.txt
+err.txt
+*_REVIEW.txt
+*.tmp
+*.bak
+fix-*.js
+tools/test-*.js
+tools/check-*.js
+tools/debug-*.js
+
+# ================= Sistema operativo / editores =================
 .DS_Store
 Thumbs.db
-npm-debug.log*
+desktop.ini
+.vscode/
+.cursor/
+.codex/
+.idea/
+
+# ================= Proyectos anidados que no son parte de la app =================
+noir-portfolio/
+*.zip
