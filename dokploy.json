@@ -23,8 +23,22 @@
           "DB_PASS": "${DB_PASS}",
           "DB_NAME": "${DB_NAME:-catamanager}",
           "MASTER_KEY": "${MASTER_KEY}",
-          "BASE_URL": "${BASE_URL:-}"
-        }
+          "BASE_URL": "${BASE_URL:-https://cadi.nessik.net}"
+        },
+        "labels": [
+          "traefik.enable=true",
+          "traefik.http.services.cadi.loadbalancer.server.port=3000",
+          "traefik.http.routers.cadi.rule=Host(`cadi.nessik.net`)",
+          "traefik.http.routers.cadi.entrypoints=web",
+          "traefik.http.routers.cadi.service=cadi",
+          "traefik.http.routers.cadi.middlewares=cadi-https-redirect",
+          "traefik.http.middlewares.cadi-https-redirect.redirectscheme.scheme=https",
+          "traefik.http.routers.cadi-secure.rule=Host(`cadi.nessik.net`)",
+          "traefik.http.routers.cadi-secure.entrypoints=websecure",
+          "traefik.http.routers.cadi-secure.tls=true",
+          "traefik.http.routers.cadi-secure.tls.certresolver=letsencrypt",
+          "traefik.http.routers.cadi-secure.service=cadi"
+        ]
       }
     },
     "volumes": {

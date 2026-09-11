@@ -42,7 +42,11 @@ services:
       DB_PASS: ${DB_PASS:-cambia-esta-clave}
       DB_NAME: ${DB_NAME:-catamanager}
       MASTER_KEY: ${MASTER_KEY:-mk-cambia-esta-clave-maestra}
-      # URL pública usada en links de compartir/SEO (vacía = relativa).
+      # URL pública usada en links de compartir/SEO/QR y para forzar el
+      # redirect http->https (ver server.js). Debe empezar con https:// —
+      # se deja vacía aquí a propósito: este compose es para levantar el
+      # stack en localhost (sin TLS), y forzar https rompería esa prueba.
+      # En Dokploy sí se define (ver dokploy.json / env.dokploy).
       BASE_URL: ${BASE_URL:-}
     volumes:
       - uploads_data:/app/public/uploads
@@ -51,10 +55,21 @@ services:
       db:
         condition: service_healthy
     labels:
+      # Sin "traefik.enable" Traefik ignora el contenedor; sin el puerto del
+      # servicio y el redirect, quedaba sirviendo por http plano en vez de
+      # mandar a https (la causa raíz de los enlaces/QR que salían en http).
+      - "traefik.enable=true"
+      - "traefik.http.services.cadi.loadbalancer.server.port=3000"
       - "traefik.http.routers.cadi.rule=Host(`cadi.nessik.net`)"
+      - "traefik.http.routers.cadi.entrypoints=web"
+      - "traefik.http.routers.cadi.service=cadi"
+      - "traefik.http.routers.cadi.middlewares=cadi-https-redirect"
+      - "traefik.http.middlewares.cadi-https-redirect.redirectscheme.scheme=https"
       - "traefik.http.routers.cadi-secure.rule=Host(`cadi.nessik.net`)"
+      - "traefik.http.routers.cadi-secure.entrypoints=websecure"
       - "traefik.http.routers.cadi-secure.tls=true"
       - "traefik.http.routers.cadi-secure.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.cadi-secure.service=cadi"
 
 volumes:
   db_data:
