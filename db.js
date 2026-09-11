@@ -41,7 +41,7 @@ addColumnIfMissing('businesses', 'giros', "TEXT DEFAULT ''"); // giros múltiple
 addColumnIfMissing('businesses', 'plan_price', 'REAL DEFAULT 0'); // precio del plan contratado
 addColumnIfMissing('businesses', 'plan_ends_at', "TEXT DEFAULT ''"); // fecha de vencimiento del plan (YYYY-MM-DD)
 addColumnIfMissing('businesses', 'suspended', 'INTEGER DEFAULT 0'); // tienda suspendida por el administrador
-addColumnIfMissing('businesses', 'ads_enabled', 'INTEGER DEFAULT 0'); // esta tienda se muestra como anuncio en otros catálogos
+addColumnIfMissing('businesses', 'ads_enabled', 'INTEGER DEFAULT 1'); // esta tienda se muestra como anuncio en otros catálogos (activado por defecto)
 // Ajustes finos de diseño ('' = seguir el estilo visual elegido)
 addColumnIfMissing('businesses', 'bg', "TEXT DEFAULT ''");      // fondo de la tienda
 addColumnIfMissing('businesses', 'card', "TEXT DEFAULT ''");    // color de tarjetas de producto
@@ -89,6 +89,12 @@ CREATE TABLE IF NOT EXISTS employees (
 if (db.pragma('user_version', { simple: true }) < 2) {
   db.prepare(`UPDATE businesses SET plan = 'pro' WHERE plan = 'free'`).run();
   db.pragma('user_version = 2');
+}
+
+// Migración única: todas las tiendas se publicitan por defecto (antes era opt-in desde el panel maestro)
+if (db.pragma('user_version', { simple: true }) < 3) {
+  db.prepare(`UPDATE businesses SET ads_enabled = 1`).run();
+  db.pragma('user_version = 3');
 }
 
 // Migración de ids de color antiguos → nuevos (con degradado)
@@ -374,6 +380,9 @@ addColumnIfMissing('businesses', 'onboarding_done', 'INTEGER DEFAULT 0');
 addColumnIfMissing('businesses', 'blocks', "TEXT DEFAULT '[]'");
 addColumnIfMissing('businesses', 'page_bg', "TEXT DEFAULT ''");
 addColumnIfMissing('businesses', 'redes', "TEXT DEFAULT '{}'");
+// Patrón visual del catálogo público (mismo contenido, distinto acomodo):
+// 'catalogo' = patrón base de venta por catálogo; 'joyeria' = patrón elegante tipo boutique.
+addColumnIfMissing('businesses', 'catalog_design', "TEXT DEFAULT 'catalogo'");
 
 // ============ Plantillas personalizadas del equipo ============
 db.exec(`

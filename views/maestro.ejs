@@ -14,6 +14,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800;14..32,900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/css/material.css" />
   <script src="/js/material.js"></script>
+  <script src="/js/searchable-select.js"></script>
   <script src="/vendor/sweetalert2.all.min.js"></script>
   <script>
     (function () {
@@ -266,6 +267,52 @@
       box-shadow: 0 0 0 3px var(--mp-accent-glow);
     }
 
+    /* Tarjetas de resumen (dashboard) */
+    .mp-stat-card {
+      background: var(--mp-card);
+      border: 1px solid var(--mp-border);
+      border-radius: var(--mp-radius);
+      box-shadow: var(--mp-shadow);
+      padding: 0.9rem 1rem;
+      cursor: pointer;
+      transition: all .25s cubic-bezier(.22,1,.36,1);
+      position: relative;
+      overflow: hidden;
+    }
+    .mp-stat-card:hover { transform: translateY(-2px); box-shadow: var(--mp-shadow-lg); border-color: rgba(37,99,235,.15); }
+    .mp-stat-card.active-filter { border-color: var(--mp-accent); box-shadow: 0 0 0 3px var(--mp-accent-glow); }
+    .mp-stat-icon {
+      width: 34px; height: 34px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px; margin-bottom: 0.5rem;
+      transition: transform .25s cubic-bezier(.22,1,.36,1);
+    }
+    .mp-stat-card:hover .mp-stat-icon { transform: scale(1.1) rotate(-4deg); }
+    .mp-stat-icon.blue { background: rgba(37,99,235,.1); }
+    .mp-stat-icon.green { background: rgba(5,150,105,.1); }
+    .mp-stat-icon.amber { background: rgba(217,119,6,.1); }
+    .mp-stat-icon.purple { background: rgba(147,51,234,.1); }
+    .mp-stat-icon.pink { background: rgba(219,39,119,.1); }
+    .mp-stat-icon.slate { background: rgba(100,116,139,.1); }
+    .mp-stat-val { font-size: 1.3rem; font-weight: 900; color: var(--mp-text); line-height: 1.1; }
+    .mp-stat-lbl { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--mp-text-sec); margin-top: 0.2rem; }
+    body.dark .mp-stat-card:hover { border-color: rgba(96,165,250,.25); }
+
+    /* Barra de adopción Pro vs Free */
+    .mp-adopt-bar { height: 8px; border-radius: 99px; background: #e2e8f0; overflow: hidden; display: flex; }
+    .mp-adopt-bar .fill { height: 100%; background: linear-gradient(90deg, var(--mp-accent), var(--mp-accent-light)); transition: width .8s cubic-bezier(.22,1,.36,1); }
+    body.dark .mp-adopt-bar { background: rgba(255,255,255,.08); }
+
+    /* Selector de orden */
+    .sort-select { font-size: 0.75rem; padding: 0.4rem 0.8rem; border-radius: 10px; border: 1px solid var(--mp-border); background: var(--mp-card); color: var(--mp-text); font-weight: 600; cursor: pointer; outline: none; transition: all .2s; }
+    .sort-select:focus { border-color: var(--mp-accent); box-shadow: 0 0 0 3px var(--mp-accent-glow); }
+    body.dark .sort-select { background: #0d1117; border-color: rgba(255,255,255,.08); color: #e6edf3; }
+
+    /* Badges clicables (funcionan como filtros rápidos) */
+    .badge-status.clickable { cursor: pointer; user-select: none; }
+    .badge-status.clickable:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+    .badge-status.clickable:active { transform: scale(.96); }
+
     /* Tabs modernos */
     .mt-tab {
       flex: 1;
@@ -428,6 +475,54 @@
     <!-- MAIN -->
     <main class="max-w-6xl mx-auto px-3 md:px-6 py-5">
 
+      <!-- RESUMEN GLOBAL -->
+      <%
+        var mpActivas = list.filter(function(b){ return b.active; }).length;
+        var mpProCount = list.filter(function(b){ return b.plan === 'pro'; }).length;
+        var mpAds = list.filter(function(b){ return b.ads_enabled; }).length;
+        var mpProductos = list.reduce(function(s,b){ return s + (b.products_count||0); }, 0);
+        var mpPedidos = list.reduce(function(s,b){ return s + (b.orders_count||0); }, 0);
+        var mpMrr = list.filter(function(b){ return b.active && !b.suspended; }).reduce(function(s,b){ return s + Number(b.plan_price||0); }, 0);
+        var mpProPct = list.length ? Math.round((mpProCount / list.length) * 100) : 0;
+      %>
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2.5 mb-3">
+        <div class="mp-stat-card stagger-item" data-stat-filter="all" style="animation-delay:.0s" title="Ver todas las tiendas">
+          <div class="mp-stat-icon blue">🏪</div>
+          <p class="mp-stat-val"><%= list.length %></p>
+          <p class="mp-stat-lbl">Tiendas</p>
+        </div>
+        <div class="mp-stat-card stagger-item" data-stat-filter="active" style="animation-delay:.03s" title="Filtrar: solo activas">
+          <div class="mp-stat-icon green">●</div>
+          <p class="mp-stat-val"><%= mpActivas %></p>
+          <p class="mp-stat-lbl">Activas</p>
+        </div>
+        <div class="mp-stat-card stagger-item" data-stat-filter="pro" style="animation-delay:.06s" title="Filtrar: solo plan Pro">
+          <div class="mp-stat-icon purple">💎</div>
+          <p class="mp-stat-val"><%= mpProCount %></p>
+          <p class="mp-stat-lbl">Plan Pro</p>
+        </div>
+        <div class="mp-stat-card stagger-item" data-stat-filter="ads" style="animation-delay:.09s" title="Filtrar: publicitadas">
+          <div class="mp-stat-icon amber">📣</div>
+          <p class="mp-stat-val"><%= mpAds %></p>
+          <p class="mp-stat-lbl">Publicitadas</p>
+        </div>
+        <div class="mp-stat-card stagger-item" style="animation-delay:.12s" title="Productos registrados en toda la plataforma">
+          <div class="mp-stat-icon pink">📦</div>
+          <p class="mp-stat-val"><%= mpProductos %></p>
+          <p class="mp-stat-lbl">Productos</p>
+        </div>
+        <div class="mp-stat-card stagger-item" style="animation-delay:.15s" title="Suma de precios de plan de tiendas activas">
+          <div class="mp-stat-icon slate">💰</div>
+          <p class="mp-stat-val">$<%= mpMrr.toFixed(0) %></p>
+          <p class="mp-stat-lbl">Ingreso/mes</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3 mb-5 px-0.5">
+        <span class="text-[11px] font-bold text-slate-400 dark:text-slate-500 shrink-0">Adopción Pro</span>
+        <div class="mp-adopt-bar flex-1"><div class="fill" style="width:0%" data-adopt-pct="<%= mpProPct %>"></div></div>
+        <span class="text-[11px] font-black text-slate-600 dark:text-slate-300 shrink-0"><%= mpProPct %>%</span>
+      </div>
+
       <!-- TAB NAV -->
       <nav class="flex gap-1 bg-slate-100 dark:bg-[#161b22] rounded-2xl p-1 mb-5 border border-slate-200 dark:border-[#21262d]">
         <button onclick="switchTab('tiendas')" id="tab-btn-tiendas" class="mt-tab active">🏪 Tiendas <span class="mt-tab-count"><%= list.length %></span></button>
@@ -447,12 +542,25 @@
         </select>
         <input id="busca-tienda" type="search" placeholder="Buscar por nombre o slug…"
           class="input-compact flex-1 min-w-[180px] rounded-xl px-3 py-2 text-sm border border-slate-200 dark:bg-[#0d1117] dark:border-[#30363d] dark:text-white bg-white focus:outline-none focus:border-blue-400">
+        <select id="orden-tiendas" class="sort-select rounded-xl">
+          <option value="recientes">↓ Más recientes</option>
+          <option value="visitas">👁 Más visitas</option>
+          <option value="productos">📦 Más productos</option>
+          <option value="pedidos">🧾 Más pedidos</option>
+          <option value="az">A–Z</option>
+        </select>
+        <span id="conteo-tiendas" class="text-[11px] font-bold text-slate-400 dark:text-slate-500 shrink-0"><%= list.length %> tienda<%= list.length === 1 ? '' : 's' %></span>
       </div>
 
       <!-- LISTADO DE TIENDAS -->
-      <div class="grid gap-3">
+      <div class="grid gap-3" id="tiendas-grid">
         <% list.forEach((b, i) => { %>
-          <div class="store-card <%= b.expired ? 'expired' : '' %> <%= b.suspended ? 'suspended' : '' %> stagger-item" data-giro="<%= b.giro || '' %>" data-busca="<%= (b.name + ' ' + b.slug).toLowerCase() %>" style="animation-delay: <%= (i * 0.03) %>s">
+          <div class="store-card <%= b.expired ? 'expired' : '' %> <%= b.suspended ? 'suspended' : '' %> stagger-item"
+               data-giro="<%= b.giro || '' %>" data-busca="<%= (b.name + ' ' + b.slug).toLowerCase() %>"
+               data-active="<%= b.active ? 1 : 0 %>" data-plan="<%= b.plan %>" data-ads="<%= b.ads_enabled ? 1 : 0 %>"
+               data-visitas="<%= b.visits_count || 0 %>" data-productos="<%= b.products_count || 0 %>" data-pedidos="<%= b.orders_count || 0 %>"
+               data-creado="<%= b.created_at %>" data-nombre="<%= (b.name || '').toLowerCase() %>"
+               style="animation-delay: <%= (i * 0.03) %>s">
             <div class="flex flex-col md:flex-row md:items-center gap-3">
 
               <!-- Info tienda -->
@@ -470,7 +578,7 @@
                     <span>📅 <%= fmtFecha(b.created_at) %></span>
                   </p>
                   <div class="flex items-center gap-1.5 mt-1 flex-wrap">
-                    <% if (b.giro) { %><span class="badge-status giro">🏪 <%= b.giro %></span><% } %>
+                    <% if (b.giro) { %><span class="badge-status giro clickable" onclick="filtrarPorGiro('<%= b.giro %>')" title="Filtrar por este giro">🏪 <%= b.giro %></span><% } %>
                     <span class="badge-status <%= b.plan === 'pro' ? 'pro' : 'free' %>"><%= b.plan_name.toUpperCase() %></span>
                     <span class="badge-status neutral">$<%= Number(b.plan_price || 0).toFixed(2) %></span>
                     <% if (b.plan_ends_at) { %>
@@ -625,22 +733,93 @@
       }
     });
 
-    // Filtro por giro + búsqueda en el listado de tiendas
+    // Filtro por giro + búsqueda + tarjeta de resumen + orden en el listado de tiendas
+    var filtrarPorGiro;
     (function () {
       var sel = document.getElementById('giro-filtro');
       var inp = document.getElementById('busca-tienda');
-      if (!sel || !inp) return;
+      var ordenSel = document.getElementById('orden-tiendas');
+      var grid = document.getElementById('tiendas-grid');
+      var conteo = document.getElementById('conteo-tiendas');
+      var statCards = Array.prototype.slice.call(document.querySelectorAll('.mp-stat-card[data-stat-filter]'));
+      if (!sel || !inp || !grid) return;
       var cards = Array.prototype.slice.call(document.querySelectorAll('.store-card[data-giro]'));
+      var statFilter = 'all';
+
+      filtrarPorGiro = function (g) {
+        sel.value = g;
+        switchTab('tiendas');
+        apply();
+      };
+
       function apply() {
         var g = sel.value, q = inp.value.trim().toLowerCase();
+        var visibles = 0;
         cards.forEach(function (c) {
           var okG = !g || c.getAttribute('data-giro').toLowerCase() === g;
           var okQ = !q || (c.getAttribute('data-busca') || '').indexOf(q) !== -1;
-          c.style.display = okG && okQ ? '' : 'none';
+          var okStat = true;
+          if (statFilter === 'active') okStat = c.getAttribute('data-active') === '1';
+          else if (statFilter === 'pro') okStat = c.getAttribute('data-plan') === 'pro';
+          else if (statFilter === 'ads') okStat = c.getAttribute('data-ads') === '1';
+          var show = okG && okQ && okStat;
+          c.style.display = show ? '' : 'none';
+          if (show) visibles++;
         });
+        if (conteo) conteo.textContent = visibles + ' tienda' + (visibles === 1 ? '' : 's') + (visibles !== cards.length ? ' de ' + cards.length : '');
       }
+
       sel.addEventListener('change', apply);
       inp.addEventListener('input', apply);
+
+      // Tarjetas de resumen como filtros rápidos (clic para activar/desactivar)
+      statCards.forEach(function (card) {
+        card.addEventListener('click', function () {
+          var f = card.getAttribute('data-stat-filter');
+          statFilter = (statFilter === f) ? 'all' : f;
+          statCards.forEach(function (c) { c.classList.toggle('active-filter', c.getAttribute('data-stat-filter') === statFilter && statFilter !== 'all'); });
+          switchTab('tiendas');
+          apply();
+          grid.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        });
+      });
+
+      // Orden del listado (recientes, visitas, productos, pedidos, A-Z)
+      if (ordenSel) {
+        ordenSel.addEventListener('change', function () {
+          var mode = ordenSel.value;
+          var sorted = cards.slice().sort(function (a, b) {
+            if (mode === 'visitas') return (+b.getAttribute('data-visitas')) - (+a.getAttribute('data-visitas'));
+            if (mode === 'productos') return (+b.getAttribute('data-productos')) - (+a.getAttribute('data-productos'));
+            if (mode === 'pedidos') return (+b.getAttribute('data-pedidos')) - (+a.getAttribute('data-pedidos'));
+            if (mode === 'az') return a.getAttribute('data-nombre').localeCompare(b.getAttribute('data-nombre'));
+            return new Date(b.getAttribute('data-creado')) - new Date(a.getAttribute('data-creado'));
+          });
+          sorted.forEach(function (c) { grid.appendChild(c); });
+        });
+      }
+    })();
+
+    // Animación de conteo para las tarjetas de resumen
+    (function () {
+      document.querySelectorAll('.mp-stat-val').forEach(function (el) {
+        var text = el.textContent.trim();
+        var m = /^(\$?)(\d+)$/.exec(text);
+        if (!m) return;
+        var prefix = m[1], target = parseInt(m[2], 10);
+        if (!target) return;
+        var dur = 700, start = null;
+        function step(ts) {
+          if (!start) start = ts;
+          var p = Math.min(1, (ts - start) / dur);
+          var eased = 1 - Math.pow(1 - p, 3);
+          el.textContent = prefix + Math.round(target * eased);
+          if (p < 1) requestAnimationFrame(step);
+        }
+        requestAnimationFrame(step);
+      });
+      var bar = document.querySelector('.mp-adopt-bar .fill');
+      if (bar) requestAnimationFrame(function () { setTimeout(function () { bar.style.width = bar.getAttribute('data-adopt-pct') + '%'; }, 80); });
     })();
   </script>
 </body>

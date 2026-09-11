@@ -1,4 +1,4 @@
-const CACHE = 'nessik-v1';
+const CACHE = 'nessik-v2';
 
 const CORE = [
   '/css/material.css',
@@ -72,17 +72,21 @@ self.addEventListener('fetch', (e) => {
     return;
   }
 
-  // Recursos propios estáticos: caché primero
+  // Recursos propios estáticos: caché primero para que responda al instante,
+  // pero siempre revalida contra la red en segundo plano (stale-while-revalidate)
+  // — así una actualización de JS/CSS llega en la siguiente visita en vez de
+  // quedar atascada en caché para siempre (antes era caché-primero sin revalidar).
   if (url.origin === self.location.origin && /\.(css|js|png|jpe?g|webp|svg|gif|webmanifest|woff2?|ico)$/.test(url.pathname)) {
     e.respondWith((async () => {
-      const hit = await caches.match(req);
+      const c = await caches.open(CACHE);
+      const hit = await c.match(req);
+      const networkUpdate = fetch(req).then((res) => {
+        if (res && res.status === 200) c.put(req, res.clone());
+        return res;
+      }).catch(() => null);
+      e.waitUntil(networkUpdate);
       if (hit) return hit;
-      const res = await fetch(req);
-      if (res && res.status === 200) {
-        const c = await caches.open(CACHE);
-        c.put(req, res.clone());
-      }
-      return res;
+      return (await networkUpdate) || Response.error();
     })());
     return;
   }

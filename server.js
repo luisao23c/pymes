@@ -28,6 +28,16 @@ const app = express();
 // de ellos se convierte en 500 (next(err)) en lugar de tumbar el proceso.
 const ah = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 
+// Red de seguridad: un error fuera de una ruta Express (un setInterval, una
+// promesa sin .catch, etc.) no debe tirar el servidor completo para todas las
+// tiendas. Se registra y el proceso sigue vivo.
+process.on('unhandledRejection', (reason) => {
+  console.error('[unhandledRejection]', reason && (reason.stack || reason.message) || reason);
+});
+process.on('uncaughtException', (err) => {
+  console.error('[uncaughtException]', err && (err.stack || err.message) || err);
+});
+
 const MASTER_KEY = process.env.MASTER_KEY || crypto.randomBytes(12).toString('hex');
 const BASE_URL = process.env.BASE_URL || '';
 
@@ -135,6 +145,84 @@ function adsOn(biz) {
 // El plan decide si el dueño puede personalizar el diseño de su catálogo (siempre: ya no depende del plan)
 function designAllowed(biz) {
   return true;
+}
+// Patrones visuales del catálogo público: mismo contenido, distinto acomodo
+// Cada estilo es una paleta + tipografía sobre el mismo layout base (catalog.ejs → templates/constructor.ejs).
+// Fuentes de Google reutilizadas entre varios estilos para no disparar el número de peticiones de fuentes.
+const CAT_FONTS = {
+  clasica: { heading: "'Playfair Display', serif", body: "'Inter', sans-serif", href: 'https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;600;700&display=swap' },
+  pasteleria: { heading: "'Playfair Display', serif", body: "'Quicksand', sans-serif", href: 'https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Quicksand:wght@400;500;600;700&display=swap' },
+  romantica: { heading: "'Cormorant Garamond', serif", body: "'Nunito Sans', sans-serif", href: 'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Nunito+Sans:wght@400;600;700;800&display=swap' },
+  editorial: { heading: "'Cormorant Garamond', serif", body: "'Jost', sans-serif", href: 'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Jost:wght@300;400;500;600;700&display=swap' },
+  industrial: { heading: "'Archivo', sans-serif", body: "'Barlow Condensed', sans-serif", href: 'https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Barlow+Condensed:wght@500;600;700;800&display=swap' },
+  artesanal: { heading: "'Fraunces', serif", body: "'Karla', sans-serif", href: 'https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400&family=Karla:wght@400;500;600;700;800&display=swap' },
+  luxe: { heading: "'Italiana', serif", body: "'Outfit', sans-serif", href: 'https://fonts.googleapis.com/css2?family=Italiana&family=Outfit:wght@300;400;500;600;700&display=swap' },
+  organica: { heading: "'Amatic SC', cursive", body: "'Nunito', sans-serif", href: 'https://fonts.googleapis.com/css2?family=Amatic+SC:wght@400;700&family=Nunito:wght@400;600;700;800;900&display=swap' },
+  glam: { heading: "'Marcellus', serif", body: "'Jost', sans-serif", href: 'https://fonts.googleapis.com/css2?family=Marcellus&family=Jost:wght@300;400;500;600;700&display=swap' },
+  altaCostura: { heading: "'Bodoni Moda', serif", body: "'Montserrat', sans-serif", href: 'https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,500;0,6..96,600;0,6..96,700;1,6..96,400&family=Montserrat:wght@300;400;500;600;700&display=swap' },
+  tecnica: { heading: "'Space Grotesk', sans-serif", body: "'Inter', sans-serif", href: 'https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap' },
+  redondeada: { heading: "'Poppins', sans-serif", body: "'Poppins', sans-serif", href: 'https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap' },
+  literaria: { heading: "'Libre Baskerville', serif", body: "'Work Sans', sans-serif", href: 'https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Work+Sans:wght@400;500;600;700&display=swap' },
+  geometrica: { heading: "'Jost', sans-serif", body: "'Jost', sans-serif", href: 'https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600;700&display=swap' },
+  vintage: { heading: "'Abril Fatface', serif", body: "'Lato', sans-serif", href: 'https://fonts.googleapis.com/css2?family=Abril+Fatface&family=Lato:wght@400;700;900&display=swap' },
+  contemporanea: { heading: "'Crimson Pro', serif", body: "'Manrope', sans-serif", href: 'https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Manrope:wght@400;500;600;700;800&display=swap' },
+  amigable: { heading: "'Nunito', sans-serif", body: "'Nunito', sans-serif", href: 'https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap' },
+  brutalista: { heading: "'Archivo Black', sans-serif", body: "'Inter', sans-serif", href: 'https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;500;600;700&display=swap' }
+};
+const CAT_DESIGNS = [
+  { id: 'catalogo', name: 'Clásico', desc: 'Elegante y versátil, con serif refinada — va bien con casi cualquier negocio', emoji: '🛍️',
+    tokens: { bg: '#f8f6f2', card: '#ffffff', text: '#1e1b1a', textSec: '#6b6562', accent: '#1a3c5e', accentLight: '#4a7a9c', accentGlow: '#c9a86c', border: 'rgba(26,60,94,.08)', radius: 18, shadow: '0 8px 32px rgba(0,0,0,.06)', font: CAT_FONTS.clasica } },
+  { id: 'joyeria', name: 'Vitrina Elegante', desc: 'Fondo oscuro y dorado: aire de boutique de lujo', emoji: '💎',
+    tokens: { bg: '#12100e', card: '#1c1916', text: '#f3ede1', textSec: '#aaa89e', accent: '#d8b876', accentLight: '#e8cd96', accentGlow: '#8a7147', border: 'rgba(216,184,118,.15)', radius: 4, shadow: '0 10px 40px rgba(0,0,0,.45)', font: CAT_FONTS.altaCostura } },
+  { id: 'postres', name: 'Pastel Suave', desc: 'Tonos crema y rosa, curvas amplias y tipografía delicada', emoji: '🧁',
+    tokens: { bg: '#fdf6f0', card: '#fffaf5', text: '#3d2c1e', textSec: '#8a7365', accent: '#c17b8a', accentLight: '#dba3ae', accentGlow: '#8b5e3c', border: 'rgba(193,123,138,.12)', radius: 22, shadow: '0 8px 30px rgba(193,123,138,.10)', font: CAT_FONTS.pasteleria } },
+  { id: 'ropa', name: 'Editorial B/N', desc: 'Blanco y negro editorial, esquinas rectas, aire de revista de moda', emoji: '🖤',
+    tokens: { bg: '#f7f6f4', card: '#ffffff', text: '#1a1815', textSec: '#8a857c', accent: '#1a1815', accentLight: '#3a3530', accentGlow: '#b08d57', border: 'rgba(26,24,21,.12)', radius: 0, shadow: '0 8px 28px rgba(0,0,0,.05)', font: CAT_FONTS.editorial } },
+  { id: 'floreria', name: 'Botánico Romántico', desc: 'Verdes naturales y rosa empolvado, con textos cursivos', emoji: '🌿',
+    tokens: { bg: '#f6f7f3', card: '#ffffff', text: '#2c3a2a', textSec: '#7c8a77', accent: '#5a7052', accentLight: '#87a17e', accentGlow: '#c98a9c', border: 'rgba(90,112,82,.12)', radius: 20, shadow: '0 8px 30px rgba(90,112,82,.08)', font: CAT_FONTS.romantica } },
+  { id: 'ferreteria', name: 'Industrial', desc: 'Grises de acero, amarillo de advertencia y sombras marcadas', emoji: '⚙️',
+    tokens: { bg: '#eef0f2', card: '#ffffff', text: '#1b1f23', textSec: '#5f6b76', accent: '#1b1f23', accentLight: '#3a4249', accentGlow: '#f0b429', border: 'rgba(27,31,35,.14)', radius: 6, shadow: '4px 4px 0 rgba(27,31,35,.12)', font: CAT_FONTS.industrial } },
+  { id: 'muebles', name: 'Cálido Artesanal', desc: 'Nogal cálido y crema, con aire de taller hecho a mano', emoji: '🪵',
+    tokens: { bg: '#f7f2ea', card: '#fffdfa', text: '#33291f', textSec: '#8b7e6f', accent: '#8b5e3c', accentLight: '#ab7d5c', accentGlow: '#c9a86c', border: 'rgba(139,94,60,.12)', radius: 14, shadow: '0 10px 32px rgba(90,60,30,.08)', font: CAT_FONTS.artesanal } },
+  { id: 'cosmeticos', name: 'Minimalista Rosa', desc: 'Porcelana y rosa dorado, curvas amplias y mucho aire', emoji: '🤍',
+    tokens: { bg: '#fbf7f5', card: '#ffffff', text: '#2e2624', textSec: '#a0948e', accent: '#c9927e', accentLight: '#dcae9c', accentGlow: '#e8cdb8', border: 'rgba(201,146,126,.14)', radius: 24, shadow: '0 10px 30px rgba(201,146,126,.10)', font: CAT_FONTS.luxe } },
+  { id: 'vivero', name: 'Natural Fresco', desc: 'Verdes vivos y terracota, con un toque juguetón', emoji: '🌱',
+    tokens: { bg: '#f4f7ef', card: '#ffffff', text: '#2c3b2d', textSec: '#7e8b77', accent: '#3e7c4f', accentLight: '#5fa072', accentGlow: '#c96f44', border: 'rgba(62,124,79,.14)', radius: 24, shadow: '0 10px 30px rgba(62,124,79,.10)', font: CAT_FONTS.organica } },
+  { id: 'belleza', name: 'Glam Dorado', desc: 'Rosa dorado y tipografía elegante, aire de salón de belleza', emoji: '💫',
+    tokens: { bg: '#fbf5f2', card: '#ffffff', text: '#3a2e2a', textSec: '#8a7a76', accent: '#c4899b', accentLight: '#d8a8b6', accentGlow: '#3a2e2a', border: 'rgba(196,137,155,.16)', radius: 20, shadow: '0 10px 34px rgba(196,137,155,.12)', font: CAT_FONTS.glam } },
+  { id: 'eventos', name: 'Nocturno Elegante', desc: 'Fondo oscuro con dorado champán, para un efecto de gala', emoji: '🌙',
+    tokens: { bg: '#1f1120', card: '#2a1830', text: '#faf6f0', textSec: '#c7b3c9', accent: '#d8b876', accentLight: '#e8cd96', accentGlow: '#b08d57', border: 'rgba(216,184,118,.2)', radius: 0, shadow: '0 12px 40px rgba(0,0,0,.5)', font: CAT_FONTS.altaCostura } },
+  { id: 'minimalista', name: 'Minimalista', desc: 'Blanco y negro puro, esquinas rectas, sin adornos', emoji: '◻️',
+    tokens: { bg: '#fafafa', card: '#ffffff', text: '#18181b', textSec: '#71717a', accent: '#18181b', accentLight: '#3f3f46', accentGlow: '#a1a1aa', border: 'rgba(0,0,0,.08)', radius: 4, shadow: '0 4px 20px rgba(0,0,0,.05)', font: CAT_FONTS.tecnica } },
+  { id: 'pastel', name: 'Pastel Dreams', desc: 'Lavanda y menta suaves, todo redondeado y ligero', emoji: '🍬',
+    tokens: { bg: '#f7f5fc', card: '#ffffff', text: '#3a3352', textSec: '#8b84a3', accent: '#a78bda', accentLight: '#c3aeea', accentGlow: '#8ed6c0', border: 'rgba(167,139,218,.14)', radius: 24, shadow: '0 10px 30px rgba(167,139,218,.12)', font: CAT_FONTS.redondeada } },
+  { id: 'monocromo', name: 'Monocromo', desc: 'Blanco y negro contrastado, sombras duras, muy directo', emoji: '⬛',
+    tokens: { bg: '#ffffff', card: '#f4f4f5', text: '#0a0a0a', textSec: '#71717a', accent: '#0a0a0a', accentLight: '#27272a', accentGlow: '#a1a1aa', border: 'rgba(0,0,0,.1)', radius: 0, shadow: '6px 6px 0 rgba(0,0,0,.9)', font: CAT_FONTS.brutalista } },
+  { id: 'bohemio', name: 'Bohemio', desc: 'Terracota y mostaza cálidos, con aire artesanal y libre', emoji: '🧿',
+    tokens: { bg: '#faf3ea', card: '#fffaf3', text: '#3d2b1f', textSec: '#9c8770', accent: '#c1652f', accentLight: '#d98a52', accentGlow: '#c9a227', border: 'rgba(193,101,47,.14)', radius: 16, shadow: '0 10px 30px rgba(193,101,47,.10)', font: CAT_FONTS.artesanal } },
+  { id: 'oceanico', name: 'Oceánico', desc: 'Verde azulado profundo con arena, fresco y sereno', emoji: '🌊',
+    tokens: { bg: '#f2f7f7', card: '#ffffff', text: '#123638', textSec: '#5f8285', accent: '#0e7c86', accentLight: '#3ba0a9', accentGlow: '#e8c07d', border: 'rgba(14,124,134,.14)', radius: 12, shadow: '0 10px 30px rgba(14,124,134,.10)', font: CAT_FONTS.literaria } },
+  { id: 'nordico', name: 'Nórdico', desc: 'Madera clara, salvia y blanco, limpio y acogedor', emoji: '🤍',
+    tokens: { bg: '#f7f6f2', card: '#ffffff', text: '#2e332c', textSec: '#8a9186', accent: '#6b7a5e', accentLight: '#8fa07f', accentGlow: '#d8cdb8', border: 'rgba(107,122,94,.12)', radius: 10, shadow: '0 6px 24px rgba(0,0,0,.05)', font: CAT_FONTS.geometrica } },
+  { id: 'vibrante', name: 'Vibrante', desc: 'Coral y morado intensos, curvas amplias y mucha energía', emoji: '🎉',
+    tokens: { bg: '#fef7f5', card: '#ffffff', text: '#2b1b2e', textSec: '#8c7a90', accent: '#ff5d73', accentLight: '#ff8a99', accentGlow: '#7c3aed', border: 'rgba(255,93,115,.14)', radius: 22, shadow: '0 12px 34px rgba(255,93,115,.16)', font: CAT_FONTS.redondeada } },
+  { id: 'retro', name: 'Retro Vintage', desc: 'Mostaza y naranja quemado, con sombras a la antigua', emoji: '📻',
+    tokens: { bg: '#f6ecd9', card: '#fffdf6', text: '#3a2a1a', textSec: '#8c765a', accent: '#c1621f', accentLight: '#dc8548', accentGlow: '#2f6b5e', border: 'rgba(193,98,31,.16)', radius: 8, shadow: '5px 5px 0 rgba(58,42,26,.14)', font: CAT_FONTS.vintage } },
+  { id: 'futurista', name: 'Futurista', desc: 'Azul noche con cian neón, sombras que brillan', emoji: '🔮',
+    tokens: { bg: '#0b0f1a', card: '#121a2b', text: '#e6f6ff', textSec: '#8fa3bf', accent: '#22d3ee', accentLight: '#67e8f9', accentGlow: '#a78bfa', border: 'rgba(34,211,238,.2)', radius: 12, shadow: '0 0 32px rgba(34,211,238,.15)', font: CAT_FONTS.tecnica } },
+  { id: 'rustico', name: 'Rústico', desc: 'Terracota y oliva, con textura de campo', emoji: '🌾',
+    tokens: { bg: '#f5f0e6', card: '#fffcf5', text: '#382f22', textSec: '#8b8168', accent: '#a0522d', accentLight: '#bf7248', accentGlow: '#6b7a45', border: 'rgba(160,82,45,.14)', radius: 8, shadow: '0 8px 26px rgba(90,60,30,.08)', font: CAT_FONTS.artesanal } },
+  { id: 'elegante', name: 'Elegante Blanco', desc: 'Blanco puro con acentos dorados finos, muy sobrio', emoji: '🕊️',
+    tokens: { bg: '#fdfdfc', card: '#ffffff', text: '#242220', textSec: '#8f897f', accent: '#a88a4a', accentLight: '#c7a968', accentGlow: '#2a2824', border: 'rgba(168,138,74,.14)', radius: 16, shadow: '0 10px 34px rgba(0,0,0,.06)', font: CAT_FONTS.clasica } },
+  { id: 'urbano', name: 'Urbano', desc: 'Concreto y negro con un toque de verde neón', emoji: '🏙️',
+    tokens: { bg: '#eceeed', card: '#ffffff', text: '#16181a', textSec: '#5c6266', accent: '#16181a', accentLight: '#33383c', accentGlow: '#c6f24a', border: 'rgba(0,0,0,.12)', radius: 6, shadow: '4px 4px 0 rgba(0,0,0,.15)', font: CAT_FONTS.industrial } },
+  { id: 'tropical', name: 'Tropical', desc: 'Naranja coral y verde jungla, cálido y alegre', emoji: '🌴',
+    tokens: { bg: '#fffaf0', card: '#ffffff', text: '#20361f', textSec: '#6f8a68', accent: '#ea580c', accentLight: '#f2905a', accentGlow: '#16a34a', border: 'rgba(234,88,12,.14)', radius: 24, shadow: '0 10px 30px rgba(234,88,12,.12)', font: CAT_FONTS.amigable } },
+  { id: 'acuarela', name: 'Acuarela', desc: 'Azul suave y lavanda, como pintado a mano', emoji: '🎨',
+    tokens: { bg: '#f5f7fb', card: '#ffffff', text: '#2a3040', textSec: '#818ba0', accent: '#5b7fbd', accentLight: '#8aa6d4', accentGlow: '#c9a4d4', border: 'rgba(91,127,189,.12)', radius: 18, shadow: '0 10px 30px rgba(91,127,189,.10)', font: CAT_FONTS.contemporanea } }
+];
+function catDesignOf(biz) {
+  return CAT_DESIGNS.find(d => d.id === (biz && biz.catalog_design)) || CAT_DESIGNS[0];
 }
 // Tienda bloqueada por suspensión o plan vencido
 function storeBlock(biz) {
@@ -320,21 +408,55 @@ function verifyBodyCsrf(req, res, next) {
 }
 
 // ================= BACKUP AUTOMÁTICO DIARIO =================
+// Nota: desde la migración a MySQL 8, este backup vuelca la base real por SQL
+// (no hay un archivo .db local que copiar). Se guarda en backups/ dentro del
+// contenedor — si el despliegue en Dokploy no monta ese directorio como volumen
+// persistente, los backups no sobreviven un redeploy; considera moverlos a un
+// bucket remoto (S3, etc.) o confirmar que Dokploy ya respalda la base por su cuenta.
 const fs = require('fs');
 const backupsDir = path.join(__dirname, 'backups');
 if (!fs.existsSync(backupsDir)) fs.mkdirSync(backupsDir, { recursive: true });
-function hacerBackup() {
+async function hacerBackup() {
+  const mysql = require('mysql2/promise');
+  const cfg = {
+    host: process.env.DB_HOST || process.env.MYSQLHOST || '127.0.0.1',
+    port: Number(process.env.DB_PORT || process.env.MYSQLPORT || 3306),
+    user: process.env.DB_USER || process.env.MYSQLUSER || 'catamanager',
+    password: process.env.DB_PASS || process.env.MYSQLPASSWORD || 'catamanager_local_2026',
+    database: process.env.DB_NAME || process.env.MYSQLDATABASE || 'catamanager',
+  };
+  let conn;
   try {
+    conn = await mysql.createConnection(cfg);
+    const [tables] = await conn.query(
+      'SELECT table_name AS name FROM information_schema.tables WHERE table_schema = ? ORDER BY table_name',
+      [cfg.database]
+    );
+    let sql = `-- Backup automático de ${cfg.database} · ${new Date().toISOString()}\nSET FOREIGN_KEY_CHECKS=0;\n\n`;
+    for (const { name } of tables) {
+      const [[createRow]] = await conn.query('SHOW CREATE TABLE `' + name + '`');
+      sql += 'DROP TABLE IF EXISTS `' + name + '`;\n' + createRow['Create Table'] + ';\n\n';
+      const [rows] = await conn.query('SELECT * FROM `' + name + '`');
+      if (rows.length) {
+        const cols = Object.keys(rows[0]);
+        const colList = cols.map(c => '`' + c + '`').join(', ');
+        const values = rows.map(r => '(' + cols.map(c => conn.escape(r[c])).join(', ') + ')').join(',\n');
+        sql += 'INSERT INTO `' + name + '` (' + colList + ') VALUES\n' + values + ';\n\n';
+      }
+    }
+    sql += 'SET FOREIGN_KEY_CHECKS=1;\n';
     const date = new Date().toISOString().slice(0, 10);
-    const dest = path.join(backupsDir, `data-${date}.db`);
-    fs.copyFileSync(path.join(__dirname, 'data.db'), dest);
-    console.log(`Backup creado: ${dest}`);
+    const dest = path.join(backupsDir, `data-${date}.sql`);
+    fs.writeFileSync(dest, sql);
+    console.log(`Backup creado: ${dest} (${tables.length} tablas, ${(sql.length / 1024 / 1024).toFixed(1)} MB)`);
   } catch (e) {
     console.error('Error al crear backup:', e.message);
+  } finally {
+    if (conn) { try { await conn.end(); } catch (e) {} }
   }
 }
-setTimeout(hacerBackup, 1000 * 60 * 5); // 5 min tras iniciar
-setInterval(hacerBackup, 1000 * 60 * 60 * 24); // luego cada 24h
+setTimeout(() => { hacerBackup().catch(e => console.error('Error al crear backup:', e.message)); }, 1000 * 60 * 5); // 5 min tras iniciar
+setInterval(() => { hacerBackup().catch(e => console.error('Error al crear backup:', e.message)); }, 1000 * 60 * 60 * 24); // luego cada 24h
 
 // ================= RATE LIMIT DE LOGIN (anti fuerza bruta) =================
 const loginAttempts = new Map();
@@ -1014,10 +1136,13 @@ function currencyInfo(code) {
 // Secciones del catálogo: qué se muestra, en qué orden, modo de categorías, densidad, sombra y animación
 const DEFAULT_SECTIONS = { hero_mode: 'destacado', catmode: 'left', density: 'normal', shadow: 'media', hover: 'lift', orden: ['hero', 'contenido'] };
 function sectionsOf(biz) {
-  const def = { hero_mode: 'destacado', hero: true, categorias: true, catmode: 'left', density: 'normal', shadow: 'media', hover: 'lift', orden: ['hero', 'contenido'], showHeader: true, showFooter: true };
+  const def = { hero_mode: 'destacado', hero: true, categorias: true, catmode: 'left', density: 'normal', shadow: 'media', hover: 'lift', orden: ['hero', 'contenido'], showHeader: true, showFooter: true, campaign: null };
   try {
     const s = JSON.parse(biz.sections || '');
     const hero_mode = ['destacado', 'compacto', 'oculto'].includes(s.hero_mode) ? s.hero_mode : 'destacado';
+    const campaign = (s.campaign && typeof s.campaign === 'object' && String(s.campaign.text || '').trim())
+      ? { text: String(s.campaign.text).trim().slice(0, 120), ends: /^\d{4}-\d{2}-\d{2}$/.test(String(s.campaign.ends || '')) ? String(s.campaign.ends) : '' }
+      : null;
     return {
       hero_mode,
       hero: hero_mode !== 'oculto' && s.hero !== false,
@@ -1028,7 +1153,8 @@ function sectionsOf(biz) {
       hover: ['none', 'scale', 'lift', 'zoom', 'glow'].includes(s.hover) ? s.hover : 'lift',
       orden: Array.isArray(s.orden) ? s.orden : ['hero', 'contenido'],
       showHeader: s.showHeader !== false,
-      showFooter: s.showFooter !== false
+      showFooter: s.showFooter !== false,
+      campaign
     };
   } catch (e) {
     return def;
@@ -1345,8 +1471,8 @@ app.post('/registrar', rateLimit(10), (req, res) => {
   const tpl = 'constructor';
   const estSel = ESTILOS.some(e => e.id === estilo) ? estilo : (GIRO_STYLE[giroOk] || 'moderno');
   const r = db.prepare(
-    `INSERT INTO businesses (slug, name, whatsapp, description, pin, template, color, color_hex, color_hex2, giro, estilo, color_mode, plan)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'estilo', 'demo')`
+    `INSERT INTO businesses (slug, name, whatsapp, description, pin, template, color, color_hex, color_hex2, giro, estilo, color_mode, plan, ads_enabled)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'estilo', 'demo', 1)`
   ).run(
     cleanSlug,
     name.trim(),
@@ -1537,11 +1663,26 @@ app.get('/:slug', (req, res, next) => {
   const sess = findSession(req.cookies && req.cookies.sid);
   const adminLink = sess && (sess.kind === 'owner' || sess.kind === 'employee') && sess.biz_id === biz.id ? '/' + biz.slug + '/admin' : null;
   const sponsoredAds = adsOn(biz) ? pickSponsored(biz, 6) : [];
-  app.render('catalog', { biz, categories, products: productsFinal, estilo, theme: getTemplateTheme(biz.template), components: getComponents(biz), pages, seoUrl: BASE_URL ? BASE_URL + '/' + biz.slug : '', money: moneyFor(biz), currencySymbol: currencyInfo(biz.currency).symbol, currencyCode: biz.currency, mascaraCss: MASCARA_CSS, mascaraConfig: { MASCARA_SIZES, SHAPE_DEFS, getShapeClip }, adsEnabled: adsOn(biz), sponsoredAds, adminLink }, (err, html) => {
+  const catDesign = catDesignOf(biz).id;
+  const catDesignTokens = catDesignOf(biz).tokens;
+  const ogUrl = absoluteStoreUrl(req, biz);
+  const ogImage = absoluteImgUrl(req, biz.logo || biz.banner || '');
+  app.render('catalog', { biz, categories, products: productsFinal, estilo, catDesign, catDesignTokens, theme: getTemplateTheme(biz.template), components: getComponents(biz), pages, seoUrl: BASE_URL ? BASE_URL + '/' + biz.slug : '', money: moneyFor(biz), currencySymbol: currencyInfo(biz.currency).symbol, currencyCode: biz.currency, mascaraCss: MASCARA_CSS, mascaraConfig: { MASCARA_SIZES, SHAPE_DEFS, getShapeClip }, adsEnabled: adsOn(biz), sponsoredAds, adminLink, ogUrl, ogImage }, (err, html) => {
     if (err) return next(err);
     res.send(finishCatalog(html, biz, pal, estilo));
   });
 });
+
+// URL absoluta de la tienda (para OpenGraph, QR y compartir)
+function absoluteStoreUrl(req, biz) {
+  return (BASE_URL ? BASE_URL : req.protocol + '://' + req.get('host')) + '/' + biz.slug;
+}
+// Convierte la ruta de imagen del producto en absoluta para las etiquetas og:image
+function absoluteImgUrl(req, src) {
+  if (!src) return '';
+  if (/^https?:\/\//i.test(src)) return src;
+  return (BASE_URL ? BASE_URL : req.protocol + '://' + req.get('host')) + (src.startsWith('/') ? src : '/' + src);
+}
 
 // Página de un producto individual (para compartir y verlo solo)
 app.get('/:slug/p/:id', (req, res, next) => {
@@ -1564,7 +1705,7 @@ app.get('/:slug/p/:id', (req, res, next) => {
       res.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
       console.log('=== ROUTE HIT: Rendering catalog for:', bizOv.slug);
       console.log('bizOv.blocks:', bizOv.blocks ? 'present' : 'empty');
-      app.render('catalog', { biz: bizOv, categories, products, estilo, theme: getTemplateTheme(biz.template), components: getComponents(bizOv), pages, seoUrl: BASE_URL ? BASE_URL + '/' + biz.slug : '', money: moneyFor(biz), currencySymbol: currencyInfo(biz.currency).symbol, currencyCode: biz.currency, mascaraCss: MASCARA_CSS, mascaraConfig: { MASCARA_SIZES, SHAPE_DEFS, getShapeClip } }, (err, html) => {
+      app.render('catalog', { biz: bizOv, categories, products, estilo, catDesign: catDesignOf(biz).id, catDesignTokens: catDesignOf(biz).tokens, theme: getTemplateTheme(biz.template), components: getComponents(bizOv), pages, seoUrl: BASE_URL ? BASE_URL + '/' + biz.slug : '', money: moneyFor(biz), currencySymbol: currencyInfo(biz.currency).symbol, currencyCode: biz.currency, mascaraCss: MASCARA_CSS, mascaraConfig: { MASCARA_SIZES, SHAPE_DEFS, getShapeClip } }, (err, html) => {
         if (err) return next(err);
         try {
           res.send(finishCatalog(html, bizOv, pal, estilo));
@@ -1582,8 +1723,10 @@ app.get('/:slug/p/:id', (req, res, next) => {
   const { products } = getCatalog(biz.id);
   const related = products.filter(x => x.id !== p.id).slice(0, 8);
   const ads = adsOn(biz) ? pickSponsored(biz, 4) : [];
+  const ogUrl = absoluteStoreUrl(req, biz) + '/p/' + p.id;
+  const ogImage = absoluteImgUrl(req, p.imgs[0] || '');
   res.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
-  app.render('producto', { biz, product: p, categories: [{ id: p.category_id || 0, name: p.category_name || 'General' }], related, ads, estilo, money: moneyFor(biz), currencySymbol: currencyInfo(biz.currency).symbol, currencyCode: biz.currency }, (err, html) => {
+  app.render('producto', { biz, product: p, categories: [{ id: p.category_id || 0, name: p.category_name || 'General' }], related, ads, estilo, money: moneyFor(biz), currencySymbol: currencyInfo(biz.currency).symbol, currencyCode: biz.currency, ogUrl, ogImage }, (err, html) => {
     if (err) return next(err);
     res.send(paintCatalog(html, biz, pal, estilo));
   });
@@ -1688,7 +1831,7 @@ function previewCatalog(biz, q, res) {
   }
   prods = prods.map(p => { p.imgs = productImgs(p); return p; });
   res.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
-  app.render('catalog', { biz: bizOv, categories: cats, products: prods, estilo, theme: getTemplateTheme(bizOv.template), components: q.edit === '1' ? parseComponents(bizOv) : getComponents(bizOv), pages, editMode: q.edit === '1', seoUrl: '', money: moneyFor(biz), currencySymbol: currencyInfo(biz.currency).symbol, currencyCode: biz.currency, mascaraCss: MASCARA_CSS, mascaraConfig: { MASCARA_SIZES, SHAPE_DEFS, getShapeClip } }, (err, html) => {
+  app.render('catalog', { biz: bizOv, categories: cats, products: prods, estilo, catDesign: catDesignOf(biz).id, catDesignTokens: catDesignOf(biz).tokens, theme: getTemplateTheme(bizOv.template), components: q.edit === '1' ? parseComponents(bizOv) : getComponents(bizOv), pages, editMode: q.edit === '1', seoUrl: '', money: moneyFor(biz), currencySymbol: currencyInfo(biz.currency).symbol, currencyCode: biz.currency, mascaraCss: MASCARA_CSS, mascaraConfig: { MASCARA_SIZES, SHAPE_DEFS, getShapeClip } }, (err, html) => {
     if (err) return sendErrorPage(res, err);
     try { res.send(finishCatalog(html, bizOv, pal, estilo)); } catch (e) { sendErrorPage(res, e); }
   });
@@ -1912,6 +2055,8 @@ function firstEmployeePage(perms) {
 app.get('/:slug/admin', (req, res) => {
   const biz = getBusiness(req.params.slug);
   if (!biz) return res.status(404).render('404', { message: 'Tienda no encontrada' });
+  const block = storeBlock(biz);
+  if (block.blocked) return res.status(403).render('store-off', { biz, reason: block.reason });
   const pal = getPalette(biz, getEffectiveEstilo(biz));
   res.render('login', { biz, error: null, ok: req.query.salir ? 'Sesión cerrada correctamente.' : (req.query.nueva ? 'Tienda creada correctamente ✓ — entra con tu PIN para administrarla.' : null), pal });
 });
@@ -1919,6 +2064,8 @@ app.get('/:slug/admin', (req, res) => {
 app.post('/:slug/admin', loginRateLimit, (req, res) => {
   const biz = getBusiness(req.params.slug);
   if (!biz) return res.status(404).render('404', { message: 'Tienda no encontrada' });
+  const block = storeBlock(biz);
+  if (block.blocked) return res.status(403).render('store-off', { biz, reason: block.reason });
   const pal = getPalette(biz, getEffectiveEstilo(biz));
   const pin = String(req.body.pin || '');
   // 1) Dueño
@@ -2010,6 +2157,49 @@ async function qrFor(biz) {
     return '';
   }
 }
+
+// QR de un producto concreto (para la tarjeta compartible de redes)
+app.get('/:slug/admin/producto/:id/qr', requireAuth, can('productos.ver'), ah(async (req, res) => {
+  const p = db.prepare('SELECT id FROM products WHERE id = ? AND business_id = ?').get(req.params.id, req.biz.id);
+  if (!p) return res.status(404).json({ ok: false, error: 'Producto no encontrado' });
+  const url = (BASE_URL ? BASE_URL : req.protocol + '://' + req.get('host')) + '/' + req.params.slug + '/p/' + p.id;
+  try {
+    const dataUrl = await QRCode.toDataURL(url, { width: 300, margin: 1 });
+    res.json({ ok: true, url, qr: dataUrl });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: 'No se pudo generar el QR' });
+  }
+}));
+
+// Proxy de imágenes para el canvas de la tarjeta de redes: descarga la foto
+// desde el servidor y la sirve same-origin (evita CORS que "contamina" el canvas).
+app.get('/:slug/admin/img-proxy', requireAuth, can('productos.ver'), ah(async (req, res) => {
+  const src = String(req.query.u || '');
+  if (!src) return res.status(400).json({ ok: false, error: 'Falta la URL' });
+  if (/\/admin\//i.test(src) || src.includes('..')) return res.status(400).json({ ok: false, error: 'URL no permitida' });
+  const isHttp = /^https?:\/\//i.test(src);
+  try {
+    if (isHttp) {
+      const r = await fetch(src, {
+        signal: AbortSignal.timeout(8000),
+        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; NessikCard/1.0)', 'Accept': 'image/*' }
+      });
+      if (!r.ok) return res.status(404).json({ ok: false, error: 'La imagen no se pudo descargar (' + r.status + ')' });
+      const buf = Buffer.from(await r.arrayBuffer());
+      if (buf.length > 15 * 1024 * 1024) return res.status(413).json({ ok: false, error: 'Imagen demasiado grande' });
+      res.set('Content-Type', r.headers.get('content-type') || 'image/jpeg');
+      res.set('Cache-Control', 'private, max-age=300');
+      res.send(buf);
+    } else {
+      // Ruta relativa (foto subida a /uploads): se sirve directo del disco
+      const file = path.resolve(__dirname, 'public', src.replace(/^\/+/, ''));
+      if (!file.startsWith(path.resolve(__dirname, 'public'))) return res.status(400).json({ ok: false, error: 'Ruta no permitida' });
+      res.sendFile(file);
+    }
+  } catch (e) {
+    res.status(502).json({ ok: false, error: 'No se pudo descargar la imagen' });
+  }
+}));
 
 app.get('/:slug/admin/panel', requireAuth, can(['reportes', 'pedidos.gestionar']), ah(async (req, res) => {
   const biz = req.biz;
@@ -2625,6 +2815,19 @@ app.get('/:slug/admin/catalogo-print', requireAuth, (req, res) => {
   res.render('catalogo-print', { biz: req.biz, products, money: moneyFor(req.biz) });
 });
 
+// Póster publicitario imprimible de un producto (foto + precio + QR)
+app.get('/:slug/admin/producto/:id/poster', requireAuth, can('productos.ver'), ah(async (req, res) => {
+  const p = db.prepare('SELECT * FROM products WHERE id = ? AND business_id = ?').get(req.params.id, req.biz.id);
+  if (!p) return res.status(404).render('404', { message: 'Producto no encontrado' });
+  p.imgs = productImgs(p);
+  withPromo(p);
+  const url = (BASE_URL ? BASE_URL : req.protocol + '://' + req.get('host')) + '/' + req.params.slug + '/p/' + p.id;
+  let qr = '';
+  try { qr = await QRCode.toDataURL(url, { width: 400, margin: 1 }); } catch (e) {}
+  res.set('Cache-Control', 'no-store');
+  res.render('producto-poster', { biz: req.biz, product: p, qr, url, money: moneyFor(req.biz) });
+}));
+
 // ================= CLIENTES (mini-CRM) =================
 function upsertCustomer(bizId, name, phone) {
   const nm = String(name || '').trim();
@@ -3058,6 +3261,8 @@ function configLocals(biz, opts) {
     biz,
     TEMPLATES, COLORS, GIROS: getGiros(), ESTILOS, FONTS, CURRENCIES, GIRO_PRESETS,
     diseno,
+    CAT_DESIGNS,
+    catDesign: catDesignOf(biz),
     TPL_META,
     TPL_CASOS,
     template: biz.template || '',
@@ -3097,7 +3302,11 @@ function applyConfig(biz, body) {
         orden: (Array.isArray(s.orden) ? s.orden : ['hero', 'contenido']).slice(0, 3),
         nav: cleanNav(s.nav),
         showHeader: s.showHeader !== false,
-        showFooter: s.showFooter !== false
+        showFooter: s.showFooter !== false,
+        campaign: (s.campaign && typeof s.campaign === 'object') ? {
+          text: String(s.campaign.text || '').slice(0, 120),
+          ends: /^\d{4}-\d{2}-\d{2}$/.test(String(s.campaign.ends || '')) ? String(s.campaign.ends) : ''
+        } : null
       });
     } catch (e) { return biz.sections || ''; }
   })();
@@ -3284,8 +3493,9 @@ function applyConfig(biz, body) {
   const address = Object.prototype.hasOwnProperty.call(body, 'address')
     ? String(body.address || '').trim().slice(0, 300)
     : (biz.address || '');
+  const catDesign = CAT_DESIGNS.some(d => d.id === body.catalog_design) ? body.catalog_design : (biz.catalog_design || 'catalogo');
   db.prepare(
-    `UPDATE businesses SET name = ?, whatsapp = ?, description = ?, template = ?, color = ?, color_hex = ?, color_hex2 = ?, color_mode = ?, grid_cols = ?, logo = ?, banner = ?, giro = ?, giros = ?, estilo = ?, bg = ?, card = ?, text = ?, muted = ?, border = ?, radius = ?, font = ?, accent = ?, accent2 = ?, header = ?, header_text = ?, wa_message = ?, currency = ?, sections = ?, demo = ?, horario = ?, horario_msg = ?, blocks = ?, page_bg = ?, redes = ?, faq = ?, address = ? WHERE id = ?`
+    `UPDATE businesses SET name = ?, whatsapp = ?, description = ?, template = ?, color = ?, color_hex = ?, color_hex2 = ?, color_mode = ?, grid_cols = ?, logo = ?, banner = ?, giro = ?, giros = ?, estilo = ?, bg = ?, card = ?, text = ?, muted = ?, border = ?, radius = ?, font = ?, accent = ?, accent2 = ?, header = ?, header_text = ?, wa_message = ?, currency = ?, sections = ?, demo = ?, horario = ?, horario_msg = ?, blocks = ?, page_bg = ?, redes = ?, faq = ?, address = ?, catalog_design = ? WHERE id = ?`
   ).run(
     name || biz.name,
     cleanWa || biz.whatsapp,
@@ -3323,6 +3533,7 @@ function applyConfig(biz, body) {
     redes,
     faq,
     address,
+    catDesign,
     biz.id
   );
   // Modo fácil: guarda el preset elegido y crea las páginas sugeridas
@@ -3622,7 +3833,7 @@ app.use((err, req, res, next) => {
   sendErrorPage(res, err);
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = Number(process.env.PORT) || 3000; // '0' u otro valor no numérico cae al 3000
 app.listen(PORT, () => {
   db.prepare("DELETE FROM sessions WHERE expires_at IS NOT NULL AND expires_at < datetime('now')").run();
   setInterval(() => {

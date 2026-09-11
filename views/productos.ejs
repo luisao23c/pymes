@@ -170,6 +170,12 @@
                 </div>
                 </div>
                 <div class="flex items-center gap-0.5 flex-wrap justify-start sm:justify-end w-full sm:w-auto sm:shrink-0">
+                  <button type="button" class="m-btn-icon !w-8 !h-8 hover:!bg-emerald-50 hover:!text-emerald-600" title="Tarjeta para redes" onclick="abrirTarjetaProducto(this.closest('[data-edit-id]'))">
+                    <i class="bi bi-share text-base leading-none"></i>
+                  </button>
+                  <a href="/<%= biz.slug %>/admin/producto/<%= p.id %>/poster" target="_blank" class="m-btn-icon !w-8 !h-8 hover:!bg-amber-50 hover:!text-amber-600" title="Póster imprimible con QR">
+                    <i class="bi bi-qr-code text-base leading-none"></i>
+                  </a>
                   <% if (puedeEditarP) { %>
                   <form method="POST" action="/<%= biz.slug %>/admin/producto/<%= p.id %>/mover">
                     <input type="hidden" name="dir" value="up">
@@ -441,31 +447,33 @@
 
   <style>
     .pf-step { display:flex; flex-direction:column; align-items:center; gap:2px; min-width:64px; cursor:pointer; }
-    .pf-dot { width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; background:#e2e8f0; color:#64748b; transition:all .2s; }
-    .pf-step.on .pf-dot { background:var(--md-primary, #2563eb); color:#fff; }
+    .pf-dot { width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; background:#e2e8f0; color:#64748b; transition:all .22s cubic-bezier(.22,1,.36,1); }
+    .pf-step.on .pf-dot { background:var(--md-primary, #2563eb); color:#fff; transform:scale(1.06); }
     .pf-step.done .pf-dot { background:var(--md-primary-container, #dbeafe); color:var(--md-on-primary-container, #1d4ed8); }
-    .pf-lbl { font-size:10px; font-weight:700; color:#94a3b8; }
+    .pf-lbl { font-size:10px; font-weight:700; color:#94a3b8; transition:color .22s cubic-bezier(.22,1,.36,1); }
     .pf-step.on .pf-lbl { color:var(--md-primary, #2563eb); }
-    .pf-tipo-card { display:flex; align-items:center; gap:10px; text-align:left; padding:12px 14px; border-radius:14px; border:2px solid #e2e8f0; background:#fff; cursor:pointer; transition:all .18s ease; }
-    .pf-tipo-card:hover { border-color:#93c5fd; background:#f0f7ff; }
+    .pf-tipo-card { display:flex; align-items:center; gap:10px; text-align:left; padding:12px 14px; border-radius:14px; border:2px solid #e2e8f0; background:#fff; cursor:pointer; transition:all .25s cubic-bezier(.22,1,.36,1); }
+    .pf-tipo-card:hover { border-color:#93c5fd; background:#f0f7ff; transform:translateY(-1px); }
     .pf-tipo-card.active { border-color:var(--md-primary, #2563eb); background:var(--md-primary-container, #dbeafe); box-shadow:0 2px 10px rgba(37,99,235,.15); }
-    .pf-tipo-ico { font-size:22px; line-height:1; }
+    .pf-tipo-ico { font-size:22px; line-height:1; transition:transform .25s cubic-bezier(.22,1,.36,1); }
+    .pf-tipo-card:hover .pf-tipo-ico { transform:scale(1.12) rotate(-4deg); }
     .pf-tipo-tit { display:block; font-size:13px; font-weight:800; color:#1e293b; }
     .pf-tipo-sub { display:block; font-size:10px; font-weight:600; color:#64748b; margin-top:1px; }
     /* Tabs: Productos | Categorías | Atributos */
     .prod-tabs { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; background:var(--ap-card); border:1px solid var(--ap-border); padding:6px; border-radius:var(--ap-radius); box-shadow:var(--ap-shadow); }
-    .prod-tab { display:inline-flex; align-items:center; gap:8px; padding:8px 14px; border-radius:12px; font-size:12px; font-weight:800; color:var(--ap-text-sec); background:transparent; border:none; cursor:pointer; transition:all .18s ease; }
+    .prod-tab { display:inline-flex; align-items:center; gap:8px; padding:8px 14px; border-radius:12px; font-size:12px; font-weight:800; color:var(--ap-text-sec); background:transparent; border:none; cursor:pointer; transition:all .25s cubic-bezier(.22,1,.36,1); }
     .prod-tab:hover { background:rgba(26,60,94,.06); color:var(--ap-text); }
     .prod-tab.active { background:var(--ap-accent); color:#fff; box-shadow:0 4px 10px rgba(26,60,94,.25); }
-    .prod-tab .cnt { background:rgba(100,116,139,.14); color:var(--ap-text-sec); font-size:10px; font-weight:900; padding:1px 7px; border-radius:999px; }
+    .prod-tab .cnt { background:rgba(100,116,139,.14); color:var(--ap-text-sec); font-size:10px; font-weight:900; padding:1px 7px; border-radius:999px; transition:background .25s cubic-bezier(.22,1,.36,1), color .25s cubic-bezier(.22,1,.36,1); }
     .prod-tab.active .cnt { background:rgba(255,255,255,.22); color:#fff; }
     .prod-tab-panel { display:none; }
-    .prod-tab-panel.active { display:block; animation:prodFade .25s ease; }
-    @keyframes prodFade { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+    .prod-tab-panel.active { display:block; animation:prodFade .35s cubic-bezier(.22,1,.36,1) both; }
+    @keyframes prodFade { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
     #prod-loading { display:none; }
     .bg-checker { background-image: linear-gradient(45deg,#eef1f6 25%,transparent 25%),linear-gradient(-45deg,#eef1f6 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#eef1f6 75%),linear-gradient(-45deg,transparent 75%,#eef1f6 75%); background-size:16px 16px; background-position:0 0,0 8px,8px -8px,-8px 0; }
-    .img-aspect { font-size:10px; font-weight:700; padding:4px 8px; border-radius:999px; border:1px solid #e2e8f0; color:#64748b; }
+    .img-aspect { font-size:10px; font-weight:700; padding:4px 8px; border-radius:999px; border:1px solid #e2e8f0; color:#64748b; transition:all .2s cubic-bezier(.22,1,.36,1); }
     .img-aspect.on { border-color:#2563eb; background:#eff6ff; color:#2563eb; }
+    #prod-grid > * { transition:opacity .2s cubic-bezier(.22,1,.36,1); }
   </style>
 
   <script>
@@ -683,6 +691,7 @@
         model: model,
         save: save,
         render: render,
+        renderCombos: renderCombos,
         toggleAttr: function (name, values) {
           var idx = -1;
           model.attrs.forEach(function (a, i) { if ((a.name || '').toLowerCase() === String(name).toLowerCase()) idx = i; });
@@ -1164,6 +1173,21 @@
       pfMode = 'duplicar';
       prefilledFrom(card);
       setVal('f-name', (card.getAttribute('data-edit-name') || '') + ' (copia)');
+      // La copia nace LIMPIA de datos por variante: los combos de la copia aún no
+      // existen, así que no heredan fotos, stock, precios, SKU ni códigos de barra.
+      // El usuario los captura de nuevo en el paso de variantes.
+      var edDup = window.VAR_EDITORS && window.VAR_EDITORS.f;
+      if (edDup && edDup.model) {
+        edDup.model.images = {}; edDup.model.stock = {}; edDup.model.prices = {}; edDup.model.skus = {}; edDup.model.barcodes = {};
+        if (typeof edDup.save === 'function') edDup.save();
+        if (typeof edDup.render === 'function') { edDup.render(); edDup.renderCombos(); }
+      }
+      // Igual las fotos generales: si solo existían como portada heredada de
+      // variantes, se van; si el dueño subió fotos reales, también se piden de nuevo.
+      document.getElementById('f-fotos').innerHTML = '';
+      setVal('f-image', ''); setVal('f-galeria', '');
+      initFotos('f', '', '');
+      syncStockField();
       var form = document.getElementById('pf-form');
       form.action = '/<%= biz.slug %>/admin/producto';
       document.getElementById('pf-title').textContent = 'Duplicar producto';
@@ -1587,6 +1611,387 @@
 
 
 
+  </script>
+
+  <!-- Modal: tarjeta de producto para redes sociales -->
+  <style>
+    #tp-modal { display:none; }
+    #tp-modal.open { display:flex; }
+    #tp-preview canvas { width:100%; height:auto; display:block; }
+    #tp-preview { cursor: pointer; }
+  </style>
+  <div id="tp-modal" class="fixed inset-0 z-[200] items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="cerrarTarjetaProducto()"></div>
+    <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm max-h-[92vh] overflow-y-auto">
+      <div class="flex items-center justify-between px-4 py-3 border-b border-slate-100 sticky top-0 bg-white">
+        <p class="font-extrabold text-sm text-slate-800">🛍️ Tarjeta para redes</p>
+        <button type="button" onclick="cerrarTarjetaProducto()" class="w-8 h-8 rounded-full hover:bg-slate-100 text-slate-500 font-bold">✕</button>
+      </div>
+      <div class="p-4 space-y-3">
+        <div id="tp-preview" class="rounded-xl overflow-hidden border border-slate-100 bg-slate-50 flex items-center justify-center min-h-[240px]">
+          <span class="w-8 h-8 border-[3px] border-[var(--md-primary,#2563eb)] border-t-transparent rounded-full animate-spin"></span>
+        </div>
+
+        <div class="rounded-xl border border-slate-200 bg-slate-50/70 p-3">
+          <p class="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">Paso 1 · Publica tu tarjeta</p>
+          <p class="text-xs text-slate-500 mt-0.5 mb-2">Descarga la imagen y súbela a tu estado o red favorita.</p>
+          <button type="button" onclick="descargarTarjetaProducto()" class="m-btn m-btn-filled w-full !text-xs">⬇️ Descargar imagen</button>
+          <button type="button" onclick="descargarHistoriaProducto()" class="m-btn m-btn-outlined w-full mt-2 !text-xs">📱 Descargar historia (1080×1920)</button>
+        </div>
+
+        <div class="rounded-xl border border-slate-200 bg-slate-50/70 p-3">
+          <p class="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">Paso 2 · Comparte el enlace</p>
+          <p class="text-xs text-slate-500 mt-0.5 mb-2">Cópialo y pégalo en tu estado, chats o bio para que vayan directo al producto.</p>
+          <div class="flex gap-2">
+            <input id="tp-link" readonly onclick="this.select()" class="flex-1 min-w-0 text-xs text-slate-600 bg-white border border-slate-200 rounded-lg px-3 py-2 outline-none" value="">
+            <button type="button" onclick="copiarEnlaceProducto()" class="m-btn m-btn-filled !text-xs !px-3">📋</button>
+          </div>
+        </div>
+
+        <p class="text-[11px] text-slate-400 text-center">Imagen 1080×1350 para redes · Toca la tarjeta para abrir la página de compra</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ===== Tarjeta de producto para redes (canvas → PNG) =====
+    var TPCARD_BIZ = <%- safeJson({ name: biz.name, slug: biz.slug, cur: biz.currency || 'MXN', accent: biz.color_hex || '#2563eb', accent2: biz.color_hex2 || biz.color_hex || '#4f46e5', logo: biz.logo || '' }) %>;
+    var TPCARD = { row: null, url: '', photo: '', photoImg: null, canvas: null, logoImg: null };
+
+    function tpSym(n) {
+      var SYM = { MXN:'$', USD:'$', EUR:'€', COP:'$', ARS:'$', CLP:'$', PEN:'S/', GBP:'£', BRL:'R$' };
+      return (SYM[TPCARD_BIZ.cur] || '$') + Number(n || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    }
+    function tpText(hex) {
+      var m = /^#?([0-9a-f]{6})$/i.exec(hex || '#000');
+      if (!m) return '#111827';
+      var r = parseInt(m[1].slice(0,2),16), g = parseInt(m[1].slice(2,4),16), b = parseInt(m[1].slice(4,6),16);
+      return (r*0.299 + g*0.587 + b*0.114) > 155 ? '#111827' : '#F9FAFB';
+    }
+    function tpRR(ctx, x, y, w, h, r) {
+      r = Math.min(r, w/2, h/2);
+      ctx.beginPath();
+      ctx.moveTo(x+r, y);
+      ctx.arcTo(x+w, y, x+w, y+h, r); ctx.arcTo(x+w, y+h, x, y+h, r);
+      ctx.arcTo(x, y+h, x, y, r); ctx.arcTo(x, y, x+w, y, r);
+      ctx.closePath();
+    }
+    function tpWrap(ctx, text, x, y, maxW, lineH, maxLines) {
+      var words = String(text || '').split(/\s+/).filter(Boolean), line = '', lines = [];
+      for (var i = 0; i < words.length; i++) {
+        var t = line ? line + ' ' + words[i] : words[i];
+        if (ctx.measureText(t).width > maxW && line) { lines.push(line); line = words[i]; } else line = t;
+      }
+      if (line) lines.push(line);
+      lines.slice(0, maxLines).forEach(function (l, i) { ctx.fillText(l, x, y + i * lineH); });
+      return Math.min(lines.length, maxLines);
+    }
+    function tpCover(ctx, img, x, y, w, h) {
+      var ir = img.width / img.height, r = w / h, sw, sh, sx, sy;
+      if (ir > r) { sh = img.height; sw = sh * r; sx = (img.width - sw) / 2; sy = 0; }
+      else { sw = img.width; sh = sw / r; sx = 0; sy = (img.height - sh) / 2; }
+      ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
+    }
+    function tpHex(hex) {
+      var m = /^#?([0-9a-f]{6})$/i.exec(hex || '#2563eb');
+      if (!m) return { r: 37, g: 99, b: 235 };
+      return { r: parseInt(m[1].slice(0,2),16), g: parseInt(m[1].slice(2,4),16), b: parseInt(m[1].slice(4,6),16) };
+    }
+    function tpRgba(hex, a) { var c = tpHex(hex); return 'rgba(' + c.r + ',' + c.g + ',' + c.b + ',' + a + ')'; }
+    function tpMix(hex, hex2, t) {
+      var a = tpHex(hex), b = tpHex(hex2);
+      return 'rgb(' + Math.round(a.r+(b.r-a.r)*t) + ',' + Math.round(a.g+(b.g-a.g)*t) + ',' + Math.round(a.b+(b.b-a.b)*t) + ')';
+    }
+    function tpInitials(name) {
+      var p = String(name || '').trim().split(/\s+/);
+      var s = (p[0] ? p[0][0] : '') + (p[1] ? p[1][0] : '');
+      return (s || 'T').toUpperCase();
+    }
+
+    function abrirTarjetaProducto(row) {
+      if (!row) return;
+      TPCARD.row = row; TPCARD.url = ''; TPCARD.photo = ''; TPCARD.photoImg = null; TPCARD.canvas = null;
+      if (TPCARD_BIZ.logo && !TPCARD.logoImg) {
+        var lg = new Image();
+        lg.onload = function () { TPCARD.logoImg = lg; tpPintar(); };
+        lg.src = '/<%= biz.slug %>/admin/img-proxy?u=' + encodeURIComponent(TPCARD_BIZ.logo);
+      }
+      document.getElementById('tp-modal').classList.add('open');
+      document.getElementById('tp-preview').innerHTML = '<span class="w-8 h-8 border-[3px] border-[var(--md-primary,#2563eb)] border-t-transparent rounded-full animate-spin"></span>';
+      fetch('/<%= biz.slug %>/admin/producto/' + row.getAttribute('data-edit-id') + '/qr')
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (!d.ok) throw new Error(d.error || 'Error');
+          TPCARD.url = d.url;
+          var li = document.getElementById('tp-link'); if (li) li.value = d.url;
+          tpPintar();
+        })
+        .catch(function () { mostrarToast('No se pudo preparar la tarjeta', 'error'); cerrarTarjetaProducto(); });
+    }
+    function cerrarTarjetaProducto() { document.getElementById('tp-modal').classList.remove('open'); }
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') cerrarTarjetaProducto(); });
+    // Tocar la tarjeta abre la página de compra del producto
+    document.getElementById('tp-preview').addEventListener('click', function () {
+      if (TPCARD.url) window.open(TPCARD.url, '_blank');
+    });
+
+    function tpPintar() {
+      var src = TPCARD.row.getAttribute('data-edit-image');
+      if (src && src === TPCARD.photo && TPCARD.photoImg) { tpDibujar(TPCARD.photoImg); return; }
+      TPCARD.photo = ''; TPCARD.photoImg = null;
+      tpDibujar(null);
+      tpCargarFoto(0);
+    }
+
+    // Carga la foto SIEMPRE vía nuestro proxy same-origin: evita el bloqueo CORS
+    // que "contamina" el canvas y de paso esquiva hotlink-blockers externos.
+    // Si la imagen principal falla, prueba con las de la galería del producto.
+    function tpFotosCandidatas() {
+      var row = TPCARD.row, lista = [];
+      var main = row.getAttribute('data-edit-image');
+      if (main) lista.push(main);
+      try {
+        var raw = decodeURIComponent(row.getAttribute('data-edit-galeria') || '');
+        if (raw.indexOf('&quot;') !== -1) raw = raw.replace(/&quot;/g, '"').replace(/&amp;/g, '&');
+        var gal = JSON.parse(raw);
+        if (Array.isArray(gal)) gal.forEach(function (g) { if (g && lista.indexOf(g) === -1) lista.push(g); });
+      } catch (e) {}
+      return lista;
+    }
+    function tpCargarFoto(idx) {
+      var rowRef = TPCARD.row;
+      var lista = tpFotosCandidatas();
+      if (idx >= lista.length) return; // sin foto disponible: queda el respuesto
+      var src = lista[idx];
+      var proxy = '/<%= biz.slug %>/admin/img-proxy?u=' + encodeURIComponent(src);
+      var im = new Image();
+      im.onload = function () {
+        if (TPCARD.row !== rowRef) return; // el usuario ya abrió otro producto
+        TPCARD.photo = src; TPCARD.photoImg = im; tpDibujar(im);
+      };
+      im.onerror = function () { tpCargarFoto(idx + 1); };
+      im.src = proxy;
+    }
+
+    function tpDibujar(photo) {
+      var W = 1080, H = 1350, row = TPCARD.row;
+      if (!row) return;
+      var c = document.createElement('canvas'); c.width = W; c.height = H;
+      var ctx = c.getContext('2d');
+      var name = row.getAttribute('data-edit-name') || '';
+      var price = parseFloat(row.getAttribute('data-edit-price')) || 0;
+      var old = parseFloat(row.getAttribute('data-edit-old')) || 0;
+      var desc = row.getAttribute('data-edit-desc') || '';
+
+      // Fondo claro con tinte del acento + blobs suaves
+      ctx.fillStyle = tpMix(TPCARD_BIZ.accent, '#FFFFFF', 0.93);
+      ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = tpRgba(TPCARD_BIZ.accent, 0.08);
+      ctx.beginPath(); ctx.arc(W*0.88, H*0.06, 260, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = tpRgba(TPCARD_BIZ.accent2, 0.07);
+      ctx.beginPath(); ctx.arc(W*0.06, H*0.97, 220, 0, Math.PI*2); ctx.fill();
+
+      // Tarjeta blanca con sombra suave
+      ctx.save();
+      ctx.shadowColor = 'rgba(15,23,42,0.16)'; ctx.shadowBlur = 44; ctx.shadowOffsetY = 16;
+      ctx.fillStyle = '#FFFFFF';
+      tpRR(ctx, 44, 44, W-88, H-88, 44); ctx.fill();
+      ctx.restore();
+      ctx.strokeStyle = 'rgba(15,23,42,0.07)'; ctx.lineWidth = 2;
+      tpRR(ctx, 44, 44, W-88, H-88, 44); ctx.stroke();
+
+      // Encabezado: logo o iniciales + nombre de la tienda
+      var hx = 92, hy = 96, hr = 40;
+      ctx.save();
+      ctx.beginPath(); ctx.arc(hx+hr, hy+hr, hr, 0, Math.PI*2); ctx.clip();
+      if (TPCARD.logoImg) { tpCover(ctx, TPCARD.logoImg, hx, hy, hr*2, hr*2); }
+      else { ctx.fillStyle = TPCARD_BIZ.accent; ctx.fillRect(hx, hy, hr*2, hr*2); }
+      ctx.restore();
+      if (!TPCARD.logoImg) {
+        ctx.fillStyle = tpText(TPCARD_BIZ.accent); ctx.font = '800 34px "Segoe UI", Arial, sans-serif';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(tpInitials(TPCARD_BIZ.name), hx+hr, hy+hr+2);
+        ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+      }
+      ctx.strokeStyle = tpRgba(TPCARD_BIZ.accent, 0.25); ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(hx+hr, hy+hr, hr+2, 0, Math.PI*2); ctx.stroke();
+      ctx.fillStyle = '#0F172A'; ctx.font = '800 32px "Segoe UI", Arial, sans-serif';
+      var t = TPCARD_BIZ.name;
+      while (ctx.measureText(t).width > W-92-248 && t.length > 4) t = t.slice(0, -2);
+      if (t !== TPCARD_BIZ.name) t += '…';
+      ctx.fillText(t, 92 + hr*2 + 20, 122);
+      ctx.fillStyle = 'rgba(15,23,42,0.45)'; ctx.font = '700 17px "Segoe UI", Arial, sans-serif';
+      ctx.fillText('C A T Á L O G O   E N   L Í N E A', 92 + hr*2 + 20, 152);
+
+      // Foto del producto con marco y sombra
+      var px = 92, py = 204, pw = W-184, ph = 580;
+      ctx.save();
+      ctx.shadowColor = 'rgba(15,23,42,0.12)'; ctx.shadowBlur = 26; ctx.shadowOffsetY = 10;
+      ctx.fillStyle = '#FFFFFF'; tpRR(ctx, px, py, pw, ph, 30); ctx.fill();
+      ctx.restore();
+      ctx.save();
+      tpRR(ctx, px, py, pw, ph, 30); ctx.clip();
+      if (photo) { tpCover(ctx, photo, px, py, pw, ph); }
+      else {
+        ctx.fillStyle = '#EEF2F7'; ctx.fillRect(px, py, pw, ph);
+        ctx.fillStyle = 'rgba(15,23,42,0.30)'; ctx.font = '150px serif';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('🛒', px + pw/2, py + ph/2 - 20);
+        ctx.font = '600 26px "Segoe UI", Arial, sans-serif';
+        ctx.fillStyle = 'rgba(15,23,42,0.35)';
+        ctx.fillText('Foto del producto', px + pw/2, py + ph/2 + 90);
+        ctx.textBaseline = 'alphabetic';
+      }
+      if (old > price && old > 0) {
+        var pct = Math.round((1 - price/old) * 100);
+        ctx.fillStyle = '#E11D48';
+        tpRR(ctx, px+24, py+24, 210, 60, 30); ctx.fill();
+        ctx.fillStyle = '#FFFFFF'; ctx.font = '800 32px "Segoe UI", Arial, sans-serif';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('🔥 -' + pct + '%', px+24+105, py+24+30);
+        ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+      }
+      ctx.restore();
+
+      // Nombre (máx 2 líneas) y descripción (máx 2 líneas)
+      ctx.fillStyle = '#0F172A';
+      ctx.font = '800 52px "Segoe UI", Arial, sans-serif';
+      var nLines = tpWrap(ctx, name, 92, 882, pw, 62, 2);
+      var y = 882 + (nLines - 1) * 62;
+      if (desc) {
+        ctx.fillStyle = '#64748B'; ctx.font = '500 31px "Segoe UI", Arial, sans-serif';
+        y = y + 56 + tpWrap(ctx, desc, 92, y + 56, pw, 40, 2) * 40;
+      }
+
+      // Precio grande + precio anterior tachado
+      ctx.fillStyle = TPCARD_BIZ.accent; ctx.font = '900 82px "Segoe UI", Arial, sans-serif';
+      var ptxt = tpSym(price);
+      ctx.fillText(ptxt, 92, 1120);
+      var pwid = ctx.measureText(ptxt).width;
+      if (old > price && old > 0) {
+        ctx.fillStyle = '#94A3B8'; ctx.font = '600 38px "Segoe UI", Arial, sans-serif';
+        var otxt = tpSym(old);
+        ctx.fillText(otxt, 92 + pwid + 24, 1120);
+        var ow = ctx.measureText(otxt).width;
+        ctx.strokeStyle = '#94A3B8'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.moveTo(92 + pwid + 20, 1107); ctx.lineTo(92 + pwid + 28 + ow, 1107); ctx.stroke();
+      }
+
+      // Píldora de abonos: a cuánto sale cada pago
+      if (row.getAttribute('data-edit-installments') === '1') {
+        var freq = row.getAttribute('data-edit-inst-freq') || 'semanal';
+        var cnt = row.getAttribute('data-edit-inst-count') || 6;
+        var per = tpSym(Math.ceil(price / cnt));
+        var atxt = '💳 A solo ' + cnt + ' pagos ' + freq + 'es de ' + per;
+        ctx.font = '700 28px "Segoe UI", Arial, sans-serif';
+        var aw = Math.min(ctx.measureText(atxt).width + 48, pw);
+        ctx.fillStyle = 'rgba(16,185,129,0.12)';
+        tpRR(ctx, 92, 1156, aw, 50, 25); ctx.fill();
+        ctx.fillStyle = '#059669';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(atxt, 92 + 24, 1156 + 25);
+        ctx.textBaseline = 'alphabetic';
+      }
+
+      TPCARD.canvas = c;
+      var prev = document.getElementById('tp-preview');
+      prev.innerHTML = '';
+      prev.appendChild(c);
+    }
+
+    // Descarga la tarjeta en tamaño historia (1080×1920): dibuja la tarjeta
+    // actual y le agrega franjas arriba/abajo con el nombre de la tienda y el
+    // precio, para estados de WhatsApp e historias de Instagram.
+    function descargarHistoriaProducto() {
+      if (!TPCARD.canvas || !TPCARD.row) { mostrarToast('Aún se está generando la tarjeta', 'error'); return; }
+      var W = 1080, H = 1920;
+      var base = TPCARD.canvas;
+      var c = document.createElement('canvas'); c.width = W; c.height = H;
+      var ctx = c.getContext('2d');
+      // Fondo con tinte del acento (igual que la tarjeta)
+      ctx.fillStyle = tpMix(TPCARD_BIZ.accent, '#FFFFFF', 0.93);
+      ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = tpRgba(TPCARD_BIZ.accent, 0.08);
+      ctx.beginPath(); ctx.arc(W*0.88, H*0.05, 260, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = tpRgba(TPCARD_BIZ.accent2, 0.07);
+      ctx.beginPath(); ctx.arc(W*0.06, H*0.96, 220, 0, Math.PI*2); ctx.fill();
+      // Franja superior: logo/iniciales + nombre de la tienda
+      var hr = 46, hx = 92, hy = 110;
+      ctx.save();
+      ctx.beginPath(); ctx.arc(hx+hr, hy+hr, hr, 0, Math.PI*2); ctx.clip();
+      if (TPCARD.logoImg) { tpCover(ctx, TPCARD.logoImg, hx, hy, hr*2, hr*2); }
+      else { ctx.fillStyle = TPCARD_BIZ.accent; ctx.fillRect(hx, hy, hr*2, hr*2); }
+      ctx.restore();
+      if (!TPCARD.logoImg) {
+        ctx.fillStyle = tpText(TPCARD_BIZ.accent); ctx.font = '800 38px "Segoe UI", Arial, sans-serif';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(tpInitials(TPCARD_BIZ.name), hx+hr, hy+hr+2);
+        ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+      }
+      ctx.strokeStyle = tpRgba(TPCARD_BIZ.accent, 0.25); ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(hx+hr, hy+hr, hr+2, 0, Math.PI*2); ctx.stroke();
+      ctx.fillStyle = '#0F172A'; ctx.font = '800 40px "Segoe UI", Arial, sans-serif';
+      var t = TPCARD_BIZ.name;
+      while (ctx.measureText(t).width > W-92-(hr*2+40) && t.length > 4) t = t.slice(0, -2);
+      if (t !== TPCARD_BIZ.name) t += '…';
+      ctx.fillText(t, hx + hr*2 + 24, hy + hr - 6);
+      ctx.fillStyle = 'rgba(15,23,42,0.45)'; ctx.font = '700 22px "Segoe UI", Arial, sans-serif';
+      ctx.fillText('C A T Á L O G O   E N   L Í N E A', hx + hr*2 + 24, hy + hr + 34);
+      // Tarjeta base centrada (deja ~120px arriba y ~150px abajo)
+      var drawH = H - 120 - 150;
+      var drawW = drawH * (base.width / base.height);
+      var dx = (W - drawW) / 2;
+      ctx.save();
+      ctx.shadowColor = 'rgba(15,23,42,0.14)'; ctx.shadowBlur = 40; ctx.shadowOffsetY = 14;
+      ctx.drawImage(base, dx, 120, drawW, drawH);
+      ctx.restore();
+      // Franja inferior: precio + "Desliza para pedir"
+      var price = parseFloat(TPCARD.row.getAttribute('data-edit-price')) || 0;
+      ctx.fillStyle = TPCARD_BIZ.accent; ctx.font = '900 76px "Segoe UI", Arial, sans-serif';
+      ctx.fillText(tpSym(price), 92, H - 84);
+      ctx.fillStyle = 'rgba(15,23,42,0.5)'; ctx.font = '600 30px "Segoe UI", Arial, sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText('👆 Desliza hacia arriba para pedir', W - 92, H - 74);
+      ctx.textAlign = 'left';
+      c.toBlob(function (blob) {
+        if (!blob) { mostrarToast('No se pudo exportar la historia', 'error'); return; }
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'historia-' + (TPCARD.row ? TPCARD.row.getAttribute('data-edit-id') : '') + '.png';
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+        mostrarToast('Historia descargada ✓', 'ok');
+      }, 'image/png');
+    }
+
+    function descargarTarjetaProducto() {
+      if (!TPCARD.canvas) { mostrarToast('Aún se está generando la tarjeta', 'error'); return; }
+      try {
+        TPCARD.canvas.toBlob(function (blob) {
+          if (!blob) { mostrarToast('No se pudo exportar la imagen', 'error'); return; }
+          var a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = 'producto-' + (TPCARD.row ? TPCARD.row.getAttribute('data-edit-id') : '') + '.png';
+          document.body.appendChild(a); a.click(); a.remove();
+          setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+          mostrarToast('Tarjeta descargada ✓', 'ok');
+        }, 'image/png');
+      } catch (e) {
+        mostrarToast('La imagen no se pudo exportar', 'error');
+      }
+    }
+    function copiarEnlaceProducto() {
+      if (!TPCARD.url) return;
+      var done = function () { mostrarToast('Enlace copiado ✓', 'ok'); };
+      var fallback = function () {
+        var ta = document.createElement('textarea');
+        ta.value = TPCARD.url; document.body.appendChild(ta); ta.select();
+        try { document.execCommand('copy'); done(); } catch (e) { mostrarToast('No se pudo copiar', 'error'); }
+        ta.remove();
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(TPCARD.url).then(done, fallback);
+      else fallback();
+    }
   </script>
 </body>
 </html>

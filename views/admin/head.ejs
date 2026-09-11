@@ -45,8 +45,10 @@
     --ap-radius-sm: 10px;
     --ap-gradient: linear-gradient(135deg, #1a3c5e 0%, #2d5a7b 50%, #1a3c5e 100%);
     --ap-gradient-warm: linear-gradient(135deg, #c9a86c 0%, #e8c88a 100%);
-    --ap-motion: .25s cubic-bezier(0.4, 0, 0.2, 1);
+    --ap-motion: .3s cubic-bezier(.22, 1, .36, 1);
+    --ap-motion-fast: .18s cubic-bezier(.22, 1, .36, 1);
   }
+  html { scroll-behavior: smooth; }
   body {
     font-family: 'Inter', system-ui, sans-serif;
     background: var(--ap-bg);
@@ -198,6 +200,7 @@
   }
   .m-btn:active {
     transform: scale(.97);
+    transition-duration: .1s;
   }
   .m-btn:focus-visible {
     outline: 2px solid var(--ap-accent);
@@ -495,6 +498,13 @@
     .sidebar-toggle { display: flex; }
   }
 
+  /* Sidebar: curva de easing más suave que la de Tailwind (mayor especificidad, no pisa transition-property) */
+  aside.fixed,
+  main.transition-all {
+    transition-duration: .3s;
+    transition-timing-function: cubic-bezier(.22, 1, .36, 1);
+  }
+
   /* Sidebar colapsado */
   body.sidebar-closed aside {
     transform: translateX(-100%);
@@ -523,26 +533,43 @@
     }
   }
 
-  /* Overlay móvil para sidebar */
+  /* Overlay móvil para sidebar — se desvanece en vez de aparecer de golpe */
   .sidebar-overlay {
-    display: none;
     position: fixed;
     inset: 0;
     background: rgba(0,0,0,.3);
     backdrop-filter: blur(4px);
     z-index: 39;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity var(--ap-motion), visibility var(--ap-motion);
   }
   body.sidebar-open .sidebar-overlay {
-    display: block;
+    opacity: 1;
+    visibility: visible;
   }
   body.sidebar-open aside {
     transform: translateX(0);
     opacity: 1;
     pointer-events: auto;
   }
+
+  /* ===== ACCESIBILIDAD: respetar "reducir movimiento" ===== */
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .fade-in, .toast-in, .animate-slide-up, .m-card::before, .progress-bar-fill::after {
+      animation: none !important;
+    }
+    *, *::before, *::after {
+      transition-duration: .001ms !important;
+      animation-duration: .001ms !important;
+      animation-iteration-count: 1 !important;
+    }
+  }
 </style>
 <link rel="stylesheet" href="/css/material.css">
 <script src="/js/material.js"></script>
+<script src="/js/searchable-select.js"></script>
 <script src="/vendor/sweetalert2.all.min.js"></script>
 <script>
   (function () {

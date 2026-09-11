@@ -70,13 +70,13 @@
       <!-- Métricas clave -->
       <section class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 mb-3">
         <% const cards = [
-          { label: 'Visitas hoy', value: stats.today, isNum: true, delta: stats.weekDelta, deltaLabel: 'vs semana pasada', icon: 'M15 12a3 3 0 11-6 0 3 3 0 016 0zM2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z', tint: 'text-blue-600 bg-blue-50' },
-          { label: 'Ingresos (cobrado)', value: stats.revenue, isMoney: true, delta: stats.revenueDelta, deltaLabel: 'vs semana pasada', title: 'Dinero que realmente entró: abonos cobrados + pedidos de contado cobrados (sin pendientes ni cancelados)', icon: 'M12 8c-2.2 0-4 1.1-4 2.5S9.8 13 12 13s4-1.1 4-2.5S14.2 8 12 8zM5 13.5c.5 1.9 3.4 3.1 7 3.1s6.5-1.2 7-3.1M5 17.5c.5 1.9 3.4 3.1 7 3.1s6.5-1.2 7-3.1', tint: 'text-emerald-600 bg-emerald-50' },
-          { label: 'Pedidos WhatsApp', value: stats.waClicks, isNum: true, icon: 'M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z', tint: 'text-indigo-600 bg-indigo-50' },
-          { label: 'Conversión', value: stats.conv, isPct: true, icon: 'M3 13h4v8H3zM10 5h4v16h-4zM17 9h4v12h-4z', tint: 'text-fuchsia-600 bg-fuchsia-50' }
+          { label: 'Visitas hoy', value: stats.today, isNum: true, delta: stats.weekDelta, deltaLabel: 'vs semana pasada', icon: 'M15 12a3 3 0 11-6 0 3 3 0 016 0zM2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z', tint: 'text-blue-600 bg-blue-50', target: '#sec-charts' },
+          { label: 'Ingresos (cobrado)', value: stats.revenue, isMoney: true, delta: stats.revenueDelta, deltaLabel: 'vs semana pasada', title: 'Dinero que realmente entró: abonos cobrados + pedidos de contado cobrados (sin pendientes ni cancelados)', icon: 'M12 8c-2.2 0-4 1.1-4 2.5S9.8 13 12 13s4-1.1 4-2.5S14.2 8 12 8zM5 13.5c.5 1.9 3.4 3.1 7 3.1s6.5-1.2 7-3.1M5 17.5c.5 1.9 3.4 3.1 7 3.1s6.5-1.2 7-3.1', tint: 'text-emerald-600 bg-emerald-50', target: '#sec-pedidos' },
+          { label: 'Pedidos WhatsApp', value: stats.waClicks, isNum: true, icon: 'M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z', tint: 'text-indigo-600 bg-indigo-50', target: '#sec-funnel' },
+          { label: 'Conversión', value: stats.conv, isPct: true, icon: 'M3 13h4v8H3zM10 5h4v16h-4zM17 9h4v12h-4z', tint: 'text-fuchsia-600 bg-fuchsia-50', target: '#sec-funnel' }
         ]; %>
         <% cards.forEach((c, i) => { %>
-          <div class="metric-card <%= ['blue','green','purple','gold'][i] %> p-3.5 cursor-pointer" title="<%= c.title || '' %>">
+          <div class="metric-card <%= ['blue','green','purple','gold'][i] %> p-3.5 cursor-pointer" title="<%= c.title || '' %>" data-scroll-target="<%= c.target %>">
             <div class="flex items-center justify-between gap-2">
               <div class="min-w-0">
                 <p class="text-[10px] font-bold uppercase tracking-wider" style="color:var(--ap-text-sec)"><%= c.label %></p>
@@ -130,7 +130,7 @@
       <% } %>
 
       <!-- Funnel + pedidos semana en una fila -->
-      <div class="grid lg:grid-cols-3 gap-2.5 mb-3">
+      <div class="grid lg:grid-cols-3 gap-2.5 mb-3" id="sec-funnel">
         <section class="lg:col-span-2 m-card p-5">
           <div class="flex items-center justify-between mb-3">
             <div>
@@ -230,7 +230,7 @@
       <% } %>
 
       <!-- Gráficas de 7 días -->
-      <div class="grid lg:grid-cols-2 gap-2.5 mb-3">
+      <div class="grid lg:grid-cols-2 gap-2.5 mb-3" id="sec-charts">
         <section class="m-card p-4">
           <div class="flex items-center justify-between mb-3">
             <div>
@@ -279,7 +279,7 @@
       </div>
 
       <!-- Pedidos recientes -->
-      <section class="m-card p-4 mb-3">
+      <section class="m-card p-4 mb-3" id="sec-pedidos">
         <div class="flex items-center justify-between flex-wrap gap-2 mb-2.5">
           <div class="flex items-center gap-2">
             <h2 class="font-bold text-sm" style="color:var(--ap-text)">Pedidos recientes</h2>
@@ -314,6 +314,12 @@
             <input id="order-search" type="text" placeholder="Buscar pedido (producto o cliente)…" class="w-full text-xs" style="border:1px solid var(--ap-border);border-radius:12px;padding:6px 12px 6px 36px;background:var(--ap-card);color:var(--ap-text);outline:none">
             <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z"/></svg>
           </div>
+          <select id="order-orden" class="border border-slate-200 rounded-lg px-2 py-1.5 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-blue-500" style="background:var(--ap-card);color:var(--ap-text)">
+            <option value="recientes">↓ Más recientes</option>
+            <option value="antiguos">↑ Más antiguos</option>
+            <option value="mayor">$ Mayor monto</option>
+            <option value="menor">$ Menor monto</option>
+          </select>
           <div class="flex items-center gap-1.5">
             <input id="order-desde" type="date" class="border border-slate-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500" title="Desde">
             <span class="text-slate-400 text-xs">–</span>
@@ -321,6 +327,7 @@
             <button type="button" onclick="limpiarFiltrosPedidos()" class="text-xs font-bold text-blue-600 hover:text-blue-700">Limpiar</button>
           </div>
         </div>
+        <p id="order-count" class="text-[11px] font-bold mb-2" style="color:var(--ap-text-sec)"></p>
 
         <% if (orders.length === 0) { %>
           <div class="text-center py-10 px-4 rounded-xl" style="border:2px dashed var(--ap-border)">
@@ -337,7 +344,7 @@
                  if (o.schedule) { o.schedule.forEach(function(s){ if (!s.covered && !sNext) sNext = s; if (s.overdue) sOverdue++; }); } %>
               <div class="m-list-item m-ripple px-2 first:pt-1 last:pb-1" data-active-layer
                    data-order-status="<%= o.status %>" data-paid="<%= o.paid ? 1 : 0 %>" data-confirm-anchor
-                   data-installment="<%= o.is_installment ? 1 : 0 %>"
+                   data-installment="<%= o.is_installment ? 1 : 0 %>" data-pend="<%= oPend ? 1 : 0 %>" data-total="<%= o.total || 0 %>"
                    data-search="<%= (o.items + ' ' + (o.customer_name || '')).toLowerCase().replace(/"/g, '&quot;') %>" data-created="<%= o.created_at %>">
                 <div class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style="background:rgba(26,60,94,0.06);color:var(--ap-accent)">
                   <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13l-1 5h12M7 13L5.4 5M7 13l.4 2M10 21a1 1 0 100-2 1 1 0 000 2zm8 0a1 1 0 100-2 1 1 0 000 2z"/></svg>
@@ -453,105 +460,116 @@
   <%- include('admin/toast') %>
 
   <script>
-    // Formato de moneda para el modal de abono (no hay helper en esta página)
-    function money(n) {
-      var sym = (typeof CURRENCY_SYMBOL !== 'undefined') ? CURRENCY_SYMBOL : '$';
-      return sym + Number(n || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-    }
+    var BIZ_SLUG = <%- safeJson(biz.slug) %>;
+    var CURRENCY_SYMBOL = <%- safeJson(typeof currencySymbol !== 'undefined' && currencySymbol ? currencySymbol : '$') %>;
+    function moneyFmt(n) { return CURRENCY_SYMBOL + (Number(n || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')); }
 
-    // Modal de abono
-    function modalAbono(orderId, pending, nextAmt, nextDate) {
-      document.getElementById('abono-form').action = '/<%= biz.slug %>/admin/order/' + orderId + '/abono';
-      document.getElementById('abono-amount').max = pending;
-      // Prefill con el monto del siguiente abono programado (o el pendiente si es menor)
-      var amt = (nextAmt && nextAmt <= pending) ? nextAmt : Math.min(pending, 100);
-      document.getElementById('abono-amount').value = amt ? amt.toFixed(2) : '';
-      document.getElementById('abono-pending').textContent = money(pending);
-      var elNext = document.getElementById('abono-next');
-      if (elNext) elNext.textContent = nextDate ? ('📅 Próximo abono: ' + nextDate + ' · ' + money(nextAmt)) : '';
-      document.getElementById('modal-abono').classList.remove('hidden');
-      document.getElementById('abono-amount').focus();
-    }
-
-    // Filtros de pedidos por estado + paginación
-    var ORDER_PAGE_SIZE = 8;
-    function initOrderFilter() {
-      var chips = document.querySelectorAll('#order-filters button');
-      var list = document.getElementById('order-list');
-      if (!chips.length || !list) return;
-      var rows = Array.prototype.slice.call(list.querySelectorAll('[data-order-status]'));
-      var f = 'all', page = 1, current = [];
-      function compute() {
-        var q = (document.getElementById('order-search').value || '').toLowerCase().trim();
-        var desde = document.getElementById('order-desde').value;
-        var hasta = document.getElementById('order-hasta').value;
-        return rows.filter(function (row) {
-          var st = row.getAttribute('data-order-status');
-          var paid = row.getAttribute('data-paid');
-          var isInst = row.getAttribute('data-installment');
-          var okStatus = f === 'all'
-            || (f === 'nuevo' && st === 'nuevo')
-            || (f === 'pendiente' && paid !== '1' && st !== 'cancelado')
-            || (f === 'abonos' && isInst === '1' && st !== 'cancelado' && paid !== '1')
-            || (f === st);
-          var okSearch = !q || (row.getAttribute('data-search') || '').indexOf(q) !== -1;
-          var created = (row.getAttribute('data-created') || '').slice(0, 10);
-          var okDesde = !desde || created >= desde;
-          var okHasta = !hasta || created <= hasta;
-          return okStatus && okSearch && okDesde && okHasta;
+    // ===== Tarjetas de métricas: clic para saltar a la sección relacionada =====
+    (function () {
+      document.querySelectorAll('.metric-card[data-scroll-target]').forEach(function (card) {
+        card.addEventListener('click', function () {
+          var sel = card.getAttribute('data-scroll-target');
+          var target = sel && document.querySelector(sel);
+          if (!target) return;
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          target.style.transition = 'box-shadow .3s ease';
+          target.style.boxShadow = '0 0 0 3px var(--ap-accent-light)';
+          setTimeout(function () { target.style.boxShadow = ''; }, 1200);
         });
-      }
-      function show() {
-        current = compute();
-        var pages = Math.max(1, Math.ceil(current.length / ORDER_PAGE_SIZE));
-        if (page > pages) page = pages;
-        var start = (page - 1) * ORDER_PAGE_SIZE;
-        var slice = current.slice(start, start + ORDER_PAGE_SIZE);
-        rows.forEach(function (r) { r.classList.add('hidden'); });
-        slice.forEach(function (r) { r.classList.remove('hidden'); });
-        var box = document.getElementById('order-pager');
-        if (box) {
-          if (pages <= 1) { box.innerHTML = ''; }
-          else {
-            box.innerHTML = '<div class="flex items-center justify-center gap-2 mt-3">'
-              + '<button type="button" class="m-btn m-btn-outlined m-btn-sm" data-pg="prev">‹ Anterior</button>'
-              + '<span class="text-xs font-bold text-slate-500 px-2">Página ' + page + ' de ' + pages + '</span>'
-              + '<button type="button" class="m-btn m-btn-outlined m-btn-sm" data-pg="next">Siguiente ›</button></div>';
-            box.querySelector('[data-pg="prev"]').onclick = function () { if (page > 1) { page--; show(); } };
-            box.querySelector('[data-pg="next"]').onclick = function () { if (page < pages) { page++; show(); } };
-          }
-        }
-      }
-      chips.forEach(function (ch) {
-        ch.onclick = function () {
-          chips.forEach(function (c) {
-            c.classList.toggle('m-chip-selected', c === ch);
-            c.classList.toggle('!opacity-60', c !== ch);
-          });
-          f = ch.getAttribute('data-f');
-          page = 1;
-          show();
-        };
       });
+    })();
+
+    // ===== Filtros, búsqueda, orden y rango de fechas de "Pedidos recientes" =====
+    (function () {
+      var list = document.getElementById('order-list');
+      if (!list) return;
+      var rows = Array.prototype.slice.call(list.querySelectorAll('[data-order-status]'));
+      var chips = Array.prototype.slice.call(document.querySelectorAll('#order-filters button[data-f]'));
       var search = document.getElementById('order-search');
       var desde = document.getElementById('order-desde');
       var hasta = document.getElementById('order-hasta');
-      if (search) search.oninput = function () { page = 1; show(); };
-      if (desde) desde.onchange = function () { page = 1; show(); };
-      if (hasta) hasta.onchange = function () { page = 1; show(); };
-      show();
+      var ordenSel = document.getElementById('order-orden');
+      var countEl = document.getElementById('order-count');
+      var currentFilter = 'all';
+
+      function matchesFilter(r, f) {
+        var status = r.getAttribute('data-order-status');
+        var paid = r.getAttribute('data-paid') === '1';
+        var installment = r.getAttribute('data-installment') === '1';
+        var pend = r.getAttribute('data-pend') === '1';
+        if (f === 'all') return true;
+        if (f === 'nuevo') return status === 'nuevo';
+        if (f === 'pendiente') return !paid && status !== 'cancelado';
+        if (f === 'abonos') return installment && pend && status !== 'cancelado';
+        if (f === 'pagado') return status === 'pagado';
+        if (f === 'entregado') return status === 'entregado';
+        if (f === 'cancelado') return status === 'cancelado';
+        return true;
+      }
+
+      function apply() {
+        var q = (search.value || '').trim().toLowerCase();
+        var d1 = desde.value, d2 = hasta.value;
+        var visibles = 0;
+        rows.forEach(function (r) {
+          var okF = matchesFilter(r, currentFilter);
+          var okQ = !q || (r.getAttribute('data-search') || '').indexOf(q) !== -1;
+          var created = (r.getAttribute('data-created') || '').slice(0, 10);
+          var okD1 = !d1 || created >= d1;
+          var okD2 = !d2 || created <= d2;
+          var show = okF && okQ && okD1 && okD2;
+          r.style.display = show ? '' : 'none';
+          if (show) visibles++;
+        });
+        if (countEl) countEl.textContent = visibles === rows.length ? '' : ('Mostrando ' + visibles + ' de ' + rows.length + ' pedidos');
+      }
+
+      chips.forEach(function (c) {
+        c.addEventListener('click', function () {
+          chips.forEach(function (x) { x.classList.remove('m-chip-selected'); });
+          c.classList.add('m-chip-selected');
+          currentFilter = c.getAttribute('data-f');
+          apply();
+        });
+      });
+      search.addEventListener('input', apply);
+      desde.addEventListener('change', apply);
+      hasta.addEventListener('change', apply);
+      if (ordenSel) {
+        ordenSel.addEventListener('change', function () {
+          var mode = ordenSel.value;
+          var sorted = rows.slice().sort(function (a, b) {
+            if (mode === 'antiguos') return new Date(a.getAttribute('data-created')) - new Date(b.getAttribute('data-created'));
+            if (mode === 'mayor') return (+b.getAttribute('data-total')) - (+a.getAttribute('data-total'));
+            if (mode === 'menor') return (+a.getAttribute('data-total')) - (+b.getAttribute('data-total'));
+            return new Date(b.getAttribute('data-created')) - new Date(a.getAttribute('data-created'));
+          });
+          sorted.forEach(function (r) { list.appendChild(r); });
+        });
+      }
+
+      window.limpiarFiltrosPedidos = function () {
+        search.value = ''; desde.value = ''; hasta.value = '';
+        chips.forEach(function (x) { x.classList.remove('m-chip-selected'); });
+        var allChip = document.querySelector('#order-filters button[data-f="all"]');
+        if (allChip) allChip.classList.add('m-chip-selected');
+        currentFilter = 'all';
+        apply();
+      };
+    })();
+
+    // ===== Modal: registrar abono =====
+    function modalAbono(orderId, rest, nextAmount, nextDateLabel) {
+      var form = document.getElementById('abono-form');
+      form.action = '/' + BIZ_SLUG + '/admin/order/' + orderId + '/abono';
+      var pendEl = document.getElementById('abono-pending');
+      if (pendEl) pendEl.textContent = moneyFmt(rest);
+      var amountInp = document.getElementById('abono-amount');
+      if (amountInp) { amountInp.max = rest; amountInp.value = nextAmount > 0 ? nextAmount.toFixed(2) : ''; }
+      var nextEl = document.getElementById('abono-next');
+      if (nextEl) nextEl.textContent = (nextAmount > 0 && nextDateLabel) ? ('★ Próximo abono sugerido: ' + moneyFmt(nextAmount) + ' · ' + nextDateLabel) : '';
+      document.getElementById('modal-abono').classList.remove('hidden');
     }
-    function limpiarFiltrosPedidos() {
-      var s = document.getElementById('order-search');
-      var d = document.getElementById('order-desde');
-      var h = document.getElementById('order-hasta');
-      if (s) s.value = '';
-      if (d) d.value = '';
-      if (h) h.value = '';
-      initOrderFilter();
-    }
-    window.onPanelSwap = initOrderFilter;
-    document.addEventListener('DOMContentLoaded', initOrderFilter);
 
     // ===== Tarjeta para redes sociales (canvas → PNG) =====
     var CARD = {
@@ -563,7 +581,9 @@
       accent: <%- safeJson(biz.color_hex || '#2563eb') %>,
       accent2: <%- safeJson(biz.color_hex2 || biz.color_hex || '#4f46e5') %>
     };
+
     function roundRect(ctx, x, y, w, h, r) {
+      r = Math.min(r, w / 2, h / 2);
       ctx.beginPath();
       ctx.moveTo(x + r, y);
       ctx.arcTo(x + w, y, x + w, y + h, r);
@@ -572,7 +592,27 @@
       ctx.arcTo(x, y, x + w, y, r);
       ctx.closePath();
     }
-    function wrapText(ctx, text, x, y, maxW, lineH) {
+
+    function textColorOver(hex) {
+      const m = /^#?([0-9a-f]{6})$/i.exec(hex || '#000000');
+      if (!m) return '#111827';
+      const r = parseInt(m[1].slice(0, 2), 16), g = parseInt(m[1].slice(2, 4), 16), b = parseInt(m[1].slice(4, 6), 16);
+      return (r * 0.299 + g * 0.587 + b * 0.114) > 155 ? '#111827' : '#F9FAFB';
+    }
+
+    function logoFallback(ctx, x, y, r, color) {
+      ctx.fillStyle = color;
+      roundRect(ctx, x, y, r * 2, r * 2, r);
+      ctx.fill();
+      ctx.fillStyle = textColorOver(color);
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = `bold ${Math.round(r * 0.85)}px "Segoe UI", Arial, sans-serif`;
+      const abbr = String(CARD.name.slice(0, 2)).toUpperCase();
+      ctx.fillText(abbr, x + r, y + r);
+    }
+
+    function wrapText(ctx, text, x, y, maxW, lineH, maxLines) {
       const words = String(text || '').split(/\s+/).filter(Boolean);
       let line = '';
       const lines = [];
@@ -582,94 +622,273 @@
         else line = test;
       }
       if (line) lines.push(line);
-      lines.slice(0, 3).forEach((l, i) => ctx.fillText(l, x, y + i * lineH));
+      (maxLines !== undefined ? lines.slice(0, maxLines) : lines).forEach((l, i) => ctx.fillText(l, x, y + i * lineH));
     }
+
+    function pill(ctx, x, y, w, h, r, fill, text, tc) {
+      ctx.fillStyle = fill;
+      roundRect(ctx, x, y, w, h, r);
+      ctx.fill();
+      ctx.fillStyle = tc;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      const fs = 16;
+      ctx.font = '700 ' + fs + 'px "Segoe UI", Arial, sans-serif';
+      let t = text;
+      let attempts = 0;
+      while (ctx.measureText(t).width > w - 24 && attempts < 6) { t = t.slice(0, -1); attempts++; }
+      if (t.length < text.length) t = t.slice(0, -3) + '…';
+      ctx.fillText(t, x + w / 2, y + h / 2);
+    }
+
     function descargarTarjeta() {
       const W = 1080, H = 1080;
       const canvas = document.createElement('canvas');
       canvas.width = W; canvas.height = H;
       const ctx = canvas.getContext('2d');
 
+      // Fondo degradado diagonal entre los dos colores del negocio
       const g = ctx.createLinearGradient(0, 0, W, H);
       g.addColorStop(0, CARD.accent);
       g.addColorStop(1, CARD.accent2);
       ctx.fillStyle = g;
       ctx.fillRect(0, 0, W, H);
 
-      ctx.fillStyle = 'rgba(255,255,255,0.12)';
-      ctx.beginPath(); ctx.arc(W * 0.85, H * 0.1, 220, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath(); ctx.arc(W * 0.1, H * 0.9, 160, 0, Math.PI * 2); ctx.fill();
+      // Decoración: círculos suaves en la esquina opuesta
+      ctx.fillStyle = 'rgba(255,255,255,0.10)';
+      ctx.beginPath(); ctx.arc(W * 0.82, H * 0.12, 280, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(W * 0.12, H * 0.82, 210, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.05)';
+      ctx.beginPath(); ctx.arc(W * 0.9, H * 0.78, 220, 0, Math.PI * 2); ctx.fill();
 
-      ctx.fillStyle = '#ffffff';
-      roundRect(ctx, 60, 60, W - 120, H - 120, 40);
+      // Panel blanco central con bordes del giro
+      ctx.fillStyle = '#FFFFFF';
+      roundRect(ctx, 44, 44, W - 88, H - 88, 36);
       ctx.fill();
 
+      // Borde fino del panel
+      ctx.strokeStyle = 'rgba(0,0,0,0.05)';
+      ctx.lineWidth = 2;
+      roundRect(ctx, 44, 44, W - 88, H - 88, 36);
+      ctx.stroke();
+
+      // Cabecera del panel: barra del color del negocio
       ctx.fillStyle = CARD.accent;
-      roundRect(ctx, 60, 60, W - 120, 26, 13);
+      roundRect(ctx, 44, 44, W - 88, 30, 36);
+      ctx.arc(44 + 30, 44 + 30, 30, Math.PI, Math.PI * 1.5);
       ctx.fill();
 
-      ctx.fillStyle = '#0f172a';
-      ctx.textAlign = 'center';
-      ctx.font = 'bold 52px "Segoe UI", Arial, sans-serif';
-      ctx.fillText(CARD.name.slice(0, 30), W / 2, 210);
+      // Texto de cabecera: "CATÁLOGO EN LÍNEA"
+      ctx.fillStyle = textColorOver(CARD.accent);
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.font = '700 18px "Segoe UI", Arial, sans-serif';
+      wrapText(ctx, 'CATÁLOGO EN LÍNEA', 80, 59, W - 200, 22);
 
-      ctx.fillStyle = '#64748b';
-      ctx.font = '24px "Segoe UI", Arial, sans-serif';
-      wrapText(ctx, CARD.desc, W / 2, 260, W - 260, 34);
+      // Logo del negocio: círculo perfurado con borde en color del negocio
+      const centerY = 392;
+      const logoR = 112;
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(W / 2, centerY, logoR, 0, Math.PI * 2);
+      ctx.closePath();
 
-      const centerY = 500;
-      const logoSize = 220;
-      let drawn = false;
-      const finish = function () {
-        ctx.fillStyle = '#0f172a';
-        ctx.textAlign = 'center';
-        ctx.font = 'bold 30px "Segoe UI", Arial, sans-serif';
-        ctx.fillText('Catálogo en línea', W / 2, H - 250);
-        ctx.fillStyle = '#2563eb';
-        ctx.font = 'bold 30px "Segoe UI", Arial, sans-serif';
-        ctx.fillText(CARD.url.replace(/^https?:\/\//, '').slice(0, 46), W / 2, H - 205);
-        const a = document.createElement('a');
-        a.download = 'tarjeta-' + CARD.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') + '.png';
-        a.href = canvas.toDataURL('image/png');
-        a.click();
-        mostrarToast('Tarjeta descargada ✓', 'ok');
-      };
-      const drawLogo = function () {
-        if (!CARD.logo) { drawQr(); return; }
+      // Oscurece ligeramente detrás del logo para que brille
+      ctx.shadowColor = 'rgba(0,0,0,0.06)';
+      ctx.shadowBlur = 18;
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      // Borde fino del círculo del logo
+      ctx.strokeStyle = CARD.accent;
+      ctx.lineWidth = 6;
+      ctx.beginPath();
+      ctx.arc(W / 2, centerY, logoR, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Agujeros decorativos
+      ctx.fillStyle = '#FFFFFF';
+      ctx.beginPath(); ctx.arc(W / 2 - logoR * 0.5, centerY - logoR * 0.3, 8, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(W / 2 + logoR * 0.45, centerY - logoR * 0.25, 8, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+
+      let logoDrawn = false;
+      let qrDrawn = false;
+      function bothOK() { if (logoDrawn && qrDrawn) mountPointer(); }
+
+      if (CARD.logo) {
         const img = new Image();
         img.crossOrigin = 'anonymous';
         img.onload = function () {
           ctx.save();
           ctx.beginPath();
-          ctx.arc(W / 2, centerY, logoSize / 2, 0, Math.PI * 2);
+          ctx.arc(W / 2, centerY, logoR - 6, 0, Math.PI * 2);
           ctx.closePath();
           ctx.clip();
-          ctx.drawImage(img, W / 2 - logoSize / 2, centerY - logoSize / 2, logoSize, logoSize);
+          ctx.drawImage(img, W / 2 - logoR, centerY - logoR, logoR * 2, logoR * 2);
           ctx.restore();
-          ctx.strokeStyle = '#e2e8f0';
-          ctx.lineWidth = 4;
-          ctx.beginPath(); ctx.arc(W / 2, centerY, logoSize / 2, 0, Math.PI * 2); ctx.stroke();
-          drawQr();
+          logoDrawn = true; bothOK();
         };
-        img.onerror = function () { drawQr(); };
+        img.onerror = function () { logoFallback(ctx, W / 2 - logoR, centerY - logoR, logoR - 6, CARD.accent); logoDrawn = true; bothOK(); };
         img.src = CARD.logo;
-      };
-      const drawQr = function () {
-        if (!CARD.qr) { finish(); return; }
+      } else {
+        logoFallback(ctx, W / 2 - logoR, centerY - logoR, logoR - 6, '#FFFFFF');
+        logoDrawn = true; bothOK();
+      }
+
+      // Nombre del negocio bajo el logo
+      ctx.fillStyle = '#111827';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = '800 58px "Segoe UI", Arial, sans-serif';
+      const name = CARD.name.length > 34 ? CARD.name.slice(0, 32) + '…' : CARD.name;
+      ctx.fillText(name, W / 2, centerY + logoR + 78);
+
+      // Línea divisoria decorativa
+      ctx.strokeStyle = CARD.accent;
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(W / 2 - 60, centerY + logoR + 122);
+      ctx.lineTo(W / 2 + 60, centerY + logoR + 122);
+      ctx.stroke();
+
+      // Descripción
+      ctx.fillStyle = '#4B5563';
+      ctx.font = '400 24px "Segoe UI", Arial, sans-serif';
+      wrapText(ctx, CARD.desc, W / 2, centerY + logoR + 170, W - 260, 30, 3);
+
+      // Paleta de color del negocio: 3 chips alineados a la derecha de la descripción
+      const chips = [
+        CARD.accent,
+        CARD.accent2,
+        (function () {
+          const ha = CARD.accent.replace('#',''), hb = CARD.accent2.replace('#','');
+          const r = Math.min(255, ((parseInt(ha.slice(0,2),16)+parseInt(hb.slice(0,2),16))/2)|0);
+          const gg = Math.min(255, ((parseInt(ha.slice(2,4),16)+parseInt(hb.slice(2,4),16))/2)|0);
+          const bb = Math.min(255, ((parseInt(ha.slice(4,6),16)+parseInt(hb.slice(4,6),16))/2)|0);
+          return '#' + [r, gg, bb].map(v => v.toString(16).padStart(2,'0')).join('');
+        })()
+      ];
+      const chipY = centerY + logoR + 222;
+      const chipW = 30;
+      const chipGap = 14;
+      const chipX0 = W - 112;
+      chips.forEach(function (c, i) {
+        ctx.fillStyle = c;
+        roundRect(ctx, chipX0 + i * (chipW + chipGap), chipY - chipW / 2, chipW, chipW, 6);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(0,0,0,0.10)';
+        ctx.lineWidth = 1;
+        roundRect(ctx, chipX0 + i * (chipW + chipGap), chipY - chipW / 2, chipW, chipW, 6);
+        ctx.stroke();
+      });
+
+      // Código QR + botón de micropagina
+      const qrSize = 228;
+      const qrCornerR = 22;
+      const qrBgY = centerY + logoR + 308;
+      const qrBgX = (W - qrSize - 140) / 2;
+
+      // Etiqueta sobre el QR
+      if (CARD.qr) {
+        pill(ctx, W / 2 - 90, qrBgY - 66, 180, 42, 21, CARD.accent, 'Escanea el catálogo', textColorOver(CARD.accent));
+      }
+
+      // Marco blanco del QR: cuadrado con bordes redondeados (o círculo si no hay QR)
+      ctx.fillStyle = '#FFFFFF';
+      if (CARD.qr) {
+        roundRect(ctx, qrBgX, qrBgY, qrSize, qrSize, qrCornerR);
+      } else {
+        ctx.beginPath();
+        ctx.arc(W / 2, qrBgY + qrSize / 2, qrSize / 2, 0, Math.PI * 2);
+      }
+      ctx.fill();
+
+      // QR dibujado
+      if (CARD.qr) {
         const q = new Image();
+        q.crossOrigin = 'anonymous';
         q.onload = function () {
-          const s = 240;
-          ctx.fillStyle = '#ffffff';
-          roundRect(ctx, W / 2 - s / 2 - 16, centerY + logoSize / 2 + 30, s + 32, s + 32, 20);
-          ctx.fill();
-          ctx.drawImage(q, W / 2 - s / 2, centerY + logoSize / 2 + 46, s, s);
-          finish();
+          ctx.drawImage(q, qrBgX + 12, qrBgY + 12, qrSize - 24, qrSize - 24);
+          qrDrawn = true; bothOK();
         };
-        q.onerror = function () { finish(); };
+        q.onerror = function () { qrDrawn = true; bothOK(); };
         q.src = CARD.qr;
-      };
-      drawLogo();
+      } else {
+        // Espacio reservado circular: logo del negocio pequeño perfurado
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(W / 2, qrBgY + qrSize / 2, qrSize / 2 - 6, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.clip();
+        ctx.fillStyle = CARD.accent;
+        roundRect(ctx, W / 2 - 70, qrBgY + 40, 140, 140, 24);
+        ctx.fill();
+        ctx.fillStyle = textColorOver(CARD.accent);
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.font = 'bold 80px "Segoe UI", Arial, sans-serif';
+        ctx.fillText(String(CARD.name.slice(0, 2)).toUpperCase(), W / 2, qrBgY + qrSize / 2);
+        ctx.restore();
+        qrDrawn = true; bothOK();
+      }
+
+      // Láminas "micropagina de catálogo" + pie
+      function mountPointer() {
+        const pointerY = qrBgY + qrSize + 40;
+        ctx.fillStyle = '#111827';
+        ctx.font = '700 26px "Segoe UI", Arial, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('micropagina de catálogo', W / 2, pointerY);
+
+        ctx.fillStyle = '#6B7280';
+        ctx.font = '400 18px "Segoe UI", Arial, sans-serif';
+        ctx.fillText(CARD.url.replace(/^https?:\/\//, '').slice(0, 56), W / 2, pointerY + 42);
+
+        // Línea punteada decorativa debajo del QR
+        ctx.strokeStyle = 'rgba(0,0,0,0.08)';
+        ctx.setLineDash([6, 8]);
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(W / 2, pointerY + 84);
+        ctx.lineTo(W / 2, pointerY + 120);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Pie izquierdo: "Creado para" + nombre
+        const footerY = H - 92;
+        ctx.fillStyle = '#9CA3AF';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.font = '400 18px "Segoe UI", Arial, sans-serif';
+        ctx.fillText('Creado para', 92, footerY);
+        ctx.fillStyle = '#111827';
+        ctx.font = '700 22px "Segoe UI", Arial, sans-serif';
+        ctx.fillText(CARD.name, 92, footerY + 28);
+
+        // Pie derecho: "Visítanos" + dominio corto
+        const urlShort = CARD.url.replace(/^https?:\/\//, '').slice(0, 32);
+        ctx.fillStyle = '#6B7280';
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        ctx.font = '400 18px "Segoe UI", Arial, sans-serif';
+        ctx.fillText('Visítanos', W - 92, footerY);
+        ctx.fillStyle = CARD.accent;
+        ctx.font = '700 22px "Segoe UI", Arial, sans-serif';
+        ctx.fillText(urlShort, W - 92, footerY + 28);
+
+        // Descarga del PNG
+        const a = document.createElement('a');
+        a.download = 'tarjeta-' + CARD.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') + '.png';
+        a.href = canvas.toDataURL('image/png');
+        a.click();
+        mostrarToast('Tarjeta descargada ✓', 'ok');
+      }
+
+      if (!CARD.qr) mountPointer();
     }
+
   </script>
 </body>
-</html>

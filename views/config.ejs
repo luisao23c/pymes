@@ -390,6 +390,8 @@
         </div>
 
         <form method="POST" action="<%= cfgAction %>" class="space-y-4" id="form-datos">
+          <input type="hidden" name="sections-current" value="<%= biz.sections || '{}' %>">
+          <input type="hidden" name="sections" id="sections-json" value="">
           <div class="grid md:grid-cols-2 gap-4">
             <div>
               <label class="config-label">Nombre del negocio *</label>
@@ -522,6 +524,17 @@
 
             <div id="faq-rows" class="space-y-3"></div>
             <input type="hidden" name="faq" id="faq-json" value=''>
+
+            <div class="border-t border-slate-200 dark:border-[#30363d] pt-4 mt-3">
+              <label class="config-label">Banner de campaña <span class="font-normal text-slate-400">(publicidad en tu catálogo)</span></label>
+              <p class="text-xs text-slate-400 dark:text-slate-500 mb-3">Una franja arriba de tu catálogo para anunciar promociones. Ejemplos: "🔥 Buen Fin: -30% en toda la tienda", "🎉 2x1 en pinturas esta semana", "⚡ Envío gratis en pedidos +$500". Déjalo vacío para no mostrar nada.</p>
+              <input name="campaign_text" value="<%= (biz.sections && biz.sections.indexOf('campaign') !== -1 && (JSON.parse(biz.sections||'{}').campaign||{}).text) || '' %>" maxlength="120" class="config-input" placeholder="🔥 Buen Fin: -30% en toda la tienda">
+              <div class="flex items-center gap-2 mt-2">
+                <label class="text-xs font-semibold text-slate-600 dark:text-slate-300 shrink-0">Termina el</label>
+                <input name="campaign_ends" type="date" value="<%= (biz.sections && (JSON.parse(biz.sections||'{}').campaign||{}).ends) || '' %>" class="border border-slate-200 dark:border-[#30363d] rounded-lg px-2 py-1.5 text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <span class="text-[11px] text-slate-400">(opcional — muestra cuenta regresiva)</span>
+              </div>
+            </div>
             <div class="flex flex-wrap gap-2 mt-1">
               <button type="button" onclick="faqAgregarFila()" class="m-btn m-btn-outline m-btn-sm !text-blue-600 dark:!text-[#8ab4f8] dark:!border-[#8ab4f8] dark:hover:!bg-blue-500/10">
                 ＋ Agregar pregunta
@@ -556,9 +569,76 @@
             <div class="w-12 h-12 rounded-xl bg-fuchsia-50 dark:bg-fuchsia-900/30 text-fuchsia-600 dark:text-fuchsia-400 flex items-center justify-center text-2xl shrink-0">🎨</div>
             <div class="flex-1 min-w-[200px]">
               <h2 class="font-extrabold text-slate-900 dark:text-white">Diseño del catálogo</h2>
-              <p class="text-xs text-slate-400 dark:text-slate-500">Colores, tipografía y vista previa del catálogo.</p>
+              <p class="text-xs text-slate-400 dark:text-slate-500">Escoge el estilo visual de tu catálogo — colores, tipografía y formas. Los mismos elementos, distinta personalidad.</p>
             </div>
           </div>
+
+          <% var _fontHrefs = Array.from(new Set(CAT_DESIGNS.map(function(d){ return d.tokens.font.href; }))); %>
+          <% _fontHrefs.forEach(function(h) { %><link rel="stylesheet" href="<%= h %>"><% }) %>
+
+          <form method="POST" action="<%= cfgAction %>" id="cat-design-form" class="mt-5">
+            <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              <% CAT_DESIGNS.forEach(function(d) { %>
+              <% var t = d.tokens; %>
+              <label class="cat-design-card relative block cursor-pointer rounded-2xl border-2 transition overflow-hidden <%= catDesign.id === d.id ? 'border-blue-500' : 'border-slate-200 dark:border-[#30363d] hover:border-slate-300 dark:hover:border-[#3d444d]' %>">
+                <input type="radio" name="catalog_design" value="<%= d.id %>" class="sr-only" <%= catDesign.id === d.id ? 'checked' : '' %>>
+
+                <!-- Preview: mini tarjeta de producto renderizada con la paleta y tipografía reales del estilo -->
+                <div class="cat-design-preview" style="background:<%= t.bg %>;">
+                  <div class="cdp-card" style="background:<%= t.card %>; border-radius:<%= Math.min(t.radius, 14) %>px; box-shadow:<%= t.shadow %>; border:1px solid <%= t.border %>;">
+                    <div class="cdp-thumb" style="background:<%= t.accentGlow %>; border-radius:<%= Math.max(0, Math.min(t.radius, 14) - 4) %>px;"></div>
+                    <div class="cdp-info">
+                      <div class="cdp-heading" style="font-family:<%= t.font.heading %>; color:<%= t.text %>;">Producto</div>
+                      <div class="cdp-body" style="font-family:<%= t.font.body %>; color:<%= t.textSec %>;">Desde $99</div>
+                    </div>
+                  </div>
+                  <div class="cdp-btn" style="background:<%= t.accent %>; border-radius:<%= Math.min(t.radius, 10) %>px;"></div>
+                </div>
+
+                <div class="p-3">
+                  <div class="flex items-center justify-between">
+                    <span class="text-sm"><%= d.emoji %></span>
+                    <% if (catDesign.id === d.id) { %><span class="text-[10px] font-black uppercase tracking-wider text-blue-600 bg-blue-100 dark:bg-blue-900/40 dark:text-blue-300 px-2 py-0.5 rounded-full">En uso</span><% } %>
+                  </div>
+                  <p class="font-extrabold text-sm text-slate-900 dark:text-white mt-1"><%= d.name %></p>
+                  <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5"><%= d.desc %></p>
+                </div>
+              </label>
+              <% }) %>
+            </div>
+            <input type="hidden" name="save_design_only" value="1">
+            <button type="submit" class="m-btn m-btn-filled m-btn-sm mt-4">Guardar diseño</button>
+          </form>
+          <style>
+            .cat-design-preview { display:flex; align-items:center; gap:8px; padding:12px; }
+            .cdp-card { flex:1; min-width:0; display:flex; align-items:center; gap:8px; padding:8px; }
+            .cdp-thumb { width:30px; height:30px; flex-shrink:0; }
+            .cdp-info { min-width:0; flex:1; }
+            .cdp-heading { font-size:12px; font-weight:700; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+            .cdp-body { font-size:11px; margin-top:2px; }
+            .cdp-btn { width:26px; height:26px; flex-shrink:0; }
+            .cat-design-card.border-blue-500 { box-shadow:0 0 0 3px rgba(59,130,246,.15); }
+          </style>
+          <script>
+            (function () {
+              var form = document.getElementById('cat-design-form');
+              if (!form) return;
+              // Al cambiar de radio, marca la tarjeta activa y envía solo este formulario
+              var radios = form.querySelectorAll('input[name="catalog_design"]');
+              radios.forEach(function (r) {
+                r.addEventListener('change', function () {
+                  form.querySelectorAll('.cat-design-card').forEach(function (c) {
+                    var on = c.querySelector('input').checked;
+                    c.classList.toggle('border-blue-500', on);
+                    c.classList.toggle('bg-blue-50/40', on);
+                    c.classList.toggle('dark:bg-blue-900/10', on);
+                    c.classList.toggle('border-slate-200', !on);
+                    c.classList.toggle('dark:border-[#30363d]', !on);
+                  });
+                });
+              });
+            })();
+          </script>
         </section>
 
       <!-- ============================================================
@@ -930,7 +1010,18 @@
     }
     (function () {
       var form = document.getElementById('form-datos');
-      if (form) form.addEventListener('submit', faqSerializar);
+      if (form) form.addEventListener('submit', function () {
+        faqSerializar();
+        // Serializa el banner de campaña dentro de sections (mismo POST)
+        var sec = {};
+        try { sec = JSON.parse(document.querySelector('input[name=sections-current]') ? document.querySelector('input[name=sections-current]').value : '{}'); } catch (e) {}
+        sec.campaign = {
+          text: (form.querySelector('input[name=campaign_text]') || {}).value || '',
+          ends: (form.querySelector('input[name=campaign_ends]') || {}).value || ''
+        };
+        var h = document.getElementById('sections-json');
+        if (h) h.value = JSON.stringify(sec);
+      });
       (FAQ_INICIAL || []).forEach(function (f) { faqAgregarFila(f.q || '', f.a || ''); });
     })();
   </script>

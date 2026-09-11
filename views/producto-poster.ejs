@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Póster · <%= product.name %> · <%= biz.name %></title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Segoe UI', Arial, sans-serif; background:#e2e8f0; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    .toolbar { background:#0f172a; color:#fff; padding:12px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px; position:sticky; top:0; z-index:10; }
+    .toolbar p { font-size:13px; opacity:.85; }
+    .toolbar button { background:#2563eb; color:#fff; border:none; border-radius:10px; padding:10px 20px; font-weight:700; font-size:14px; cursor:pointer; }
+    .toolbar button:hover { background:#1d4ed8; }
+    .toolbar a { color:#93c5fd; font-size:13px; }
+
+    /* Póster: 21cm × 29.7cm (carta media vertical) */
+    .poster {
+      width:21cm; min-height:29.7cm; margin:24px auto; background:#fff;
+      display:flex; flex-direction:column; overflow:hidden;
+      box-shadow:0 8px 40px rgba(0,0,0,.18);
+      color:#0f172a;
+    }
+    .p-head { background:<%= biz.color_hex || '#1a3c5e' %>; color:#fff; padding:22px 34px; display:flex; align-items:center; gap:16px; }
+    .p-head img { width:56px; height:56px; border-radius:50%; object-fit:cover; border:3px solid rgba(255,255,255,.7); background:#fff; }
+    .p-head .ini { width:56px; height:56px; border-radius:50%; background:rgba(255,255,255,.2); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:22px; }
+    .p-head h2 { font-size:20px; font-weight:800; letter-spacing:.02em; }
+    .p-head span { display:block; font-size:11px; opacity:.85; font-weight:600; letter-spacing:.18em; margin-top:2px; }
+
+    .p-body { flex:1; padding:34px; display:flex; flex-direction:column; }
+    .p-img-wrap { position:relative; border-radius:18px; overflow:hidden; background:#f1f5f9; }
+    .p-img { width:100%; aspect-ratio:4/3; object-fit:cover; display:block; }
+    .p-badge { position:absolute; top:16px; left:16px; background:#e11d48; color:#fff; font-weight:800; font-size:19px; padding:8px 18px; border-radius:999px; }
+    .p-name { font-size:30px; font-weight:800; line-height:1.15; margin-top:22px; }
+    .p-desc { font-size:15px; color:#475569; margin-top:8px; line-height:1.6; }
+    .p-price-row { display:flex; align-items:baseline; gap:14px; margin-top:18px; flex-wrap:wrap; }
+    .p-price { font-size:52px; font-weight:900; color:<%= biz.color_hex || '#1a3c5e' %>; letter-spacing:-.02em; }
+    .p-old { font-size:22px; color:#94a3b8; text-decoration:line-through; }
+    <% if (product.allow_installments) { %>
+    .p-inst { display:inline-flex; align-items:center; gap:10px; margin-top:10px; background:rgba(16,185,129,.1); border:1px solid rgba(16,185,129,.35); color:#059669; font-weight:700; font-size:16px; padding:9px 18px; border-radius:999px; align-self:flex-start; }
+    <% } %>
+
+    .p-foot { margin-top:auto; display:flex; align-items:flex-end; justify-content:space-between; gap:24px; padding-top:24px; border-top:2px solid #e2e8f0; }
+    .p-cta h3 { font-size:20px; font-weight:800; }
+    .p-cta p { font-size:13px; color:#64748b; margin-top:4px; max-width:30ch; }
+    .p-cta .url { font-size:12px; color:<%= biz.color_hex || '#1a3c5e' %>; font-weight:700; margin-top:8px; word-break:break-all; }
+    .p-qr { text-align:center; }
+    .p-qr img { width:150px; height:150px; display:block; }
+    .p-qr span { font-size:11px; font-weight:700; color:#475569; display:block; margin-top:6px; letter-spacing:.06em; }
+
+    @media print {
+      body { background:#fff; }
+      .toolbar { display:none; }
+      .poster { margin:0; box-shadow:none; width:100%; min-height:100vh; }
+      @page { size:letter portrait; margin:0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <p>Póster publicitario — imprímelo y pégalo en tu tienda. El QR lleva directo al producto.</p>
+    <div style="display:flex;align-items:center;gap:14px;">
+      <a href="/<%= biz.slug %>/admin/productos">← Volver a productos</a>
+      <button onclick="window.print()">🖨️ Imprimir / Guardar PDF</button>
+    </div>
+  </div>
+
+  <div class="poster">
+    <div class="p-head">
+      <% if (biz.logo) { %><img src="<%= biz.logo %>" alt="" onerror="this.style.display='none'"><% } else { %><div class="ini"><%= (biz.name||'T').trim().split(/\s+/).slice(0,2).map(function(w){return w[0];}).join('').toUpperCase() %></div><% } %>
+      <div>
+        <h2><%= biz.name %></h2>
+        <span>CATÁLOGO EN LÍNEA</span>
+      </div>
+    </div>
+
+    <div class="p-body">
+      <div class="p-img-wrap">
+        <img class="p-img" src="<%= product.imgs[0] || '/img/sin-imagen.svg' %>" alt="<%= product.name %>" onerror="this.onerror=null;this.src='/img/sin-imagen.svg'">
+        <% if (product.old_price && product.old_price > product.price) { %>
+          <span class="p-badge">🔥 -<%= Math.round((1-product.price/product.old_price)*100) %>%</span>
+        <% } %>
+      </div>
+
+      <h1 class="p-name"><%= product.name %></h1>
+      <% if (product.description) { %><p class="p-desc"><%= product.description %></p><% } %>
+
+      <div class="p-price-row">
+        <span class="p-price"><%= money(product.price) %></span>
+        <% if (product.old_price && product.old_price > product.price) { %>
+          <span class="p-old"><%= money(product.old_price) %></span>
+        <% } %>
+      </div>
+
+      <% if (product.allow_installments) { %>
+        <% var instCount = product.installment_count || 6; var instUnit = Math.ceil(product.price / instCount); %>
+        <span class="p-inst">💳 A solo <%= instCount %> pagos <%= {semanal:'semanales',quincenal:'quincenales',mensual:'mensuales'}[product.installment_frequency] || 'semanales' %> de <%= money(instUnit) %></span>
+      <% } %>
+      <% if (product.promo_desc) { %>
+        <span class="p-inst" style="background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.35);color:#dc2626;">🎉 <%= product.promo_desc %></span>
+      <% } %>
+
+      <div class="p-foot">
+        <div class="p-cta">
+          <h3>Escanea y pide ahora</h3>
+          <p>Apunta la cámara de tu celular al código y llega directo a este producto.</p>
+          <p class="url"><%= url.replace(/^https?:\/\//, '') %></p>
+        </div>
+        <div class="p-qr">
+          <% if (qr) { %><img src="<%= qr %>" alt="QR del producto"><% } %>
+          <span>ESCANEA EL CÓDIGO</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
