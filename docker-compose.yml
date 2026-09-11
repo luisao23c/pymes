@@ -50,6 +50,11 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    labels:
+      - "traefik.http.routers.cadi.rule=Host(`cadi.nessik.net`)"
+      - "traefik.http.routers.cadi-secure.rule=Host(`cadi.nessik.net`)"
+      - "traefik.http.routers.cadi-secure.tls=true"
+      - "traefik.http.routers.cadi-secure.tls.certresolver=letsencrypt"
 
 volumes:
   db_data:
