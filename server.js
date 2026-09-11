@@ -41,6 +41,25 @@ process.on('uncaughtException', (err) => {
 const MASTER_KEY = process.env.MASTER_KEY || crypto.randomBytes(12).toString('hex');
 const BASE_URL = process.env.BASE_URL || '';
 
+// En producción (Dokploy/Traefik u otro proxy) la TLS se termina ANTES de
+// llegar al contenedor: Express recibe todo por HTTP plano. Sin "trust proxy"
+// req.protocol siempre da 'http' aunque el visitante entre por https, lo que
+// generaba enlaces para compartir, QR y og:image en http (rotos o inseguros).
+// Con esto, Express confía en el header X-Forwarded-Proto que pone el proxy.
+app.set('trust proxy', 1);
+
+// Si BASE_URL apunta a https, cualquier visita que llegue por http se manda
+// a la versión https (evita contenido mixto y enlaces "http" que ya no cargan
+// si el dominio solo sirve https). /health se excluye: el healthcheck del
+// Dockerfile lo consulta en http plano dentro de la propia red del contenedor.
+const FORCE_HTTPS = /^https:\/\//i.test(BASE_URL);
+app.use((req, res, next) => {
+  if (FORCE_HTTPS && !req.secure && req.path !== '/health') {
+    return res.redirect(301, 'https://' + req.get('host') + req.originalUrl);
+  }
+  next();
+});
+
 app.get('/health', (req, res) => res.send('ok'));
 
 // ================= PLANES (configurables desde el panel maestro) =================
@@ -378,7 +397,7 @@ app.use((req, res, next) => {
 app.use((req, res, next) => {
   if (!req.cookies.csrf) {
     req.cookies.csrf = crypto.randomBytes(24).toString('hex');
-    res.cookie('csrf', req.cookies.csrf, { httpOnly: false, sameSite: 'lax', path: '/' });
+    res.cookie('csrf', req.cookies.csrf, { httpOnly: false, sameSite: 'lax', path: '/', secure: req.secure });
   }
   res.locals.csrf = req.cookies.csrf;
   next();
@@ -1500,7 +1519,7 @@ app.get('/maestro', (req, res) => {
 app.post('/maestro', (req, res) => {
   if (req.body.master === MASTER_KEY || verifyPin(req.body.master, MASTER_KEY)) {
     const token = createSession(null, 'maestro');
-    res.cookie('sid', token, { maxAge: 24 * 60 * 60 * 1000, httpOnly: true, sameSite: 'lax', path: '/' });
+    res.cookie('sid', token, { maxAge: 24 * 60 * 60 * 1000, httpOnly: true, sameSite: 'lax', path: '/', secure: req.secure });
     return res.redirect('/maestro/panel');
   }
   res.render('maestro', { error: 'Código maestro incorrecto.', list: null });
@@ -2017,7 +2036,8 @@ function requireAuth(req, res, next) {
     res.locals.lowStockCount = db.prepare("SELECT COUNT(*) AS c FROM products WHERE business_id = ? AND active = 1 AND (stock IS NULL OR stock <= 5)").get(biz.id).c;
     return next();
   }
-  res.redirect('/' + req.params.slug + '/admin');
+  const next_ = encodeURIComponent(req.originalUrl || ('/' + req.params.slug + '/admin'));
+  res.redirect('/' + req.params.slug + '/admin?sesion=1&next=' + next_);
 }
 
 // Middleware: exige un permiso concreto (los dueños siempre pasan). Acepta string o array (basta con uno).
@@ -2058,7 +2078,11 @@ app.get('/:slug/admin', (req, res) => {
   const block = storeBlock(biz);
   if (block.blocked) return res.status(403).render('store-off', { biz, reason: block.reason });
   const pal = getPalette(biz, getEffectiveEstilo(biz));
-  res.render('login', { biz, error: null, ok: req.query.salir ? 'Sesión cerrada correctamente.' : (req.query.nueva ? 'Tienda creada correctamente ✓ — entra con tu PIN para administrarla.' : null), pal });
+  let ok = null, error = null;
+  if (req.query.salir) ok = 'Sesión cerrada correctamente.';
+  else if (req.query.nueva) ok = 'Tienda creada correctamente ✓ — entra con tu PIN para administrarla.';
+  else if (req.query.sesion) error = 'Tu sesión expiró. Entra con tu PIN para continuar.';
+  res.render('login', { biz, error, ok, pal });
 });
 
 app.post('/:slug/admin', loginRateLimit, (req, res) => {
@@ -2079,7 +2103,10 @@ app.post('/:slug/admin', loginRateLimit, (req, res) => {
   }
   if (ok) {
     const token = createSession(biz.id, 'owner');
-    res.cookie('sid', token, { maxAge: 1000 * 60 * 60 * 12, httpOnly: true, sameSite: 'lax', path: '/' });
+    res.cookie('sid', token, { maxAge: 1000 * 60 * 60 * 12, httpOnly: true, sameSite: 'lax', path: '/', secure: req.secure });
+    // Volver a la página protegida desde la que vino (solo rutas admin de esta tienda)
+    const next_ = String(req.query.next || '');
+    if (next_ && next_.startsWith('/' + req.params.slug + '/admin')) return res.redirect(next_);
     return res.redirect('/' + req.params.slug + '/admin/panel');
   }
   // 2) Empleado
@@ -2087,7 +2114,7 @@ app.post('/:slug/admin', loginRateLimit, (req, res) => {
   const emp = emps.find(e => verifyPin(pin, e.pin_hash));
   if (emp) {
     const token = createSession(biz.id, 'employee', emp.id);
-    res.cookie('sid', token, { maxAge: 1000 * 60 * 60 * 12, httpOnly: true, sameSite: 'lax', path: '/' });
+    res.cookie('sid', token, { maxAge: 1000 * 60 * 60 * 12, httpOnly: true, sameSite: 'lax', path: '/', secure: req.secure });
     let empPerms = [];
     try { empPerms = JSON.parse(emp.perms || '[]'); } catch (e) { empPerms = []; }
     const dest = firstEmployeePage(empPerms);
@@ -3697,7 +3724,19 @@ app.get('/:slug/admin/proveedores', requireAuth, can('config'), (req, res) => {
     .map(p => { p.variantOpts = combosOf(p.variants); return p; });
   const pos = db.prepare('SELECT po.*, s.name AS supplier_name, s.phone AS supplier_phone, s.email AS supplier_email FROM purchase_orders po LEFT JOIN suppliers s ON s.id = po.supplier_id WHERE po.business_id = ? ORDER BY po.id DESC LIMIT 40').all(req.biz.id)
     .map(po => { po.items = parsePoItems(po.items); po.msg = encodeURIComponent(poMessage(po.supplier_name, po.items, po.total)); po.esubject = encodeURIComponent('Pedido de compra'); po.ebody = encodeURIComponent(poMessage(po.supplier_name, po.items, po.total)); return po; });
-  res.render('proveedores', { biz: req.biz, suppliers, products, pos, error: null, ok: req.query.ok === '1', msg: req.query.msg || '', money: moneyFor(req.biz) });
+  res.render('proveedores', {
+    biz: req.biz, suppliers, products, pos,
+    ok: req.query.ok === '1',
+    error: ({
+      nombre: 'Escribe el nombre del proveedor para guardarlo.',
+      duplicado: 'Ese proveedor ya está en tu directorio.',
+      proveedor: 'Selecciona un proveedor para registrar el pedido.',
+      tabla: 'Cada fila necesita producto y cantidad mayor a 0.'
+    })[req.query.error] || null,
+    msg: req.query.msg || '',
+    old: { name: req.query.n || '', phone: req.query.p || '', email: req.query.e || '', notes: req.query.no || '' },
+    money: moneyFor(req.biz)
+  });
 });
 
 app.post('/:slug/admin/proveedor', requireAuth, can('config'), (req, res) => {
@@ -3705,7 +3744,11 @@ app.post('/:slug/admin/proveedor', requireAuth, can('config'), (req, res) => {
   const phone = String(req.body.phone || '').trim();
   const email = String(req.body.email || '').trim();
   const notes = String(req.body.notes || '').trim();
-  if (!name) return res.redirect('/' + req.params.slug + '/admin/proveedores');
+  const back = (code) => res.redirect('/' + req.params.slug + '/admin/proveedores?' + new URLSearchParams({ error: code, n: name, p: phone, e: email, no: notes }).toString());
+  if (!name) return back('nombre');
+  // Mismo nombre en la misma tienda = doble registro; avisamos en vez de duplicar
+  const dup = db.prepare('SELECT id FROM suppliers WHERE business_id = ? AND LOWER(TRIM(name)) = LOWER(?)').get(req.biz.id, name);
+  if (dup) return back('duplicado');
   db.prepare('INSERT INTO suppliers (business_id, name, phone, email, notes) VALUES (?, ?, ?, ?, ?)').run(req.biz.id, name, phone, email, notes);
   res.redirect('/' + req.params.slug + '/admin/proveedores?ok=1');
 });
@@ -3716,9 +3759,12 @@ app.post('/:slug/admin/proveedor/:id/eliminar', requireAuth, can('config'), (req
 });
 
 app.post('/:slug/admin/compra', requireAuth, can('config'), (req, res) => {
+  const back = (code) => res.redirect('/' + req.params.slug + '/admin/proveedores?error=' + code);
   const supplier_id = parseInt(req.body.supplier_id) || null;
+  if (!supplier_id) return back('proveedor');
   const items = parsePoItems(req.body.items);
-  if (!items.length) return res.redirect('/' + req.params.slug + '/admin/proveedores');
+  // Cada fila registrada debe traer producto y cantidad; sin filas válidas no se crea el pedido
+  if (!items.length || items.some(it => !it.name || !(it.qty > 0))) return back('tabla');
   const total = items.reduce((s, it) => s + (it.cost * it.qty), 0);
   db.prepare('INSERT INTO purchase_orders (business_id, supplier_id, items, total) VALUES (?, ?, ?, ?)').run(req.biz.id, supplier_id, JSON.stringify(items), total);
   res.redirect('/' + req.params.slug + '/admin/proveedores?ok=1');

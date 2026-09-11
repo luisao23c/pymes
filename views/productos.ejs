@@ -3,7 +3,15 @@
 <head>
   <%- include('admin/head', { title: 'Productos', biz }) %>
 </head>
-<body class="m-material bg-slate-100 min-h-screen">
+<body class="m-material products-admin-page bg-slate-100 min-h-screen">
+  <!--
+    THESIS: gestionar el catálogo debe sentirse como trabajar sobre un mostrador visual, no como editar una tabla apretada.
+    OWN-WORLD: campo gris perla frío con luz cian/violeta, tinta azul petróleo, tarjetas fotográficas y controles compactos.
+    STORY: el dueño localiza un producto, entiende su estado de un vistazo y crea o edita sin perder el catálogo.
+    FIRST VIEWPORT: navegación y filtros arriba; catálogo en tres columnas a la izquierda; editor persistente a la derecha.
+    FORM: catálogo operativo con inspector lateral; seed key: user-reference-11l692; comp aprobada: Gemini_Generated_Image_11l69211l69211l6 (2).jpeg.
+    FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
+  -->
   <%- include('admin/sidebar', { biz, active: 'productos', canDesign }) %>
 
   <main class="transition-all duration-300">
@@ -19,12 +27,12 @@
       <% const puedeCategorias = perms.includes('categorias.gestionar'); %>
       <% const puedeAtributos = perms.includes('atributos.gestionar'); %>
       <div class="prod-tabs" role="tablist" aria-label="Secciones del catálogo">
-        <button type="button" id="tabbtn-productos" class="prod-tab active" onclick="switchCrudTab('productos')">📦 Productos <span class="cnt" id="tabcnt-productos"><%= allProducts.length %></span></button>
+        <button type="button" id="tabbtn-productos" class="prod-tab active" onclick="switchCrudTab('productos')"><i class="bi bi-box-seam" aria-hidden="true"></i> Productos <span class="cnt" id="tabcnt-productos"><%= allProducts.length %></span></button>
         <% if (puedeCategorias) { %>
-        <button type="button" id="tabbtn-categorias" class="prod-tab" onclick="switchCrudTab('categorias')">🗂 Categorías <span class="cnt" id="tabcnt-categorias"><%= categories.length %></span></button>
+        <button type="button" id="tabbtn-categorias" class="prod-tab" onclick="switchCrudTab('categorias')"><i class="bi bi-collection" aria-hidden="true"></i> Categorías <span class="cnt" id="tabcnt-categorias"><%= categories.length %></span></button>
         <% } %>
         <% if (puedeAtributos) { %>
-        <button type="button" id="tabbtn-atributos" class="prod-tab" onclick="switchCrudTab('atributos')">🏷 Atributos <span class="cnt" id="tabcnt-atributos">0</span></button>
+        <button type="button" id="tabbtn-atributos" class="prod-tab" onclick="switchCrudTab('atributos')"><i class="bi bi-sliders2" aria-hidden="true"></i> Atributos <span class="cnt" id="tabcnt-atributos">0</span></button>
         <% } %>
       </div>
       <div id="tabpane-productos" class="prod-tab-panel active">
@@ -97,8 +105,9 @@
         </div>
       <% } %>
 
+      <div class="products-workspace">
       <!-- Lista de productos -->
-      <section id="productos" class="m-card p-4 mb-3 m-stagger relative">
+      <section id="productos" class="product-catalog mb-3 m-stagger relative">
         <div id="prod-loading" class="hidden absolute inset-0 z-20 items-center justify-center bg-white/70 backdrop-blur-[1px] rounded-xl">
           <div class="flex flex-col items-center gap-2">
             <span class="w-7 h-7 border-[3px] border-[var(--md-primary)] border-t-transparent rounded-full animate-spin"></span>
@@ -108,23 +117,25 @@
         <div class="flex items-center justify-between flex-wrap gap-2 mb-2">
           <h2 class="font-extrabold text-slate-900 text-sm">Catálogo <span class="m-badge m-badge-neutral !ml-1.5"><%= allProducts.length %></span></h2>
           <div class="relative">
-            <input id="prod-search" type="text" placeholder="Buscar producto…" class="w-36 sm:w-56 border border-slate-200 rounded-full pl-9 pr-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+            <input id="prod-search" type="search" placeholder="Buscar producto…" aria-label="Buscar productos por nombre, etiqueta o descripción" autocomplete="off" class="w-36 sm:w-56 border border-slate-200 rounded-full pl-9 pr-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
             <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z"/></svg>
           </div>
         </div>
 
         <div class="flex flex-wrap items-center gap-1.5 mb-3" id="prod-filters">
-          <button data-f="all" class="m-chip m-chip-selected !h-8">Todos <span class="m-badge m-badge-neutral !h-5 !text-[10px]"><%= allProducts.length %></span></button>
+          <button type="button" data-f="all" aria-pressed="true" class="m-chip m-chip-selected !h-8">Todos <span class="m-badge m-badge-neutral !h-5 !text-[10px]"><%= allProducts.length %></span></button>
           <% const visibles = allProducts.filter(p => p.active).length; %>
-          <button data-f="active" class="m-chip !h-8">Visibles <span class="m-badge m-badge-success !h-5 !text-[10px]"><%= visibles %></span></button>
-          <button data-f="hidden" class="m-chip !h-8">Ocultos <span class="m-badge m-badge-neutral !h-5 !text-[10px]"><%= allProducts.length - visibles %></span></button>
+          <button type="button" data-f="active" aria-pressed="false" class="m-chip !h-8">Visibles <span class="m-badge m-badge-success !h-5 !text-[10px]"><%= visibles %></span></button>
+          <button type="button" data-f="hidden" aria-pressed="false" class="m-chip !h-8">Ocultos <span class="m-badge m-badge-neutral !h-5 !text-[10px]"><%= allProducts.length - visibles %></span></button>
           <% const agotados = allProducts.filter(p => p.stock !== null && p.stock <= 0).length; %>
-          <button data-f="out" class="m-chip !h-8">Agotados <span class="m-badge m-badge-error !h-5 !text-[10px]"><%= agotados %></span></button>
+          <button type="button" data-f="out" aria-pressed="false" class="m-chip !h-8">Agotados <span class="m-badge m-badge-error !h-5 !text-[10px]"><%= agotados %></span></button>
           <% const bajos = allProducts.filter(p => p.stock !== null && p.stock > 0 && p.stock <= 5).length; %>
-          <button data-f="low" class="m-chip !h-8">Stock bajo <span class="m-badge m-badge-warn !h-5 !text-[10px]"><%= bajos %></span></button>
+          <button type="button" data-f="low" aria-pressed="false" class="m-chip !h-8">Stock bajo <span class="m-badge m-badge-warn !h-5 !text-[10px]"><%= bajos %></span></button>
           <% const enPromo = allProducts.filter(p => p.old_price).length; %>
-          <button data-f="promo" class="m-chip !h-8">🔥 En promo <span class="m-badge m-badge-error !h-5 !text-[10px]"><%= enPromo %></span></button>
+          <button type="button" data-f="promo" aria-pressed="false" class="m-chip !h-8"><i class="bi bi-tag" aria-hidden="true"></i> En promo <span class="m-badge m-badge-error !h-5 !text-[10px]"><%= enPromo %></span></button>
         </div>
+
+        <p id="prod-result-summary" class="product-result-summary" aria-live="polite"></p>
 
         <% if (allProducts.length === 0) { %>
           <div class="text-center py-6 border-2 border-dashed border-slate-200 rounded-xl">
@@ -133,19 +144,22 @@
             <% if (perms.includes('productos.crear')) { %><a href="#nuevo-producto" class="m-btn m-btn-filled m-btn-sm">Agregar mi primer producto</a><% } %>
           </div>
         <% } else { %>
-          <div id="prod-grid" class="grid md:grid-cols-2 gap-2">
+          <div id="prod-grid" class="product-grid">
             <% allProducts.forEach((p, i) => { %>
-              <div class="m-list-item m-ripple border border-slate-100 hover:border-slate-200 flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 <%= i >= 12 ? 'hidden' : '' %>" data-active-layer
-                   data-search="<%= (p.name || '').toLowerCase() %>" data-state="<%= p.active ? 'active' : 'hidden' %>" data-stock="<%= p.stock === null ? '' : (p.stock > 5 ? 'ok' : (p.stock > 0 ? 'low' : 'out')) %>" data-promo="<%= p.old_price ? 1 : 0 %>"
+              <article class="product-card m-ripple <%= i >= 12 ? 'hidden' : '' %>" data-active-layer
+                   data-search="<%= [p.name, p.tags, p.description].filter(Boolean).join(' ').toLowerCase() %>" data-state="<%= p.active ? 'active' : 'hidden' %>" data-stock="<%= p.stock === null ? '' : (p.stock > 5 ? 'ok' : (p.stock > 0 ? 'low' : 'out')) %>" data-promo="<%= p.old_price ? 1 : 0 %>"
                    data-edit-id="<%= p.id %>" data-edit-name="<%= (p.name || '').replace(/"/g, '&quot;') %>" data-edit-price="<%= p.price %>" data-edit-old="<%= p.old_price || '' %>"
                    data-edit-cat="<%= p.category_id || '' %>" data-edit-desc="<%= (p.description || '').replace(/"/g, '&quot;') %>" data-edit-image="<%= (p.image || '').replace(/"/g, '&quot;') %>" data-edit-galeria="<%= (p.galeria || '').replace(/"/g, '&quot;') %>"
                    data-edit-stock="<%= p.stock === null ? '' : p.stock %>" data-edit-variants="<%= encodeURIComponent(JSON.stringify(p.variants || [])) %>" data-edit-featured="<%= p.featured ? 1 : 0 %>" data-edit-promo="<%= p.promo_ends_at || '' %>"
                    data-edit-promo-type="<%= p.promo_type || '' %>" data-edit-promo-value="<%= p.promo_value || '' %>" data-edit-promo-gift="<%= (p.promo_gift || '').replace(/"/g, '&quot;') %>"
                    data-edit-sku="<%= (p.sku || '').replace(/"/g, '&quot;') %>" data-edit-tags="<%= (p.tags || '').replace(/"/g, '&quot;') %>" data-edit-video="<%= (p.video || '').replace(/"/g, '&quot;') %>" data-edit-specs="<%= (p.specs || '').replace(/"/g, '&quot;') %>" data-edit-barcode="<%= (p.barcode || '').replace(/"/g, '&quot;') %>"
                    data-edit-installments="<%= p.allow_installments ? 1 : 0 %>" data-edit-inst-count="<%= p.installment_count || 6 %>" data-edit-inst-down="<%= p.installment_min_down || 0 %>" data-edit-inst-freq="<%= p.installment_frequency || 'semanal' %>">
-                <div class="flex items-center gap-3 min-w-0 w-full sm:w-auto sm:flex-1">
-                <img src="<%= p.image || '/img/sin-imagen.svg' %>" loading="lazy" class="w-11 h-11 rounded-xl object-cover shrink-0 border border-slate-100">
-                <div class="flex-1 min-w-0">
+                <div class="product-card__main">
+                <button type="button" class="product-card__image-button" data-product-name="<%= p.name %>" onclick="abrirImagenProducto(this.querySelector('img'), this.dataset.productName)" aria-label="Ampliar imagen de <%= p.name %>">
+                  <img src="<%= p.image || '/img/sin-imagen.svg' %>" alt="Foto de <%= p.name %>" loading="lazy" class="product-card__image" onerror="this.onerror=null;this.src='/img/sin-imagen.svg'">
+                  <span class="product-card__zoom" aria-hidden="true"><i class="bi bi-arrows-fullscreen"></i></span>
+                </button>
+                <div class="product-card__info">
                   <p class="font-semibold text-sm text-slate-800 truncate">
                     <% if (p.featured) { %><i class="bi bi-star-fill text-amber-400 align-[-2px]" title="Destacado"></i><% } %> <%= p.name %>
                   </p>
@@ -153,7 +167,7 @@
                     <span class="text-[11px] text-slate-500 font-semibold"><%= money(p.price) %></span>
                     <% if (p.old_price) { %>
                       <span class="text-[10px] text-slate-400 line-through"><%= money(p.old_price) %></span>
-                      <span class="m-badge !h-5 !text-[10px] m-badge-error">🔥 <%= p.promo_days !== undefined ? p.promo_days + ' días' : 'Promo' %></span>
+                      <span class="m-badge !h-5 !text-[10px] m-badge-error"><i class="bi bi-percent" aria-hidden="true"></i> <%= p.promo_days !== undefined ? p.promo_days + ' días' : 'Promo' %></span>
                     <% } else if (p.promo_badge) { %>
                       <span class="m-badge !h-5 !text-[10px] m-badge-error"><%= p.promo_badge %></span>
                     <% } %>
@@ -169,7 +183,7 @@
                   </div>
                 </div>
                 </div>
-                <div class="flex items-center gap-0.5 flex-wrap justify-start sm:justify-end w-full sm:w-auto sm:shrink-0">
+                <div class="product-card__actions">
                   <button type="button" class="m-btn-icon !w-8 !h-8 hover:!bg-emerald-50 hover:!text-emerald-600" title="Tarjeta para redes" onclick="abrirTarjetaProducto(this.closest('[data-edit-id]'))">
                     <i class="bi bi-share text-base leading-none"></i>
                   </button>
@@ -177,44 +191,52 @@
                     <i class="bi bi-qr-code text-base leading-none"></i>
                   </a>
                   <% if (puedeEditarP) { %>
-                  <form method="POST" action="/<%= biz.slug %>/admin/producto/<%= p.id %>/mover">
-                    <input type="hidden" name="dir" value="up">
-                    <button class="m-btn-icon !w-9 !h-9 hover:!bg-slate-100 !text-slate-500" title="Subir producto"><i class="bi bi-arrow-up-short text-lg leading-none"></i></button>
-                  </form>
-                  <form method="POST" action="/<%= biz.slug %>/admin/producto/<%= p.id %>/mover">
-                    <input type="hidden" name="dir" value="down">
-                    <button class="m-btn-icon !w-9 !h-9 hover:!bg-slate-100 !text-slate-500" title="Bajar producto"><i class="bi bi-arrow-down-short text-lg leading-none"></i></button>
-                  </form>
                   <button class="m-btn-icon !w-8 !h-8 hover:!bg-blue-50 hover:!text-blue-600" title="Editar" onclick="editarProducto(this.closest('[data-edit-id]'))">
                     <i class="bi bi-pencil-square text-base leading-none"></i>
                   </button>
                   <% } %>
-                  <% if (perms.includes('productos.crear')) { %>
-                  <button type="button" class="m-btn-icon !w-8 !h-8 hover:!bg-indigo-50 hover:!text-indigo-600" title="Duplicar" onclick="duplicarProducto(this.closest('[data-edit-id]'))">
-                    <i class="bi bi-copy text-base leading-none"></i>
-                  </button>
-                  <% } %>
-                  <% if (puedeEditarP) { %>
-                  <form method="POST" action="/<%= biz.slug %>/admin/producto/<%= p.id %>/featured">
-                    <button class="m-btn-icon !w-8 !h-8 <%= p.featured ? '!text-amber-500' : '' %> hover:!bg-amber-50" title="Destacar"><i class="bi <%= p.featured ? 'bi-star-fill' : 'bi-star' %> text-base leading-none"></i></button>
-                  </form>
-                  <form method="POST" action="/<%= biz.slug %>/admin/producto/<%= p.id %>/toggle">
-                    <label class="m-switch" title="<%= p.active ? 'Ocultar producto' : 'Mostrar producto' %>">
-                      <input type="checkbox" <%= p.active ? 'checked' : '' %> onchange="this.form.requestSubmit()">
-                      <span class="track"><span class="thumb"></span></span>
-                    </label>
-                  </form>
-                  <% } %>
-                  <% if (puedeEliminarP) { %>
-                  <form method="POST" action="/<%= biz.slug %>/admin/producto/<%= p.id %>/eliminar" data-confirm="¿Eliminar <%= p.name.replace(/'/g, "\\'") %>?">
-                    <button class="m-btn-icon !w-8 !h-8 hover:!bg-red-50 hover:!text-red-500" title="Eliminar"><i class="bi bi-trash3 text-base leading-none"></i></button>
-                  </form>
-                  <% } %>
+                  <details class="product-card__more">
+                    <summary class="m-btn-icon" title="Más acciones" aria-label="Más acciones para <%= p.name %>"><i class="bi bi-three-dots"></i></summary>
+                    <div class="product-card__menu">
+                      <% if (puedeEditarP) { %>
+                      <form method="POST" action="/<%= biz.slug %>/admin/producto/<%= p.id %>/mover">
+                        <input type="hidden" name="dir" value="up">
+                        <button title="Subir producto"><i class="bi bi-arrow-up"></i><span>Subir posición</span></button>
+                      </form>
+                      <form method="POST" action="/<%= biz.slug %>/admin/producto/<%= p.id %>/mover">
+                        <input type="hidden" name="dir" value="down">
+                        <button title="Bajar producto"><i class="bi bi-arrow-down"></i><span>Bajar posición</span></button>
+                      </form>
+                      <% } %>
+                      <% if (perms.includes('productos.crear')) { %>
+                      <button type="button" title="Duplicar" onclick="duplicarProducto(this.closest('[data-edit-id]'))"><i class="bi bi-copy"></i><span>Duplicar</span></button>
+                      <% } %>
+                      <% if (puedeEditarP) { %>
+                      <form method="POST" action="/<%= biz.slug %>/admin/producto/<%= p.id %>/featured">
+                        <button title="Destacar"><i class="bi <%= p.featured ? 'bi-star-fill' : 'bi-star' %>"></i><span><%= p.featured ? 'Quitar destacado' : 'Destacar' %></span></button>
+                      </form>
+                      <form method="POST" action="/<%= biz.slug %>/admin/producto/<%= p.id %>/toggle">
+                        <button title="<%= p.active ? 'Ocultar producto' : 'Mostrar producto' %>"><i class="bi <%= p.active ? 'bi-eye-slash' : 'bi-eye' %>"></i><span><%= p.active ? 'Ocultar' : 'Mostrar' %></span></button>
+                      </form>
+                      <% } %>
+                      <% if (puedeEliminarP) { %>
+                      <form method="POST" action="/<%= biz.slug %>/admin/producto/<%= p.id %>/eliminar" data-confirm="¿Eliminar <%= p.name.replace(/'/g, "\\'") %>?">
+                        <button class="danger" title="Eliminar"><i class="bi bi-trash3"></i><span>Eliminar</span></button>
+                      </form>
+                      <% } %>
+                    </div>
+                  </details>
                 </div>
-              </div>
+              </article>
             <% }) %>
           </div>
-          <div id="prod-pager"></div>
+          <div id="prod-empty-filter" class="product-filter-empty hidden" role="status">
+            <i class="bi bi-search" aria-hidden="true"></i>
+            <strong>Sin productos que coincidan</strong>
+            <span>Prueba otra búsqueda o limpia los filtros.</span>
+            <button type="button" id="prod-clear-filters" class="m-btn m-btn-outlined m-btn-sm">Ver todos</button>
+          </div>
+          <nav id="prod-pager" class="product-pager" aria-label="Paginación de productos"></nav>
         <% } %>
       </section>
 
@@ -237,11 +259,11 @@
               <label class="font-bold text-xs text-slate-600 mb-2 block">Tipo de producto</label>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-2" id="f-tipo-cards">
                 <button type="button" data-tipo="unico" class="pf-tipo-card active" onclick="setTipo('unico')">
-                  <span class="pf-tipo-ico">📦</span>
+                  <span class="pf-tipo-ico"><i class="bi bi-box-seam" aria-hidden="true"></i></span>
                   <span><span class="pf-tipo-tit">Producto único</span><span class="pf-tipo-sub">Se vende tal cual: 1 precio, 1 stock</span></span>
                 </button>
                 <button type="button" data-tipo="variantes" class="pf-tipo-card" onclick="setTipo('variantes')">
-                  <span class="pf-tipo-ico">🧩</span>
+                  <span class="pf-tipo-ico"><i class="bi bi-diagram-3" aria-hidden="true"></i></span>
                   <span><span class="pf-tipo-tit">Con variantes</span><span class="pf-tipo-sub">1 producto con tallas/colores…: cada variante con su propio precio y stock</span></span>
                 </button>
               </div>
@@ -395,6 +417,7 @@
         </form>
       </section>
       <% } %>
+      </div><!-- /products-workspace -->
       </div><!-- /tabpane-productos -->
 
       <% if (puedeCategorias) { %>
@@ -438,6 +461,16 @@
   </a>
   <% } %>
 
+  <dialog id="product-image-dialog" class="product-image-dialog" aria-labelledby="product-image-caption" onclick="cerrarImagenProductoDesdeFondo(event)">
+    <div class="product-image-dialog__surface">
+      <button type="button" class="product-image-dialog__close" onclick="cerrarImagenProducto()" aria-label="Cerrar imagen ampliada">
+        <i class="bi bi-x-lg" aria-hidden="true"></i>
+      </button>
+      <img id="product-image-expanded" alt="" src="">
+      <p id="product-image-caption"></p>
+    </div>
+  </dialog>
+
   <%- include('partials/img-editor', { upUrl: '/' + biz.slug + '/admin/upload', z: 130 }) %>
   <script>window.imgeContainerApplied = function () { if (typeof renderFotos === 'function') renderFotos('f'); };</script>
 
@@ -474,11 +507,452 @@
     .img-aspect { font-size:10px; font-weight:700; padding:4px 8px; border-radius:999px; border:1px solid #e2e8f0; color:#64748b; transition:all .2s cubic-bezier(.22,1,.36,1); }
     .img-aspect.on { border-color:#2563eb; background:#eff6ff; color:#2563eb; }
     #prod-grid > * { transition:opacity .2s cubic-bezier(.22,1,.36,1); }
+
+    /* Catálogo visual con inspector lateral — dirección aprobada para esta superficie */
+    .products-admin-page {
+      background-color:#f3f6f8;
+      background-image:
+        radial-gradient(circle at 88% 12%, rgba(109,220,230,.16), transparent 28rem),
+        radial-gradient(circle at 82% 58%, rgba(143,122,246,.10), transparent 26rem);
+    }
+    .products-admin-page .prod-tabs {
+      width:max-content;
+      max-width:100%;
+      gap:8px;
+      padding:0;
+      margin-bottom:22px;
+      border:0;
+      background:transparent;
+      box-shadow:none;
+    }
+    .products-admin-page .prod-tab {
+      min-height:36px;
+      padding:8px 15px;
+      border:1px solid rgba(23,62,99,.08);
+      border-radius:12px;
+      color:#46525b;
+      background:rgba(255,255,255,.76);
+      box-shadow:0 6px 16px rgba(28,49,69,.07),0 1px 3px rgba(28,49,69,.05);
+    }
+    .products-admin-page .prod-tab i { font-size:13px; }
+    .products-admin-page .prod-tab.active {
+      background:linear-gradient(135deg,#173e63,#285679);
+      box-shadow:0 5px 13px rgba(23,62,99,.28);
+    }
+    .products-admin-page h1 { color:#151d23; letter-spacing:-.025em; }
+    .products-workspace { min-width:0; }
+    .product-catalog {
+      min-width:0;
+      padding:0;
+      background:transparent;
+    }
+    .product-catalog > .flex:first-of-type {
+      padding-bottom:10px;
+      border-bottom:1px solid rgba(23,62,99,.10);
+    }
+    .product-catalog #prod-search {
+      min-height:36px;
+      background:rgba(255,255,255,.86);
+      border-color:rgba(23,62,99,.12);
+      color:#17232d;
+      box-shadow:0 3px 10px rgba(28,49,69,.04);
+    }
+    .product-catalog #prod-search::placeholder { color:#687781; opacity:1; }
+    .product-catalog #prod-filters { gap:6px; margin-bottom:14px; }
+    .product-catalog #prod-filters .m-chip {
+      min-height:30px;
+      padding:0 11px;
+      border:1px solid rgba(23,62,99,.10);
+      background:rgba(255,255,255,.66);
+      color:#52616c;
+      box-shadow:0 2px 7px rgba(28,49,69,.035);
+    }
+    .product-catalog #prod-filters .m-chip-selected {
+      border-color:transparent;
+      background:#214b70 !important;
+      color:#fff;
+      box-shadow:0 4px 10px rgba(23,62,99,.22);
+    }
+    .product-result-summary {
+      min-height:18px;
+      margin:-6px 0 10px;
+      color:#697781;
+      font-size:11px;
+      font-weight:650;
+    }
+    .product-filter-empty {
+      min-height:220px;
+      padding:34px 18px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:7px;
+      text-align:center;
+      color:#687781;
+      border:1px dashed rgba(23,62,99,.18);
+      border-radius:14px;
+      background:rgba(255,255,255,.52);
+    }
+    .product-filter-empty.hidden { display:none; }
+    .product-filter-empty > i { font-size:22px; color:#214b70; }
+    .product-filter-empty > strong { color:#27343d; font-size:14px; }
+    .product-filter-empty > span { margin-bottom:7px; font-size:12px; }
+    .product-pager {
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:6px;
+      min-height:38px;
+      margin-top:16px;
+    }
+    .product-page-arrow,
+    .product-page-number {
+      display:inline-grid;
+      place-items:center;
+      width:34px;
+      height:34px;
+      border:1px solid rgba(23,62,99,.13);
+      border-radius:10px;
+      background:rgba(255,255,255,.78);
+      color:#425461;
+      font-size:12px;
+      font-weight:750;
+      transition:background .18s ease,color .18s ease,border-color .18s ease,transform .18s ease;
+    }
+    .product-page-arrow:not(:disabled):hover,
+    .product-page-number:hover { border-color:rgba(33,75,112,.32); background:#fff; transform:translateY(-1px); }
+    .product-page-number.is-current { border-color:#214b70; background:#214b70; color:#fff; }
+    .product-page-arrow:disabled { cursor:not-allowed; opacity:.38; }
+    .product-page-arrow:focus-visible,
+    .product-page-number:focus-visible { outline:3px solid rgba(33,75,112,.20); outline-offset:2px; }
+    .product-grid {
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:12px;
+    }
+    .product-card {
+      position:relative;
+      display:flex;
+      min-width:0;
+      flex-direction:column;
+      overflow:visible;
+      border-radius:14px;
+      background:var(--ap-card);
+      box-shadow:0 7px 20px rgba(28,49,69,.09), 0 2px 5px rgba(28,49,69,.05);
+      transition:transform .24s cubic-bezier(.22,1,.36,1), box-shadow .24s cubic-bezier(.22,1,.36,1);
+    }
+    .product-card.hidden { display:none !important; }
+    .product-card:hover {
+      transform:translateY(-3px);
+      box-shadow:0 14px 28px rgba(28,49,69,.13), 0 3px 8px rgba(28,49,69,.06);
+    }
+    .product-card:focus-within {
+      z-index:30;
+      box-shadow:0 0 0 3px rgba(33,75,112,.16), 0 12px 26px rgba(28,49,69,.12);
+    }
+    .product-card:has(.product-card__more[open]) { z-index:30; }
+    .product-card__main { display:block; min-width:0; }
+    .product-card__image-button {
+      position:relative;
+      display:block;
+      width:100%;
+      height:142px;
+      overflow:hidden;
+      border-radius:14px 14px 0 0;
+      background:#e9edef;
+      cursor:zoom-in;
+    }
+    .product-card__image {
+      display:block;
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      border-radius:14px 14px 0 0;
+      background:#e9edef;
+      transition:transform .4s cubic-bezier(.22,1,.36,1), filter .3s ease;
+    }
+    .product-card:hover .product-card__image { transform:scale(1.025); filter:saturate(1.04); }
+    .product-card__zoom {
+      position:absolute;
+      right:9px;
+      bottom:9px;
+      display:grid;
+      width:30px;
+      height:30px;
+      place-items:center;
+      border-radius:9px;
+      background:rgba(255,255,255,.92);
+      color:#214b70;
+      box-shadow:0 5px 14px rgba(28,49,69,.16);
+      opacity:0;
+      transform:translateY(4px);
+      transition:opacity .2s ease,transform .2s cubic-bezier(.22,1,.36,1);
+    }
+    .product-card__image-button:hover .product-card__zoom,
+    .product-card__image-button:focus-visible .product-card__zoom { opacity:1; transform:none; }
+    .product-card__info {
+      position:relative;
+      padding:10px 11px 8px;
+      background:var(--ap-card);
+    }
+    .product-card__info > p {
+      margin:0;
+      color:var(--ap-text) !important;
+      font-size:13px;
+      font-weight:800;
+      letter-spacing:-.015em;
+    }
+    .product-card__info .m-badge {
+      padding-inline:7px;
+      border-radius:6px;
+      font-size:9px !important;
+      letter-spacing:0;
+    }
+    .product-card__actions {
+      display:flex;
+      align-items:center;
+      justify-content:flex-end;
+      gap:1px;
+      margin-top:auto;
+      padding:0 7px 7px;
+      background:var(--ap-card);
+    }
+    .product-card__actions form { display:flex; align-items:center; margin:0; }
+    .product-card__actions .m-btn-icon {
+      width:28px !important;
+      height:28px !important;
+      border-radius:8px !important;
+      color:#667681;
+    }
+    .product-card__actions .m-btn-icon:hover { color:#214b70; background:#edf4f8; }
+    .product-card__actions .m-switch { transform:scale(.86); transform-origin:center; }
+    .product-card__more { position:relative; }
+    .product-card__more > summary {
+      display:grid;
+      place-items:center;
+      list-style:none;
+      cursor:pointer;
+      user-select:none;
+    }
+    .product-card__more > summary::-webkit-details-marker { display:none; }
+    .product-card__more[open] > summary { color:#214b70; background:#edf4f8; }
+    .product-card__menu {
+      position:absolute;
+      right:0;
+      top:34px;
+      z-index:20;
+      width:168px;
+      padding:6px;
+      border:1px solid rgba(23,62,99,.10);
+      border-radius:12px;
+      background:var(--ap-card);
+      box-shadow:0 16px 34px rgba(28,49,69,.18),0 3px 8px rgba(28,49,69,.08);
+    }
+    .product-card__menu form { display:block; }
+    .product-card__menu button {
+      display:flex;
+      width:100%;
+      min-height:34px;
+      align-items:center;
+      gap:9px;
+      padding:7px 9px;
+      border-radius:8px;
+      color:#4c5d68;
+      font-size:11px;
+      font-weight:700;
+      text-align:left;
+    }
+    .product-card__menu button:hover { color:#214b70; background:#edf4f8; }
+    .product-card__menu button.danger { color:#b43232; }
+    .product-card__menu button.danger:hover { background:#fff1f1; }
+
+    .product-image-dialog {
+      width:min(94vw,980px);
+      max-width:none;
+      max-height:92vh;
+      margin:auto;
+      padding:0;
+      border:0;
+      box-sizing:border-box;
+      overflow:visible;
+      border-radius:16px;
+      background:transparent;
+      color:#fff;
+    }
+    .product-image-dialog::backdrop {
+      background:rgba(8,17,24,.78);
+      backdrop-filter:blur(8px);
+    }
+    .product-image-dialog__surface {
+      position:relative;
+      display:flex;
+      max-height:92vh;
+      flex-direction:column;
+      align-items:center;
+      overflow:hidden;
+      max-width:100%;
+      border-radius:16px;
+      background:#101b23;
+      box-shadow:0 28px 70px rgba(5,13,19,.42);
+    }
+    .product-image-dialog__surface img {
+      display:block;
+      width:100%;
+      max-width:100%;
+      max-height:calc(92vh - 48px);
+      object-fit:contain;
+      background:#0b141b;
+    }
+    .product-image-dialog__surface p {
+      width:100%;
+      margin:0;
+      padding:13px 52px 14px 16px;
+      box-sizing:border-box;
+      color:#f4f8fa;
+      font-size:13px;
+      font-weight:700;
+      text-align:left;
+    }
+    .product-image-dialog__close {
+      position:absolute;
+      top:10px;
+      right:10px;
+      z-index:2;
+      display:grid;
+      width:38px;
+      height:38px;
+      place-items:center;
+      border-radius:11px;
+      background:rgba(10,24,33,.78);
+      color:#fff;
+      box-shadow:0 5px 16px rgba(0,0,0,.22);
+    }
+    .product-image-dialog__close:hover { background:#214b70; }
+
+    .products-admin-page #nuevo-producto {
+      border:0;
+      border-radius:15px;
+      background:
+        linear-gradient(145deg,rgba(230,250,250,.96),rgba(249,247,255,.98) 58%,rgba(238,234,255,.96));
+      box-shadow:0 16px 36px rgba(34,62,82,.14), 0 3px 8px rgba(34,62,82,.06);
+    }
+    .products-admin-page #nuevo-producto::before { display:none; }
+    .products-admin-page #nuevo-producto:hover { transform:none; }
+    .products-admin-page #nuevo-producto .m-field label {
+      color:#45545e;
+      font-size:10px;
+      letter-spacing:.025em;
+    }
+    .products-admin-page #nuevo-producto .m-field input,
+    .products-admin-page #nuevo-producto .m-field select,
+    .products-admin-page #nuevo-producto .m-field textarea,
+    .products-admin-page #nuevo-producto .m-field .ss-btn {
+      background:rgba(255,255,255,.78);
+      border-color:rgba(35,74,106,.16);
+    }
+    .products-admin-page #nuevo-producto .m-field input:focus,
+    .products-admin-page #nuevo-producto .m-field select:focus,
+    .products-admin-page #nuevo-producto .m-field textarea:focus,
+    .products-admin-page #nuevo-producto .m-field .ss-btn:focus-visible,
+    .products-admin-page #nuevo-producto .m-field .ss-wrap.ss-open .ss-btn {
+      border-color:#315f84;
+      box-shadow:0 0 0 3px rgba(49,95,132,.10);
+    }
+    .products-admin-page .pf-tipo-card {
+      min-height:76px;
+      padding:10px;
+      border:1px solid rgba(35,74,106,.14);
+      background:rgba(255,255,255,.60);
+    }
+    .products-admin-page .pf-tipo-card.active {
+      border-color:#315f84;
+      background:rgba(238,243,255,.94);
+      box-shadow:0 4px 12px rgba(49,95,132,.12);
+    }
+    .products-admin-page .pf-tipo-ico {
+      display:grid;
+      width:34px;
+      height:34px;
+      place-items:center;
+      flex:0 0 auto;
+      border-radius:10px;
+      background:#edf2f7;
+      font-size:17px;
+      color:#315f84;
+    }
+    .products-admin-page .pf-dot { width:26px; height:26px; font-size:11px; }
+    .products-admin-page .pf-lbl { font-size:9px; }
+
+    @media (min-width:1180px) {
+      .products-admin-page:not(.sidebar-closed) aside { width:11.5rem; }
+      .products-admin-page:not(.sidebar-closed) main { padding-left:11.5rem; }
+      .products-admin-page .sidebar-toggle { left:calc(11.5rem - 18px); }
+      .products-workspace {
+        display:grid;
+        grid-template-columns:minmax(0,1fr) 350px;
+        gap:18px;
+        align-items:start;
+      }
+      .products-admin-page #nuevo-producto {
+        position:sticky;
+        top:16px;
+        max-height:calc(100vh - 32px);
+        margin-bottom:0;
+        overflow:auto;
+        overscroll-behavior:contain;
+      }
+      .products-admin-page .m-fab { display:none; }
+    }
+    @media (min-width:1360px) {
+      .product-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
+    }
+    @media (max-width:767px) {
+      .products-admin-page .prod-tabs { width:100%; flex-wrap:nowrap; overflow-x:auto; }
+      .products-admin-page .prod-tab { flex:1 0 auto; justify-content:center; }
+      .product-grid { grid-template-columns:1fr; gap:10px; }
+      .product-card { display:grid; grid-template-columns:minmax(0,1fr); }
+      .product-card__main { display:grid; grid-template-columns:104px minmax(0,1fr); }
+      .product-card__image-button { width:104px; height:104px; border-radius:14px 0 0 0; }
+      .product-card__image { width:104px; height:104px; border-radius:14px 0 0 0; }
+      .product-card__info { min-height:104px; padding:12px 10px 8px; }
+      .product-card__actions { padding:4px 7px 7px; border-top:1px solid rgba(23,62,99,.07); }
+      .products-admin-page #nuevo-producto { margin-top:18px; }
+    }
+    body.dark.products-admin-page {
+      background-color:#0d141a;
+      background-image:radial-gradient(circle at 88% 12%,rgba(52,124,145,.18),transparent 28rem);
+    }
+    body.dark.products-admin-page .prod-tabs,
+    body.dark.products-admin-page .product-card,
+    body.dark.products-admin-page .product-card__info,
+    body.dark.products-admin-page .product-card__actions { background:var(--ap-card); }
+    body.dark.products-admin-page #nuevo-producto {
+      background:linear-gradient(145deg,#142329,#1b1c28 60%,#201c31);
+    }
   </style>
 
   <script>
     var CURRENCY_SYMBOL = '<%= typeof currencySymbol !== "undefined" && currencySymbol ? currencySymbol : "$" %>';
     function money(n) { return CURRENCY_SYMBOL + (Number(n || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')); }
+
+    function abrirImagenProducto(img, nombre) {
+      var dialog = document.getElementById('product-image-dialog');
+      var expanded = document.getElementById('product-image-expanded');
+      var caption = document.getElementById('product-image-caption');
+      if (!dialog || !expanded || !img) return;
+      expanded.src = img.currentSrc || img.src;
+      expanded.alt = 'Imagen ampliada de ' + (nombre || 'producto');
+      if (caption) caption.textContent = nombre || 'Producto';
+      if (!dialog.open) dialog.showModal();
+    }
+    function cerrarImagenProducto() {
+      var dialog = document.getElementById('product-image-dialog');
+      if (dialog && dialog.open) dialog.close();
+    }
+    function cerrarImagenProductoDesdeFondo(event) {
+      if (event && event.target === event.currentTarget) cerrarImagenProducto();
+    }
 
     // Tabs: Productos | Categorías | Atributos
     function switchCrudTab(name) {
@@ -818,12 +1292,20 @@
     }
 
     // ====== Filtro en vivo + paginación de productos ======
-    var PROD_PAGE_SIZE = 12;
+    var PROD_PAGE_SIZE = 6;
     function initProdFilter() {
       var input = document.getElementById('prod-search');
       var chips = document.querySelectorAll('#prod-filters button');
-      if (!input) return;
+      if (!input || input.getAttribute('data-catalog-ready') === 'true') return;
+      input.setAttribute('data-catalog-ready', 'true');
       var state = 'all', q = '', page = 1, current = [];
+      var summary = document.getElementById('prod-result-summary');
+      var empty = document.getElementById('prod-empty-filter');
+      var clear = document.getElementById('prod-clear-filters');
+      function normalize(value) {
+        var text = String(value || '').toLowerCase();
+        return typeof text.normalize === 'function' ? text.normalize('NFD').replace(/[\u0300-\u036f]/g, '') : text;
+      }
       function cardsAll() {
         return Array.prototype.slice.call(document.querySelectorAll('#prod-grid [data-search]'));
       }
@@ -833,9 +1315,9 @@
           if (state === 'active' && card.getAttribute('data-state') !== 'active') ok = false;
           if (state === 'hidden' && card.getAttribute('data-state') !== 'hidden') ok = false;
           if (state === 'out' && card.getAttribute('data-stock') !== 'out') ok = false;
-          if (state === 'low' && card.getAttribute('data-stock') !== 'low' && card.getAttribute('data-stock') !== 'out') ok = false;
+          if (state === 'low' && card.getAttribute('data-stock') !== 'low') ok = false;
           if (state === 'promo' && card.getAttribute('data-promo') !== '1') ok = false;
-          if (q && (card.getAttribute('data-search') || '').indexOf(q) === -1) ok = false;
+          if (q && normalize(card.getAttribute('data-search')).indexOf(q) === -1) ok = false;
           return ok;
         });
       }
@@ -847,32 +1329,40 @@
         var slice = current.slice(start, start + PROD_PAGE_SIZE);
         cardsAll().forEach(function (c) { c.classList.add('hidden'); });
         slice.forEach(function (c) { c.classList.remove('hidden'); });
+        if (empty) empty.classList.toggle('hidden', current.length !== 0);
+        if (summary) summary.textContent = !current.length ? '0 productos encontrados' : 'Mostrando ' + (start + 1) + '–' + Math.min(start + PROD_PAGE_SIZE, current.length) + ' de ' + current.length + (current.length === 1 ? ' producto' : ' productos');
         renderPager(pages);
       }
       function renderPager(pages) {
         var box = document.getElementById('prod-pager');
         if (!box) return;
         if (pages <= 1) { box.innerHTML = ''; return; }
-        var h = '<div class="flex items-center justify-center gap-2 mt-4">';
-        h += '<button type="button" class="m-btn m-btn-outlined m-btn-sm" data-pg="prev">‹ Anterior</button>';
-        h += '<span class="text-xs font-bold text-slate-500 px-2">Página ' + page + ' de ' + pages + '</span>';
-        h += '<button type="button" class="m-btn m-btn-outlined m-btn-sm" data-pg="next">Siguiente ›</button>';
-        h += '</div>';
+        var h = '<button type="button" class="product-page-arrow" data-pg="prev" aria-label="Página anterior"' + (page === 1 ? ' disabled' : '') + '><i class="bi bi-chevron-left" aria-hidden="true"></i></button>';
+        for (var i = 1; i <= pages; i++) h += '<button type="button" class="product-page-number' + (i === page ? ' is-current' : '') + '" data-page="' + i + '"' + (i === page ? ' aria-current="page"' : '') + ' aria-label="Ir a la página ' + i + '">' + i + '</button>';
+        h += '<button type="button" class="product-page-arrow" data-pg="next" aria-label="Página siguiente"' + (page === pages ? ' disabled' : '') + '><i class="bi bi-chevron-right" aria-hidden="true"></i></button>';
         box.innerHTML = h;
         box.querySelector('[data-pg="prev"]').onclick = function () { if (page > 1) { page--; show(); } };
         box.querySelector('[data-pg="next"]').onclick = function () { if (page < pages) { page++; show(); } };
+        box.querySelectorAll('[data-page]').forEach(function (button) { button.onclick = function () { page = Number(button.getAttribute('data-page')) || 1; show(); }; });
       }
 
       chips.forEach(function (ch) {
         ch.onclick = function () {
           chips.forEach(function (c) { c.classList.remove('m-chip-selected'); });
+          chips.forEach(function (c) { c.setAttribute('aria-pressed', 'false'); });
           ch.classList.add('m-chip-selected');
+          ch.setAttribute('aria-pressed', 'true');
           state = ch.getAttribute('data-f');
           page = 1;
           show();
         };
       });
-      input.oninput = function () { q = input.value.trim().toLowerCase(); page = 1; show(); };
+      input.oninput = function () { q = normalize(input.value.trim()); page = 1; show(); };
+      if (clear) clear.onclick = function () {
+        input.value = ''; q = ''; page = 1; state = 'all';
+        chips.forEach(function (c) { var selected = c.getAttribute('data-f') === 'all'; c.classList.toggle('m-chip-selected', selected); c.setAttribute('aria-pressed', selected ? 'true' : 'false'); });
+        show(); input.focus();
+      };
       show();
     }
 
@@ -1342,8 +1832,9 @@
         var b = document.createElement('button');
         b.type = 'button';
         b.title = (isSel ? 'Quitar ' : 'Usar ') + t.name + ' (' + t.values.join(', ') + ')';
-        b.className = 'tpl-pill inline-flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-full border transition ' +
-          (isSel ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-200 bg-white text-slate-600 hover:border-blue-300 hover:bg-blue-50');
+        b.className = isSel
+          ? 'tpl-pill inline-flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-full border transition border-blue-600 bg-blue-600 text-white'
+          : 'tpl-pill inline-flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-full border transition border-slate-200 bg-white text-slate-600 hover:border-blue-300 hover:bg-blue-50';
         b.innerHTML = (isSel ? '✓ ' : '＋ ') + escHTML(t.name) + ' <span class="opacity-70 font-semibold">' + t.values.length + '</span>';
         b.onclick = function () {
           if (!ed) return;
@@ -1611,6 +2102,16 @@
 
 
 
+  </script>
+
+  <script>
+    // Inicialización independiente: los controles del catálogo siguen funcionando
+    // aunque otra herramienta del formulario falle durante su arranque.
+    (function bootProductCatalogControls() {
+      function start() { if (typeof initProdFilter === 'function') initProdFilter(); }
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });
+      else start();
+    })();
   </script>
 
   <!-- Modal: tarjeta de producto para redes sociales -->

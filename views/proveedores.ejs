@@ -2,48 +2,170 @@
 <html lang="es">
 <head>
   <%- include('admin/head', { title: 'Proveedores', biz }) %>
+  <style>
+    .suppliers-admin-page {
+      --sp-ink:#17232d; --sp-muted:#52616c; --sp-petrol:#1a3c5e; --sp-petrol-2:#214b70;
+      --sp-line:rgba(26,60,94,.13); --sp-soft:#edf4f7; --sp-cyan:#e7f8fb; --sp-violet:#f0edff;
+      background:radial-gradient(circle at 86% 5%,rgba(93,210,222,.13),transparent 27rem),radial-gradient(circle at 97% 48%,rgba(137,113,255,.07),transparent 25rem),#f3f6f8;
+      color:var(--sp-ink); overflow-x:hidden;
+    }
+    .suppliers-admin-page main{min-width:0;max-width:100%;}
+    .suppliers-shell{width:100%;max-width:1480px;margin:0 auto;padding:24px clamp(16px,2.5vw,34px) 48px;box-sizing:border-box;}
+    .suppliers-header{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;margin-bottom:18px;}
+    .suppliers-title{font-size:clamp(1.55rem,2.2vw,2rem);font-weight:850;letter-spacing:-.035em;line-height:1.05;color:var(--sp-ink);}
+    .suppliers-subtitle{max-width:650px;margin-top:7px;color:var(--sp-muted);font-size:13px;line-height:1.55;}
+    .supplier-flow{display:flex;align-items:center;gap:8px;flex:0 0 auto;color:#657680;font-size:11px;font-weight:750;}
+    .supplier-flow span{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;}
+    .supplier-flow svg{width:15px;height:15px;color:var(--sp-petrol);}
+    .supplier-flow .flow-arrow{color:#9aabb5;}
+    .suppliers-workspace{display:grid;grid-template-columns:minmax(260px,330px) minmax(0,1fr);gap:18px;align-items:start;}
+    .supplier-panel{border:1px solid var(--sp-line);border-radius:15px;background:#fff;box-shadow:0 12px 30px -28px rgba(26,60,94,.65);min-width:0;}
+    .supplier-panel-pad{padding:20px;}
+    .supplier-directory{position:sticky;top:18px;}
+    .panel-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;}
+    .panel-title-wrap{display:flex;align-items:center;gap:11px;min-width:0;}
+    .panel-icon{width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,var(--sp-cyan),var(--sp-violet));color:var(--sp-petrol);display:grid;place-items:center;flex:0 0 auto;}
+    .panel-icon svg{width:18px;height:18px;}
+    .panel-title{font-size:15px;font-weight:820;letter-spacing:-.015em;color:var(--sp-ink);}
+    .panel-copy{margin-top:2px;color:#7a8992;font-size:11px;line-height:1.4;}
+    .supplier-count{min-width:28px;height:28px;padding:0 8px;border-radius:8px;background:var(--sp-soft);color:var(--sp-petrol);font-size:11px;font-weight:850;display:grid;place-items:center;}
+    .supplier-form{display:grid;gap:11px;}
+    .suppliers-admin-page .m-field{min-width:0;}
+    .suppliers-admin-page .m-field label{display:block;margin-bottom:5px;color:#40515d;font-size:10px;font-weight:750;letter-spacing:.055em;text-transform:uppercase;}
+    .suppliers-admin-page .m-field input,.suppliers-admin-page .m-field select,.suppliers-admin-page textarea,
+    .suppliers-admin-page .po-row input{width:100%;max-width:100%;min-height:41px;box-sizing:border-box;border:1px solid rgba(26,60,94,.16);border-radius:9px;background:#fff;color:var(--sp-ink);font:500 13px/1.3 Inter,system-ui,sans-serif;outline:0;}
+    .suppliers-admin-page .m-field input:focus,.suppliers-admin-page .m-field select:focus,.suppliers-admin-page textarea:focus,
+    .suppliers-admin-page .po-row input:focus{border-color:var(--sp-petrol-2)!important;box-shadow:0 0 0 3px rgba(33,75,112,.11)!important;}
+    .supplier-submit{width:100%;margin-top:2px;background:linear-gradient(135deg,var(--sp-petrol),var(--sp-petrol-2))!important;color:#fff!important;}
+    .supplier-list{display:grid;gap:8px;margin-top:16px;padding-top:15px;border-top:1px solid var(--sp-line);}
+    .supplier-item{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;padding:11px;border-radius:11px;background:#f7f9fa;border:1px solid rgba(26,60,94,.08);}
+    .supplier-item-name{font-size:12px;font-weight:800;color:var(--sp-ink);}
+    .supplier-meta{display:flex;flex-wrap:wrap;gap:5px 9px;margin-top:4px;color:#71808a;font-size:10px;line-height:1.35;}
+    .supplier-meta span{display:inline-flex;align-items:center;gap:4px;min-width:0;overflow-wrap:anywhere;}
+    .supplier-meta svg{width:12px;height:12px;flex:0 0 auto;}
+    .supplier-delete{width:28px;height:28px;border-radius:8px;color:#a14747;display:grid;place-items:center;flex:0 0 auto;transition:.18s ease;}
+    .supplier-delete:hover{background:#fff0ef;color:#7f2828;}
+    .supplier-delete svg{width:14px;height:14px;}
+    .supplier-empty{padding:14px 8px 4px;text-align:center;color:#82909a;font-size:11px;line-height:1.5;}
+    .supplier-empty svg{display:block;width:24px;height:24px;margin:0 auto 7px;color:#91a4af;}
+    .purchase-card{min-width:0;overflow:visible;}
+    .purchase-top{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px;align-items:end;margin-bottom:15px;}
+    .purchase-help{display:flex;align-items:center;gap:7px;color:#73838d;font-size:10px;font-weight:650;text-align:right;}
+    .purchase-help svg{width:15px;height:15px;color:var(--sp-petrol);flex:0 0 auto;}
+    .purchase-table-label{margin:15px 0 7px;color:#40515d;font-size:10px;font-weight:780;letter-spacing:.055em;text-transform:uppercase;}
+    .purchase-table-copy{font-weight:500;color:#81909a;text-transform:none;letter-spacing:0;}
+    #po-grid{border-color:var(--sp-line)!important;border-radius:12px!important;background:#fbfcfd;}
+    #po-grid table{border-collapse:separate;border-spacing:0;}
+    #po-grid thead tr{background:#edf3f6!important;color:#5f707b!important;border-color:var(--sp-line)!important;}
+    #po-grid th{height:38px;vertical-align:middle;}
+    .po-row td{background:#fff;border-color:rgba(26,60,94,.08)!important;}
+    .po-row input{min-height:36px!important;padding:7px 9px!important;}
+    .po-invalid{border-color:#dc2626!important;box-shadow:0 0 0 3px rgba(220,38,38,.13)!important;}
+    .po-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:11px 0 16px;}
+    .ui-icon{width:15px;height:15px;flex:0 0 auto;}
+    .paste-summary{display:inline-flex;align-items:center;gap:6px;color:var(--sp-petrol);font-size:11px;font-weight:750;cursor:pointer;}
+    .paste-panel{margin-top:8px;padding:10px;border-radius:11px;background:#f6f9fa;border:1px solid var(--sp-line);}
+    .purchase-total{display:flex;align-items:center;justify-content:space-between;padding:15px 16px;margin-bottom:13px;border-radius:12px;background:linear-gradient(135deg,#eaf6f8,#f2efff);}
+    .purchase-total span:first-child{color:#536670;font-size:11px;font-weight:750;}
+    .purchase-total strong{color:var(--sp-ink);font-size:21px;font-weight:880;letter-spacing:-.025em;font-variant-numeric:tabular-nums;}
+    .purchase-submit{width:100%;min-height:44px!important;background:linear-gradient(135deg,var(--sp-petrol),var(--sp-petrol-2))!important;color:#fff!important;}
+    .po-ac{max-width:calc(100vw - 16px)!important;box-sizing:border-box;border-color:rgba(26,60,94,.16)!important;border-radius:11px!important;box-shadow:0 16px 34px rgba(28,49,69,.18),0 3px 8px rgba(28,49,69,.08)!important;}
+    .po-ac-it{white-space:normal;overflow-wrap:anywhere;}
+    .purchase-history{margin-top:18px;}
+    .history-list{display:grid;gap:10px;}
+    .history-item{padding:14px;border:1px solid var(--sp-line);border-radius:12px;background:#fff;}
+    .history-item.is-received{background:#f4faf7;border-color:#cfe4d8;}
+    .history-main{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+    .history-name{font-size:13px;font-weight:800;color:var(--sp-ink);}
+    .history-total{font-weight:850;color:var(--sp-ink);font-variant-numeric:tabular-nums;}
+    .history-lines{margin-top:8px;color:#60717d;font-size:11px;line-height:1.5;}
+    .history-lines > div{display:flex;justify-content:space-between;gap:12px;padding:3px 0;border-bottom:1px solid rgba(26,60,94,.06);}
+    .history-actions{display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin-top:11px;}
+    .history-actions .m-btn{display:inline-flex;align-items:center;gap:6px;min-height:34px!important;padding:7px 10px!important;font-size:11px!important;font-weight:750;}
+    .history-actions .history-wa{background:#25d366!important;color:#0d3520!important;border-color:#25d366!important;}
+    .history-actions .history-wa:hover{background:#20bd5b!important;}
+    .history-date{margin-top:7px;color:#8a98a1;font-size:10px;}
+    .success-note{margin-bottom:14px;padding:11px 14px;border:1px solid #cde4d7;border-radius:11px;background:#f1faf5;color:#275f43;font-size:12px;font-weight:750;}
+    .error-note{margin-bottom:14px;padding:11px 14px;border:1px solid #eec9c9;border-radius:11px;background:#fdf1f1;color:#8c2f2f;font-size:12px;font-weight:750;}
+    @media(max-width:980px){.suppliers-workspace{grid-template-columns:1fr}.supplier-directory{position:static}.supplier-form{grid-template-columns:repeat(2,minmax(0,1fr))}.supplier-form .supplier-notes,.supplier-form .supplier-submit-wrap{grid-column:1/-1}.supplier-list{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(max-width:640px){.suppliers-shell{padding:16px 12px 36px}.suppliers-header{display:block}.supplier-flow{margin-top:13px;overflow-x:auto;padding-bottom:2px}.supplier-panel-pad{padding:16px}.supplier-form,.supplier-list{grid-template-columns:1fr}.purchase-top{grid-template-columns:1fr}.purchase-help{text-align:left}.purchase-table-copy{display:block;margin-top:3px}.history-lines>div{align-items:flex-start}.suppliers-admin-page .m-btn{max-width:100%}}
+    body.dark.suppliers-admin-page{background:radial-gradient(circle at 86% 5%,rgba(28,109,128,.12),transparent 27rem),#0d1117;color:#e7eef3;}
+    body.dark .suppliers-title,body.dark .panel-title,body.dark .supplier-item-name,body.dark .history-name,body.dark .history-total{color:#edf4f8;}
+    body.dark .supplier-panel,body.dark .history-item,body.dark .po-row td{background:#151c23;border-color:#2b3741;}
+    body.dark .supplier-item,body.dark #po-grid,body.dark .paste-panel{background:#101820;border-color:#303d47;}
+    body.dark.suppliers-admin-page .m-field input,body.dark.suppliers-admin-page .m-field select,body.dark.suppliers-admin-page textarea,body.dark.suppliers-admin-page .po-row input{background:#0f171e;border-color:#34414b;color:#e7eef3;}
+    body.dark #po-grid thead tr{background:#1b2730!important;color:#a8b5bd!important;}
+    body.dark .purchase-total{background:linear-gradient(135deg,#15313a,#211f3b);}
+    body.dark .purchase-total strong{color:#edf4f8;}
+    body.dark .success-note{background:#12271c;border-color:#2b4a37;color:#8fd4ae;}
+    body.dark .error-note{background:#2a1416;border-color:#543033;color:#e39a9a;}
+  </style>
 </head>
-<body class="m-material bg-slate-100 min-h-screen">
+<body class="m-material suppliers-admin-page bg-slate-100 min-h-screen">
+  <!--
+    THESIS: Proveedores es una mesa de abastecimiento: directorio a mano, pedido al centro e historial como cierre.
+    OWN-WORLD: Administración perla, tinta azul-negra y petróleo para acción y foco.
+    STORY: Identificar proveedor, capturar productos, confirmar total y dar seguimiento a la recepción.
+    FIRST VIEWPORT: Directorio compacto junto al constructor de pedido, con el total visible antes de registrar.
+    FORM: seed=supply-desk-2026; controles compactos, labels estáticas y tabla de captura con ritmo uniforme.
+    FINISH: Autocomplete contenido, tabla desplazable y composición móvil sin desbordamiento de página.
+  -->
   <%- include('admin/sidebar', { biz, active: 'proveedores', canDesign }) %>
 
   <main class="transition-all duration-300">
-    <div class="px-4 md:px-8 py-4 md:py-6 pb-24 md:pb-6">
-
-      <div class="mb-4">
-        <h1 class="text-lg md:text-xl font-black tracking-tight text-slate-900">Proveedores y compras</h1>
-        <p class="text-xs text-slate-500 mt-0.5">Registra proveedores, arma pedidos y repón stock al recibir.</p>
-      </div>
+    <div class="suppliers-shell">
+      <header class="suppliers-header">
+        <div>
+          <h1 class="suppliers-title">Proveedores y compras</h1>
+          <p class="suppliers-subtitle">Organiza tus contactos, prepara órdenes de compra y actualiza el inventario cuando recibas mercancía.</p>
+        </div>
+        <div class="supplier-flow" aria-label="Flujo de abastecimiento">
+          <span><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM19 8v6m-3-3h6"/></svg>Proveedor</span>
+          <span class="flow-arrow">→</span>
+          <span><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M6 2h9l3 3v17H6zM14 2v5h5M9 12h6M9 16h6"/></svg>Pedido</span>
+          <span class="flow-arrow">→</span>
+          <span><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M4 5h16v14H4zM4 9h16M9 13h6"/></svg>Recepción</span>
+        </div>
+      </header>
 
       <% if (ok) { %>
-        <div class="mb-3 bg-emerald-50 text-emerald-700 text-sm font-bold px-4 py-3 rounded-xl m-pop"><%= msg || 'Guardado ✓' %></div>
+        <div class="success-note m-pop"><%= msg || 'Cambios guardados correctamente' %></div>
+      <% } %>
+      <% if (error) { %>
+        <div class="error-note m-pop"><%= error %></div>
       <% } %>
 
-      <!-- Proveedores -->
-      <section class="m-card p-4 mb-3">
-        <h2 class="font-extrabold text-slate-900 text-sm mb-3">Proveedores <span class="m-badge m-badge-neutral !ml-1"><%= suppliers.length %></span></h2>
-        <form method="POST" action="/<%= biz.slug %>/admin/proveedor" class="grid sm:grid-cols-3 gap-3 mb-3">
-          <div class="m-field"><label>Nombre *</label><input name="name" required placeholder="Ej: Distribuidora Torres"></div>
-          <div class="m-field"><label>WhatsApp</label><input name="phone" inputmode="numeric" placeholder="Ej: 8712345678"></div>
-          <div class="m-field"><label>Email</label><input name="email" type="email" placeholder="ventas@torres.mx"></div>
-          <div class="m-field sm:col-span-3"><label>Notas</label><input name="notes" placeholder="Ej: entrega los martes"></div>
-          <div class="sm:col-span-3"><button class="m-btn m-btn-filled w-full !min-h-11">Guardar proveedor</button></div>
+      <div class="suppliers-workspace">
+      <section class="supplier-panel supplier-panel-pad supplier-directory">
+        <div class="panel-heading">
+          <div class="panel-title-wrap"><span class="panel-icon"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM19 8v6m-3-3h6"/></svg></span><div><h2 class="panel-title">Directorio</h2><p class="panel-copy">Contactos para tus compras</p></div></div>
+          <span class="supplier-count"><%= suppliers.length %></span>
+        </div>
+        <form method="POST" action="/<%= biz.slug %>/admin/proveedor" class="supplier-form">
+          <div class="m-field"><label>Nombre *</label><input name="name" required placeholder="Ej: Distribuidora Torres" value="<%= old.name %>"></div>
+          <div class="m-field"><label>WhatsApp</label><input name="phone" inputmode="numeric" placeholder="Ej: 8712345678" value="<%= old.phone %>"></div>
+          <div class="m-field"><label>Email</label><input name="email" type="email" placeholder="ventas@torres.mx" value="<%= old.email %>"></div>
+          <div class="m-field supplier-notes"><label>Notas</label><input name="notes" placeholder="Ej: entrega los martes" value="<%= old.notes %>"></div>
+          <div class="supplier-submit-wrap"><button class="supplier-submit m-btn m-btn-filled !min-h-11">Guardar proveedor</button></div>
         </form>
-        <div class="flex flex-wrap gap-2">
+        <div class="supplier-list">
           <% suppliers.forEach(s => { %>
-            <span class="m-chip">
-              <%= s.name %><% if (s.phone) { %> · 💬 <%= s.phone %><% } %><% if (s.email) { %> · ✉️ <%= s.email %><% } %>
+            <article class="supplier-item">
+              <div><p class="supplier-item-name"><%= s.name %></p><div class="supplier-meta">
+                <% if (s.phone) { %><span><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M5 4h4l2 5-3 2a15 15 0 006 6l2-3 5 2v4a2 2 0 01-2 2C9.6 22 2 14.4 2 5a2 2 0 012-2z"/></svg><%= s.phone %></span><% } %>
+                <% if (s.email) { %><span><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M3 5h18v14H3zM3 6l9 7 9-7"/></svg><%= s.email %></span><% } %>
+              </div></div>
               <form method="POST" action="/<%= biz.slug %>/admin/proveedor/<%= s.id %>/eliminar" data-confirm="¿Eliminar a <%= s.name %>?" class="inline">
-                <button class="text-slate-400 hover:text-red-500 font-bold leading-none" title="Eliminar">✕</button>
+                <button class="supplier-delete" title="Eliminar" aria-label="Eliminar a <%= s.name %>"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M7 7l1 14h8l1-14M10 11v6M14 11v6"/></svg></button>
               </form>
-            </span>
+            </article>
           <% }) %>
-          <% if (!suppliers.length) { %><p class="text-xs text-slate-400">Aún no tienes proveedores.</p><% } %>
+          <% if (!suppliers.length) { %><div class="supplier-empty"><svg fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM19 8v6m-3-3h6"/></svg>Agrega tu primer proveedor para comenzar un pedido.</div><% } %>
         </div>
       </section>
 
-      <!-- Nuevo pedido de compra -->
-      <section class="m-card p-4 mb-3">
-        <h2 class="font-extrabold text-slate-900 text-sm mb-3">Nuevo pedido de compra</h2>
+      <section class="supplier-panel supplier-panel-pad purchase-card">
+        <div class="purchase-top"><div class="panel-title-wrap"><span class="panel-icon"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M6 2h9l3 3v17H6zM14 2v5h5M9 12h6M9 16h6"/></svg></span><div><h2 class="panel-title">Nuevo pedido de compra</h2><p class="panel-copy">Captura productos, costos y precio de venta</p></div></div><p class="purchase-help"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M4 5h16v14H4zM8 9h.01M12 9h.01M16 9h.01M8 13h8M8 16h5"/></svg>Enter avanza · Ctrl+V pega desde Excel</p></div>
         <form method="POST" action="/<%= biz.slug %>/admin/compra" id="po-form">
           <div class="m-field mb-3">
             <label>Proveedor</label>
@@ -53,8 +175,7 @@
             </select>
           </div>
 
-          <p class="font-bold text-xs text-slate-600 mb-1">Productos del pedido <span class="font-normal text-slate-400">(elige uno existente o escribe uno nuevo — se creará al recibir)</span></p>
-          <p class="text-[11px] text-slate-400 mb-1.5">⌨️ <b>Enter</b> avanza a la siguiente celda y al final crea fila nueva · <b>Ctrl+V</b> pega tu lista de Excel directo en la tabla</p>
+          <p class="purchase-table-label">Productos del pedido <span class="purchase-table-copy">Elige uno existente o escribe uno nuevo; se creará al recibir.</span></p>
           <div class="overflow-x-auto mb-2 rounded-xl border border-slate-200" id="po-grid">
             <table class="w-full text-sm min-w-[680px]">
               <thead>
@@ -71,67 +192,67 @@
               <tbody id="po-items"></tbody>
             </table>
           </div>
-          <div class="flex flex-wrap items-center gap-2 mb-3">
-            <button type="button" onclick="poAddRow({focus:true})" class="m-btn m-btn-tonal m-btn-sm">＋ Agregar línea</button>
+          <div class="po-actions">
+            <button type="button" onclick="poAddRow({focus:true})" class="m-btn m-btn-tonal m-btn-sm"><svg class="ui-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Agregar línea</button>
             <details class="inline-block">
-              <summary class="text-xs font-bold text-blue-600 hover:text-blue-700 cursor-pointer">📋 Pegar lista (Excel/CSV)</summary>
-              <div class="mt-2">
+              <summary class="paste-summary"><svg class="ui-icon" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M9 5h6M9 3h6v4H9zM6 5H4v16h16V5h-2M8 12h8M8 16h6"/></svg>Pegar lista (Excel/CSV)</summary>
+              <div class="paste-panel">
                 <textarea id="po-paste" rows="4" placeholder="producto, cantidad, costo, precio venta&#10;Tornillos 8mm, 10, 3.50, 6.00" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
                 <button type="button" onclick="poPasteBox()" class="m-btn m-btn-tonal m-btn-sm mt-1">Cargar lista</button>
               </div>
             </details>
           </div>
 
-          <div class="flex items-center justify-between bg-slate-50 rounded-xl px-4 py-3 mb-3">
-            <span class="text-xs font-bold text-slate-500">Total estimado</span>
-            <span id="po-total" class="font-black text-lg text-slate-900">$0.00</span>
+          <div class="purchase-total">
+            <span>Total estimado del pedido</span>
+            <strong id="po-total">$0.00</strong>
           </div>
 
           <input type="hidden" name="items" id="po-items-json">
-          <button type="submit" class="m-btn m-btn-filled w-full !min-h-11">Registrar pedido</button>
+          <button type="submit" class="purchase-submit m-btn m-btn-filled">Registrar pedido</button>
         </form>
       </section>
+      </div>
 
-      <!-- Historial -->
-      <section class="m-card p-4">
-        <h2 class="font-extrabold text-slate-900 text-sm mb-3">Pedidos de compra</h2>
+      <section class="supplier-panel supplier-panel-pad purchase-history">
+        <div class="panel-heading"><div class="panel-title-wrap"><span class="panel-icon"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M4 5h16v14H4zM4 9h16M8 13h8M8 16h5"/></svg></span><div><h2 class="panel-title">Pedidos de compra</h2><p class="panel-copy">Seguimiento y recepción de inventario</p></div></div><span class="supplier-count"><%= pos.length %></span></div>
         <% if (pos.length === 0) { %>
-          <p class="text-xs text-slate-400">Sin pedidos todavía.</p>
+          <div class="supplier-empty"><svg fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24"><path d="M6 2h9l3 3v17H6zM14 2v5h5M9 12h6M9 16h6"/></svg>Los pedidos que registres aparecerán aquí para darles seguimiento.</div>
         <% } else { %>
-          <div class="space-y-2.5">
+          <div class="history-list">
             <% pos.forEach(po => { %>
-              <div class="p-3 rounded-xl border <%= po.received ? 'border-emerald-200 bg-emerald-50/40' : 'border-slate-100' %>">
-                <div class="flex items-center justify-between gap-2 flex-wrap">
+              <article class="history-item <%= po.received ? 'is-received' : '' %>">
+                <div class="history-main">
                   <div class="flex items-center gap-2">
-                    <p class="font-bold text-sm text-slate-800"><%= po.supplier_name || 'Sin proveedor' %></p>
+                    <p class="history-name"><%= po.supplier_name || 'Sin proveedor' %></p>
                     <% if (po.received) { %><span class="m-badge m-badge-success !h-5 !text-[10px]">RECIBIDO</span><% } else { %><span class="m-badge m-badge-warn !h-5 !text-[10px]">PENDIENTE</span><% } %>
                   </div>
-                  <span class="font-black text-slate-900"><%= money(po.total) %></span>
+                  <span class="history-total"><%= money(po.total) %></span>
                 </div>
-                <div class="mt-1.5 text-xs text-slate-600 space-y-0.5">
+                <div class="history-lines">
                   <% po.items.forEach(it => { %>
-                    <div class="flex justify-between gap-2"><span>• <%= it.qty %> x <%= it.name %><% if (it.variant) { %> <span class="text-slate-400">(<%= it.variant %>)</span><% } %></span><span class="text-slate-400"><%= money(it.cost * it.qty) %></span></div>
+                    <div><span><%= it.qty %> × <%= it.name %><% if (it.variant) { %> <span class="text-slate-400">(<%= it.variant %>)</span><% } %></span><span><%= money(it.cost * it.qty) %></span></div>
                   <% }) %>
                 </div>
-                <p class="text-[10px] text-slate-400 mt-1.5"><%= fmtFecha(po.created_at) %></p>
-                <div class="flex flex-wrap items-center gap-1.5 mt-2">
+                <p class="history-date"><%= fmtFecha(po.created_at) %></p>
+                <div class="history-actions">
                   <% if (po.supplier_phone) { %>
-                    <a href="https://wa.me/<%= po.supplier_phone.startsWith('52') ? po.supplier_phone : '52' + po.supplier_phone %>?text=<%= po.msg %>" target="_blank" class="m-btn m-btn-sm m-btn-tonal !min-h-0 !py-1.5">💬 Pedir por WhatsApp</a>
+                    <a href="https://wa.me/<%= po.supplier_phone.startsWith('52') ? po.supplier_phone : '52' + po.supplier_phone %>?text=<%= po.msg %>" target="_blank" class="history-wa m-btn m-btn-sm m-btn-tonal !min-h-0 !py-1.5"><svg class="ui-icon" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M5 4h4l2 5-3 2a15 15 0 006 6l2-3 5 2v4a2 2 0 01-2 2C9.6 22 2 14.4 2 5a2 2 0 012-2z"/></svg>Pedir por WhatsApp</a>
                   <% } %>
                   <% if (po.supplier_email) { %>
-                    <a href="mailto:<%= po.supplier_email %>?subject=<%= po.esubject %>&body=<%= po.ebody %>" class="m-btn m-btn-sm m-btn-tonal !min-h-0 !py-1.5">✉️ Pedir por email</a>
+                    <a href="mailto:<%= po.supplier_email %>?subject=<%= po.esubject %>&body=<%= po.ebody %>" class="m-btn m-btn-sm m-btn-tonal !min-h-0 !py-1.5"><svg class="ui-icon" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M3 5h18v14H3zM3 6l9 7 9-7"/></svg>Pedir por email</a>
                   <% } %>
-                  <button type="button" onclick="copiarPedido('<%= po.msg %>')" class="m-btn m-btn-sm m-btn-outlined !min-h-0 !py-1.5">📋 Copiar texto</button>
+                  <button type="button" onclick="copiarPedido('<%= po.msg %>')" class="m-btn m-btn-sm m-btn-outlined !min-h-0 !py-1.5"><svg class="ui-icon" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M8 7h11v14H8zM5 17H3V3h11v2"/></svg>Copiar texto</button>
                   <% if (!po.received) { %>
                     <form method="POST" action="/<%= biz.slug %>/admin/compra/<%= po.id %>/recibido" data-confirm="¿Marcar como RECIBIDO y sumar el stock a tus productos?" class="inline">
-                      <button class="m-btn m-btn-sm m-btn-filled !min-h-0 !py-1.5 !bg-emerald-600">✓ Recibido (suma stock)</button>
+                      <button class="m-btn m-btn-sm m-btn-filled !min-h-0 !py-1.5 !bg-emerald-700"><svg class="ui-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12l4 4L19 6"/></svg>Recibido (suma stock)</button>
                     </form>
                   <% } %>
                   <form method="POST" action="/<%= biz.slug %>/admin/compra/<%= po.id %>/eliminar" data-confirm="¿Eliminar este pedido?" class="inline">
-                    <button class="m-btn-icon !w-8 !h-8 hover:!bg-red-50 hover:!text-red-500" title="Eliminar">🗑</button>
+                    <button class="supplier-delete" title="Eliminar pedido" aria-label="Eliminar pedido"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M7 7l1 14h8l1-14M10 11v6M14 11v6"/></svg></button>
                   </form>
                 </div>
-              </div>
+              </article>
             <% }) %>
           </div>
         <% } %>
@@ -145,6 +266,11 @@
 
   <script>
     var PRODS = <%- safeJson(products.map(p => ({ id: p.id, name: p.name, sku: p.sku, price: p.price, variantOpts: p.variantOpts || [] }))) %>;
+    var UI_ICONS = {
+      sliders: '<svg aria-hidden="true" class="inline-block w-3 h-3 mr-1" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10M14 4v6M6 14v6"/></svg>',
+      plus: '<svg aria-hidden="true" class="inline-block w-3 h-3 mr-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
+      trash: '<svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M7 7l1 14h8l1-14M10 11v6M14 11v6"/></svg>'
+    };
     var prodNameToId = {};
     PRODS.forEach(p => prodNameToId[norm(p.name)] = p.id);
     var prodById = {};
@@ -207,7 +333,7 @@
       var vw = (vv && vv.width) || window.innerWidth;
       var vh = (vv && vv.height) || window.innerHeight;
       var H = 224; // max-h-56
-      var w = Math.max(r.width, 280);
+      var w = Math.min(Math.max(r.width, 280), Math.max(240, vw - 16));
       var left = Math.max(8, Math.min(r.left, vw - w - 8));
       var below = r.bottom + 6;
       var top;
@@ -231,11 +357,11 @@
         return '<button type="button" data-pid="' + p.id + '" class="po-ac-it w-full text-left px-3 py-2 text-sm hover:bg-blue-50 ' + (i === 0 ? 'bg-blue-50/60' : '') + ' border-b border-slate-50">' +
           '<b class="text-slate-800">' + esc(p.name) + '</b>' +
           (p.sku ? ' <span class="text-slate-400 text-xs">(' + esc(p.sku) + ')</span>' : '') +
-          (p.variantOpts && p.variantOpts.length ? ' <span class="text-amber-600 text-xs">🎛 ' + p.variantOpts.length + '</span>' : '') +
+          (p.variantOpts && p.variantOpts.length ? ' <span class="text-amber-700 text-xs">' + UI_ICONS.sliders + p.variantOpts.length + '</span>' : '') +
           (p.price ? ' <span class="text-slate-400 text-xs">$' + Number(p.price).toFixed(2) + '</span>' : '') +
         '</button>';
       }).join('');
-      if (q) html += '<button type="button" class="po-ac-new w-full text-left px-3 py-2 text-xs font-bold text-blue-600 hover:bg-blue-50">➕ Usar "' + esc(inp.value.trim()) + '" como producto nuevo</button>';
+      if (q) html += '<button type="button" class="po-ac-new w-full text-left px-3 py-2 text-xs font-bold text-blue-700 hover:bg-blue-50">' + UI_ICONS.plus + 'Usar "' + esc(inp.value.trim()) + '" como producto nuevo</button>';
       poAc.innerHTML = html;
       poAc._row = row;
       poAc.classList.remove('hidden');
@@ -295,7 +421,7 @@
         '<td class="px-2 py-1.5 align-middle">' +
           '<span class="po-vstatic hidden bg-amber-100 text-amber-800 rounded-lg px-2 py-1.5 text-xs font-bold whitespace-nowrap"></span>' +
           '<details class="po-vdet hidden relative text-xs">' +
-            '<summary tabindex="-1" class="po-vsum bg-amber-50 border border-amber-300 text-amber-800 rounded-lg px-2 py-1.5 font-bold cursor-pointer select-none">🎛 Variantes <span class="po-vcount text-amber-500"></span></summary>' +
+            '<summary tabindex="-1" class="po-vsum bg-amber-50 border border-amber-300 text-amber-800 rounded-lg px-2 py-1.5 font-bold cursor-pointer select-none">' + UI_ICONS.sliders + 'Variantes <span class="po-vcount text-amber-600"></span></summary>' +
             '<div class="po-vlist absolute z-30 mt-1 w-64 max-h-52 overflow-auto bg-white border border-slate-200 rounded-xl shadow-xl p-2 space-y-1"></div>' +
           '</details>' +
           '<input type="text" tabindex="-1" class="po-vname w-full border border-amber-300 bg-amber-50 rounded-lg px-2 py-1.5 text-sm hidden" placeholder="Atributo (ej: XS / Azul)">' +
@@ -304,7 +430,7 @@
         '<td class="px-2 py-1.5 align-middle"><input type="number" min="0" step="0.01" class="po-cost w-full border border-slate-200 rounded-lg px-2 py-1.5 text-sm" placeholder="0.00"></td>' +
         '<td class="px-2 py-1.5 align-middle"><input type="number" min="0" step="0.01" class="po-price w-full border border-slate-200 rounded-lg px-2 py-1.5 text-sm" placeholder="0.00"></td>' +
         '<td class="px-2 py-1.5 align-middle text-right"><span class="po-sub text-xs font-black text-slate-700">$0.00</span></td>' +
-        '<td class="px-2 py-1.5 align-middle text-center"><button type="button" class="po-del w-7 h-7 rounded-full bg-slate-100 text-slate-400 hover:bg-red-50 hover:text-red-500 font-bold">✕</button></td>';
+        '<td class="px-2 py-1.5 align-middle text-center"><button type="button" aria-label="Eliminar línea" title="Eliminar línea" class="po-del w-7 h-7 rounded-lg bg-slate-100 text-red-600 hover:bg-red-50 hover:text-red-800 grid place-items-center">' + UI_ICONS.trash + '</button></td>';
 
       var inp = row.querySelector('.po-name');
       var vname = row.querySelector('.po-vname');
@@ -351,7 +477,7 @@
           e.preventDefault();
           var b = acBox(row);
           var items = b.querySelectorAll('.po-ac-it');
-          if (!b.classList.contains('hidden') && row._acIdx >= 0 && items[row._acIdx]) { acPick(row, parseInt(items[row._acIdx].dataset.pid)); return; }
+          if (!b.classList.contains('hidden') && b._idx >= 0 && items[b._idx]) { acPick(row, parseInt(items[b._idx].dataset.pid)); return; }
           acHide(row);
           if (!poNextCell(row, inp)) poEnterNextRow(row);
         }
@@ -556,14 +682,36 @@
     }
 
     document.getElementById('po-form').addEventListener('submit', function(e){
+      // Validación de la tabla: una fila iniciada debe estar completa (producto + cantidad)
+      var bad = null;
+      poRows().forEach(function(r, i){
+        if (bad) return;
+        var name = (r.dataset.pid ? (prodById[r.dataset.pid] || {}).name : r.querySelector('.po-name').value.trim()) || '';
+        var qty = parseInt(r.querySelector('.po-qty').value) || 0;
+        var variant = r.dataset.var || r.querySelector('.po-vname').value.trim() || '';
+        var cost = parseFloat(r.querySelector('.po-cost').value) || 0;
+        var price = parseFloat(r.querySelector('.po-price').value) || 0;
+        var started = name || variant || qty > 0 || cost > 0 || price > 0 || r.dataset.pid;
+        if (started && (!name || qty < 1)) bad = { row: r, num: i + 1, missingName: !name, missingQty: qty < 1 };
+      });
+      if (bad) {
+        e.preventDefault();
+        var markName = bad.row.querySelector('.po-name'), markQty = bad.row.querySelector('.po-qty');
+        if (bad.missingName) markName.classList.add('po-invalid');
+        if (bad.missingQty) markQty.classList.add('po-invalid');
+        setTimeout(function(){ markName.classList.remove('po-invalid'); markQty.classList.remove('po-invalid'); }, 2500);
+        mostrarToast(bad.missingName ? ('Fila ' + bad.num + ': escribe el producto') : ('Fila ' + bad.num + ': falta la cantidad'), 'error');
+        (bad.missingName ? markName : markQty).focus();
+        return;
+      }
       var items = poSerialize();
       if (!items.length) { e.preventDefault(); mostrarToast('Agrega al menos un producto', 'error'); return; }
       if (!document.getElementById('po-supplier').value) { e.preventDefault(); mostrarToast('Selecciona un proveedor', 'error'); return; }
       document.getElementById('po-items-json').value = JSON.stringify(items);
     });
 
+    // La fila inicial queda lista sin robar foco ni abrir el autocomplete al cargar.
     poAddRow();
-    document.querySelector('.po-name').focus();
   </script>
 </body>
 </html>
