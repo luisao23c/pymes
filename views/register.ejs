@@ -9,14 +9,15 @@
   <style>body { font-family: 'Inter', sans-serif; }</style>
   <link rel="stylesheet" href="/css/material.css">
   <script src="/js/material.js"></script>
+  <script src="/js/searchable-select.js"></script>
 </head>
 <body class="m-material bg-slate-50 min-h-screen">
 
   <nav class="bg-white border-b border-slate-100 sticky top-0 z-50">
     <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
       <a href="/" class="flex items-center gap-2">
-        <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-600 to-emerald-500 flex items-center justify-center text-white font-black text-sm">C</div>
-        <span class="font-extrabold text-lg">Catálogo<span class="text-blue-600">Nessik</span></span>
+        <div class="w-8 h-8 rounded-xl bg-[#2c2c2e] flex items-center justify-center text-white font-black text-sm">C</div>
+        <span class="font-extrabold text-lg">Catálogo<span class="text-neutral-800">Nessik</span></span>
       </a>
       <a href="/" class="text-sm font-medium text-slate-600 hover:text-slate-900">← Volver</a>
     </div>
@@ -43,7 +44,7 @@
       <div class="space-y-4">
         <div>
           <label class="block text-sm font-bold mb-1.5">Nombre del negocio *</label>
-          <input id="f-name" name="name" required value="<%= form ? form.name : '' %>" placeholder="Ej: Ferretería El Toro" class="w-full border rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <input id="f-name" name="name" required value="<%= form ? form.name : '' %>" placeholder="Ej: Ferretería El Toro" class="w-full border rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-neutral-400">
         </div>
 
         <div>
@@ -57,27 +58,28 @@
 
         <div>
           <label class="block text-sm font-bold mb-1.5">WhatsApp de ventas (10 dígitos) *</label>
-          <input name="whatsapp" required type="tel" inputmode="numeric" maxlength="10" value="<%= form ? form.whatsapp : '' %>" placeholder="8719920338" class="w-full border rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <input name="whatsapp" required type="tel" inputmode="numeric" maxlength="10" value="<%= form ? form.whatsapp : '' %>" placeholder="8719920338" class="w-full border rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-neutral-400">
           <p class="text-xs text-slate-400 mt-1">Los pedidos llegarán a este número.</p>
         </div>
 
         <div>
           <label class="block text-sm font-bold mb-1.5">Descripción corta</label>
-          <textarea name="description" rows="2" placeholder="Ej: Todo para tu obra y hogar en Torreón." class="w-full border rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"><%= form ? form.description : '' %></textarea>
+          <textarea name="description" rows="2" placeholder="Ej: Todo para tu obra y hogar en Torreón." class="w-full border rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-neutral-400"><%= form ? form.description : '' %></textarea>
         </div>
 
         <div>
           <label class="block text-sm font-bold mb-1.5">Giro del negocio</label>
-          <input name="giro" list="giros-list" value="<%= form ? form.giro : '' %>" placeholder="Ej: ferretería, papelería, taller mecánico…" autocomplete="off" class="w-full border rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500" maxlength="40">
-          <datalist id="giros-list">
-            <% GIROS.forEach(g => { %><option value="<%= g %>"><% }) %>
-          </datalist>
-          <p class="text-xs text-slate-400 mt-1">Escribe tu giro: si no existe, se agrega automáticamente y queda disponible para otros negocios. Se usa para recomendar negocios complementarios.</p>
+          <select name="giro" data-allow-custom="1" class="w-full border rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-neutral-400">
+            <option value="">— Elige o escribe tu giro —</option>
+            <% if (form && form.giro && !GIROS.includes(form.giro)) { %><option value="<%= form.giro %>" selected><%= form.giro %></option><% } %>
+            <% GIROS.forEach(g => { %><option value="<%= g %>" <%= (form && form.giro === g) ? 'selected' : '' %>><%= g %></option><% }) %>
+          </select>
+          <p class="text-xs text-slate-400 mt-1">Elige tu giro o escribe uno nuevo: si no existe, se agrega automáticamente y queda disponible para otros negocios. Se usa para recomendar negocios complementarios.</p>
         </div>
 
         <div>
           <label class="block text-sm font-bold mb-1.5">PIN de acceso (el dueño lo puede cambiar)</label>
-          <input name="pin" type="text" inputmode="numeric" maxlength="12" value="<%= form ? form.pin : '' %>" placeholder="6 a 12 dígitos" class="w-full border rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <input name="pin" type="text" inputmode="numeric" maxlength="12" value="<%= form ? form.pin : '' %>" placeholder="6 a 12 dígitos" class="w-full border rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-neutral-400">
           <p class="text-xs text-slate-400 mt-1">Mínimo 6 dígitos. Es tu contraseña para entrar al panel.</p>
         </div>
 

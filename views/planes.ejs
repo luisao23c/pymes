@@ -3,15 +3,15 @@
 <head>
   <%- include('admin/head', { title: 'Planes', biz }) %>
 </head>
-<body class="m-material bg-slate-100 min-h-screen">
+<body class="m-material min-h-screen" style="background:var(--ap-bg);color:var(--ap-text)">
   <%- include('admin/sidebar', { biz, active: 'planes' }) %>
 
   <main class="transition-all duration-300">
     <div class="px-4 md:px-8 py-4 md:py-6 pb-24 md:pb-6">
 
       <div class="text-center mb-6">
-        <h1 class="text-xl md:text-2xl font-black tracking-tight text-slate-900 dark:text-slate-100">Elige tu plan</h1>
-        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Cambia de plan cuando quieras. El plan se aplica de inmediato.</p>
+        <h1 class="text-xl md:text-2xl font-extrabold tracking-tight" style="color:var(--ap-text)">Elige tu plan</h1>
+        <p class="text-sm mt-1" style="color:var(--ap-text-sec)">Cambia de plan cuando quieras. El plan se aplica de inmediato.</p>
       </div>
 
       <% if (ok) { %>
@@ -21,24 +21,24 @@
       <div class="grid md:grid-cols-3 gap-4 items-start">
         <% plans.forEach(p => { %>
           <% const esActual = biz.plan === p.key; %>
-          <div class="m-card p-5 relative <%= esActual ? 'ring-2 ring-blue-500' : '' %>">
+          <div class="m-card p-5 relative" style="<%= esActual ? 'box-shadow:0 0 0 2px var(--ap-accent), var(--ap-shadow-lg);' : '' %>">
             <% if (esActual) { %>
-              <div class="bg-gradient-to-r from-blue-600 to-blue-500 text-white text-[11px] font-black uppercase tracking-wider px-4 py-2 rounded-xl mb-4 flex items-center gap-2 shadow-lg shadow-blue-500/25">
+              <div class="text-white text-[11px] font-black uppercase tracking-wider px-4 py-2 rounded-xl mb-4 flex items-center gap-2" style="background:var(--ap-gradient);box-shadow:0 6px 16px rgba(44,44,46,.25)">
                 <i class="bi bi-patch-check-fill text-sm"></i> Tu plan actual
               </div>
             <% } %>
-            <h2 class="font-black text-lg text-slate-900 dark:text-slate-100"><%= p.name %></h2>
+            <h2 class="font-black text-lg" style="color:var(--ap-text)"><%= p.name %></h2>
             <div class="flex items-baseline gap-1 mt-1 mb-4">
-              <span class="text-2xl font-black text-slate-900 dark:text-white">$<%= Number(p.price || 0).toFixed(0) %></span>
-              <span class="text-xs text-slate-400 dark:text-slate-500"><%= p.days > 0 ? '/ ' + p.days + ' días' : 'para siempre' %></span>
+              <span class="text-2xl font-black" style="color:var(--ap-text)">$<%= Number(p.price || 0).toFixed(0) %></span>
+              <span class="text-xs" style="color:var(--ap-text-sec)"><%= p.days > 0 ? '/ ' + p.days + ' días' : 'para siempre' %></span>
             </div>
-            <ul class="space-y-2 text-sm text-slate-600 dark:text-slate-300 mb-5">
+            <ul class="space-y-2 text-sm mb-5" style="color:var(--ap-text-sec)">
               <li class="flex items-center gap-2">
-                <span class="<%= p.max_products === -1 ? 'text-emerald-500' : 'text-slate-400' %>">✓</span>
+                <span class="<%= p.max_products === -1 ? 'text-emerald-500' : '' %>" style="<%= p.max_products === -1 ? '' : 'color:var(--ap-text-sec);opacity:.4' %>">✓</span>
                 <%= p.max_products === -1 ? 'Productos ilimitados' : 'Hasta ' + p.max_products + ' productos' %>
               </li>
               <li class="flex items-center gap-2">
-                <span class="<%= p.ads === 0 ? 'text-emerald-500' : 'text-slate-400' %>">✓</span>
+                <span class="<%= p.ads === 0 ? 'text-emerald-500' : '' %>" style="<%= p.ads === 0 ? '' : 'color:var(--ap-text-sec);opacity:.4' %>">✓</span>
                 <%= p.ads === 0 ? 'Sin publicidad de otras tiendas' : 'Muestra publicidad de otras tiendas' %>
               </li>
               <li class="flex items-center gap-2">
@@ -57,7 +57,7 @@
         <% }) %>
       </div>
 
-      <p class="text-center text-xs text-slate-400 mt-6">El pago se procesa fuera de la plataforma. Si tienes dudas, escríbenos por WhatsApp.</p>
+      <p class="text-center text-xs mt-6" style="color:var(--ap-text-sec)">El pago se procesa fuera de la plataforma. Si tienes dudas, escríbenos por WhatsApp.</p>
 
     </div>
   </main>

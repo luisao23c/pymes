@@ -3,16 +3,17 @@
 <head>
   <%- include('admin/head', { title: 'Clientes', biz }) %>
 </head>
-<body class="m-material bg-slate-100 min-h-screen">
+<body class="m-material min-h-screen" style="background:var(--ap-bg);color:var(--ap-text)">
   <%- include('admin/sidebar', { biz, active: 'clientes', canDesign }) %>
 
   <main class="transition-all duration-300">
     <div class="px-4 md:px-8 py-4 md:py-6 pb-24 md:pb-6">
 
-      <div class="mb-4">
-        <h1 class="text-lg md:text-xl font-black tracking-tight text-slate-900">Clientes 👥</h1>
-        <p class="text-xs text-slate-500 mt-0.5">Tus clientes frecuentes, su historial y un botón directo a WhatsApp.</p>
-      </div>
+      <%- include('admin/page-header', {
+        icon: 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm13 10v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75',
+        title: 'Clientes',
+        subtitle: 'Tus clientes frecuentes, su historial y un botón directo a WhatsApp.'
+      }) %>
 
       <% if (ok) { %>
         <div class="mb-3 bg-emerald-50 text-emerald-700 text-sm font-bold px-4 py-3 rounded-xl m-pop">Cliente guardado ✓</div>
@@ -20,7 +21,7 @@
 
       <!-- Nuevo cliente -->
       <section class="m-card p-4 mb-3">
-        <h2 class="font-extrabold text-slate-900 text-sm mb-3">Nuevo cliente</h2>
+        <h2 class="font-extrabold text-sm mb-3" style="color:var(--ap-text)">Nuevo cliente</h2>
         <form method="POST" action="/<%= biz.slug %>/admin/cliente" class="grid sm:grid-cols-3 gap-3">
           <div class="m-field"><label>Nombre *</label><input name="name" required placeholder="Ej: María González"></div>
           <div class="m-field"><label>Teléfono</label><input name="phone" inputmode="numeric" placeholder="Ej: 8712345678"></div>
@@ -31,9 +32,12 @@
 
       <!-- Enviar promo -->
       <section class="m-card p-4 mb-3">
-        <h2 class="font-extrabold text-slate-900 text-sm mb-1">Enviar promo 📣</h2>
-        <p class="text-xs text-slate-500 mb-3">Escribe un mensaje y envíalo por WhatsApp a tus clientes. Usa <b>{nombre}</b> para personalizarlo con el nombre de cada quien.</p>
-        <textarea id="promo-msg" rows="3" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">¡Hola {nombre}! Te aviso que tenemos promociones nuevas esta semana. ¿Te interesa? 😊</textarea>
+        <h2 class="font-extrabold text-sm mb-1 flex items-center gap-1.5" style="color:var(--ap-text)">
+          <svg class="w-4 h-4" style="color:var(--ap-accent-text)" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8A6 6 0 106 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
+          Enviar promo
+        </h2>
+        <p class="text-xs mb-3" style="color:var(--ap-text-sec)">Escribe un mensaje y envíalo por WhatsApp a tus clientes. Usa <b>{nombre}</b> para personalizarlo con el nombre de cada quien.</p>
+        <textarea id="promo-msg" rows="3" class="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none" style="border-color:var(--ap-border);background:var(--ap-bg);color:var(--ap-text)">¡Hola {nombre}! Te aviso que tenemos promociones nuevas esta semana. ¿Te interesa? 😊</textarea>
         <div class="flex flex-wrap gap-2 mt-3">
           <button type="button" onclick="prepararPromo('todos')" class="m-btn m-btn-filled m-btn-sm">Enviar a todos</button>
           <button type="button" onclick="prepararPromo('frecuentes')" class="m-btn m-btn-tonal m-btn-sm">Solo frecuentes (2+ pedidos)</button>
@@ -45,35 +49,35 @@
       <!-- Lista -->
       <section class="m-card p-4">
         <div class="flex items-center justify-between mb-3">
-          <h2 class="font-extrabold text-slate-900 text-sm">Clientes <span class="m-badge m-badge-neutral !ml-1"><%= customers.length %></span></h2>
+          <h2 class="font-extrabold text-sm" style="color:var(--ap-text)">Clientes <span class="m-badge m-badge-neutral !ml-1"><%= customers.length %></span></h2>
           <div class="relative">
-            <input id="cliente-search" type="text" placeholder="Buscar cliente…" class="border border-slate-200 rounded-full pl-9 pr-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z"/></svg>
+            <input id="cliente-search" type="text" placeholder="Buscar cliente…" class="border rounded-full pl-9 pr-3 py-1.5 text-xs focus:outline-none" style="border-color:var(--ap-border);background:var(--ap-card);color:var(--ap-text)">
+            <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2" style="color:var(--ap-text-sec)" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z"/></svg>
           </div>
         </div>
 
         <% if (customers.length === 0) { %>
-          <div class="text-center py-8 border-2 border-dashed border-slate-200 rounded-xl">
-            <p class="text-2xl mb-1">👥</p>
-            <p class="text-xs text-slate-500 font-semibold">Aún no tienes clientes. Se guardan solos cuando alguien pide por WhatsApp con su nombre o teléfono.</p>
+          <div class="text-center py-8 rounded-xl" style="border:2px dashed var(--ap-border)">
+            <svg class="w-8 h-8 mx-auto mb-2" style="color:var(--ap-text-sec)" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm13 10v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <p class="text-xs font-semibold" style="color:var(--ap-text-sec)">Aún no tienes clientes. Se guardan solos cuando alguien pide por WhatsApp con su nombre o teléfono.</p>
           </div>
         <% } else { %>
-          <div id="cliente-list" class="divide-y divide-slate-100">
+          <div id="cliente-list" class="divide-y" style="border-color:var(--ap-border)">
             <% customers.forEach(c => { %>
               <div class="m-list-item m-ripple px-2 py-3 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3" data-search="<%= (c.name + ' ' + c.phone).toLowerCase() %>">
                 <div class="flex items-center gap-3 min-w-0">
-                <div class="w-10 h-10 rounded-full bg-indigo-100 text-indigo-700 font-black flex items-center justify-center shrink-0 text-sm">
+                <div class="w-10 h-10 rounded-full font-black flex items-center justify-center shrink-0 text-sm" style="background:rgba(44,44,46,.1);color:var(--ap-accent-text)">
                   <%= (c.name || '?').trim().charAt(0).toUpperCase() %>
                 </div>
                 <div class="min-w-0 flex-1">
                   <div class="flex items-center gap-2 flex-wrap">
-                    <p class="font-bold text-slate-800 text-sm truncate"><%= c.name %></p>
-                    <% if (c.phone) { %><span class="text-[11px] text-slate-400 font-semibold"><%= c.phone %></span><% } %>
+                    <p class="font-bold text-sm truncate" style="color:var(--ap-text)"><%= c.name %></p>
+                    <% if (c.phone) { %><span class="text-[11px] font-semibold" style="color:var(--ap-text-sec)"><%= c.phone %></span><% } %>
                     <% if (c.orderCount >= 2) { %><span class="m-badge m-badge-warn !h-5 !text-[10px]">⭐ Frecuente</span><% } %>
                   </div>
-                  <p class="text-[11px] text-slate-400 mt-0.5">
+                  <p class="text-[11px] mt-0.5" style="color:var(--ap-text-sec)">
                     <%= c.orderCount %> pedido<%= c.orderCount === 1 ? '' : 's' %> ·
-                    <% if (c.totalSpent > 0) { %><b class="text-slate-600"><%= money(c.totalSpent) %></b> comprado<% } else { %>sin compras aún<% } %>
+                    <% if (c.totalSpent > 0) { %><b style="color:var(--ap-text)"><%= money(c.totalSpent) %></b> comprado<% } else { %>sin compras aún<% } %>
                     <% if (c.orders.length) { %> · último: <%= fmtFecha(c.orders[0].created_at, 'fecha') %><% } %>
                     <% if (c.notes) { %> · <span class="text-amber-600"><%= c.notes %></span><% } %>
                   </p>

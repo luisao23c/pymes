@@ -43,34 +43,42 @@
        ============================================================ */
 
     :root {
-      --mp-bg: #f4f2ee;
+      /* Misma paleta "Nessik" que el resto del panel admin (ver DESIGN.md):
+         gris neutro + grafito, un solo acento, sin luz ambiental ni gradientes
+         decorativos — maestro sigue la misma disciplina minimalista. */
+      --mp-bg: #f7f7f8;
       --mp-card: #ffffff;
-      --mp-text: #1a1a1a;
-      --mp-text-sec: #7a7470;
-      --mp-accent: #2563eb;
-      --mp-accent-light: #60a5fa;
-      --mp-accent-glow: rgba(37,99,235,.08);
-      --mp-border: rgba(0,0,0,.06);
-      --mp-shadow: 0 1px 3px rgba(0,0,0,.04), 0 1px 2px rgba(0,0,0,.03);
-      --mp-shadow-lg: 0 10px 40px -8px rgba(0,0,0,.12);
-      --mp-radius: 16px;
+      --mp-text: #15181d;
+      --mp-text-sec: #61666e;
+      --mp-accent: #2c2c2e;
+      --mp-accent-light: #454548;
+      --mp-accent-glow: rgba(44,44,46,.07);
+      --mp-border: rgba(21,24,29,.09);
+      --mp-shadow: 0 1px 2px rgba(20,24,31,.04);
+      --mp-shadow-lg: 0 8px 24px rgba(20,24,31,.09);
+      --mp-radius: 12px;
     }
-    * { transition: border-color .2s, background .2s, box-shadow .25s, transform .3s cubic-bezier(.22,1,.36,1); }
-    body { font-family:'Inter',system-ui,sans-serif; }
+    * { transition: border-color .2s, background .2s, box-shadow .2s; }
+    body {
+      font-family:'Inter',system-ui,sans-serif;
+      /* !important porque la etiqueta <body> trae bg-slate-100 de Tailwind,
+         de mayor especificidad que un selector de elemento plano. */
+      background-color: var(--mp-bg) !important;
+    }
+    body.dark { background-color: #0d1117 !important; }
 
     /* Scrollbar moderno */
     ::-webkit-scrollbar { width:5px; height:5px; }
     ::-webkit-scrollbar-track { background:transparent; }
-    ::-webkit-scrollbar-thumb { background:#c4bfba; border-radius:10px; }
-    ::-webkit-scrollbar-thumb:hover { background:#a09890; }
+    ::-webkit-scrollbar-thumb { background:rgba(21,24,29,.18); border-radius:10px; }
+    ::-webkit-scrollbar-thumb:hover { background:rgba(21,24,29,.32); }
 
     /* Header glass */
     .panel-header {
-      background: rgba(255,255,255,.82)!important;
-      backdrop-filter: blur(20px) saturate(1.8);
-      -webkit-backdrop-filter: blur(20px) saturate(1.8);
+      background: rgba(255,255,255,.9)!important;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
       border-bottom: 1px solid var(--mp-border)!important;
-      box-shadow: 0 1px 0 rgba(0,0,0,.03);
     }
 
     /* Tarjeta de tienda */
@@ -79,29 +87,21 @@
       border-radius: var(--mp-radius);
       border: 1px solid var(--mp-border);
       padding: 1.1rem 1.3rem;
-      transition: all .3s cubic-bezier(.22,1,.36,1);
+      transition: border-color .2s, box-shadow .2s;
       box-shadow: var(--mp-shadow);
       position: relative;
       overflow: hidden;
     }
-    .store-card::before {
-      content: '';
-      position: absolute; top:0; left:0; right:0; height:3px;
-      background: linear-gradient(90deg, var(--mp-accent), var(--mp-accent-light));
-      opacity: 0; transition: opacity .3s;
-    }
-    .store-card:hover::before { opacity:1; }
     .store-card:hover {
       box-shadow: var(--mp-shadow-lg);
-      border-color: rgba(37,99,235,.12);
-      transform: translateY(-3px);
+      border-color: rgba(21,24,29,.16);
     }
     .store-card.expired {
-      border-color: rgba(239,68,68,.2);
-      background: linear-gradient(135deg, #fff 80%, rgba(239,68,68,.03));
+      border-color: rgba(180,50,50,.22);
+      background: #fffdfc;
     }
     .store-card.suspended {
-      border-color: rgba(239,68,68,.12);
+      border-color: rgba(180,50,50,.14);
       background: #fafafa;
       opacity: .6;
     }
@@ -140,7 +140,7 @@
       background: #eff6ff;
       color: #1e40af;
       border-color: #bfdbfe;
-      box-shadow: 0 0 0 3px rgba(37,99,235,.06);
+      box-shadow: 0 0 0 3px rgba(44,44,46,.06);
     }
     .badge-status.free {
       background: #f8fafc;
@@ -182,23 +182,21 @@
       line-height: 1;
     }
     .action-btn:hover {
-      background: #f8f7f5;
-      border-color: #d1cdc7;
+      background: var(--mp-bg);
+      border-color: rgba(21,24,29,.2);
       color: var(--mp-text);
-      transform: translateY(-1px);
-      box-shadow: 0 2px 8px rgba(0,0,0,.06);
     }
     .action-btn:active { transform:scale(.97); }
     .action-btn.primary {
       background: var(--mp-accent);
       border-color: var(--mp-accent);
       color: #fff;
-      box-shadow: 0 2px 8px rgba(37,99,235,.2);
+      box-shadow: 0 2px 8px rgba(44,44,46,.2);
     }
     .action-btn.primary:hover {
-      background: #1d4ed8;
-      border-color: #1d4ed8;
-      box-shadow: 0 4px 14px rgba(37,99,235,.3);
+      background: var(--mp-accent-light);
+      border-color: var(--mp-accent-light);
+      box-shadow: 0 4px 14px rgba(44,44,46,.3);
     }
     .action-btn.danger {
       color: #dc2626;
@@ -279,7 +277,7 @@
       position: relative;
       overflow: hidden;
     }
-    .mp-stat-card:hover { transform: translateY(-2px); box-shadow: var(--mp-shadow-lg); border-color: rgba(37,99,235,.15); }
+    .mp-stat-card:hover { transform: translateY(-2px); box-shadow: var(--mp-shadow-lg); border-color: rgba(44,44,46,.15); }
     .mp-stat-card.active-filter { border-color: var(--mp-accent); box-shadow: 0 0 0 3px var(--mp-accent-glow); }
     .mp-stat-icon {
       width: 34px; height: 34px; border-radius: 10px;
@@ -288,7 +286,7 @@
       transition: transform .25s cubic-bezier(.22,1,.36,1);
     }
     .mp-stat-card:hover .mp-stat-icon { transform: scale(1.1) rotate(-4deg); }
-    .mp-stat-icon.blue { background: rgba(37,99,235,.1); }
+    .mp-stat-icon.blue { background: rgba(44,44,46,.1); }
     .mp-stat-icon.green { background: rgba(5,150,105,.1); }
     .mp-stat-icon.amber { background: rgba(217,119,6,.1); }
     .mp-stat-icon.purple { background: rgba(147,51,234,.1); }
@@ -296,7 +294,7 @@
     .mp-stat-icon.slate { background: rgba(100,116,139,.1); }
     .mp-stat-val { font-size: 1.3rem; font-weight: 900; color: var(--mp-text); line-height: 1.1; }
     .mp-stat-lbl { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--mp-text-sec); margin-top: 0.2rem; }
-    body.dark .mp-stat-card:hover { border-color: rgba(96,165,250,.25); }
+    body.dark .mp-stat-card:hover { border-color: rgba(138,180,248,.25); }
 
     /* Barra de adopción Pro vs Free */
     .mp-adopt-bar { height: 8px; border-radius: 99px; background: #e2e8f0; overflow: hidden; display: flex; }
@@ -330,7 +328,7 @@
       justify-content: center;
       gap: 0.4rem;
     }
-    .mt-tab:hover { color: var(--mp-text); background: rgba(37,99,235,.04); }
+    .mt-tab:hover { color: var(--mp-text); background: rgba(44,44,46,.04); }
     .mt-tab.active {
       background: var(--mp-card);
       color: var(--mp-text);
@@ -380,20 +378,20 @@
     body.dark { --mp-bg: #0d1117; --mp-card: #161b22; --mp-text: #e6edf3; --mp-text-sec: #8b949e; --mp-border: rgba(255,255,255,.08); --mp-shadow: 0 1px 3px rgba(0,0,0,.3); --mp-shadow-lg: 0 10px 40px -8px rgba(0,0,0,.5); }
     body.dark .panel-header { background: rgba(13,17,23,.85)!important; border-bottom-color: rgba(255,255,255,.06)!important; }
     body.dark .store-card { border-color: rgba(255,255,255,.08); }
-    body.dark .store-card:hover { border-color: rgba(96,165,250,.2); }
+    body.dark .store-card:hover { border-color: rgba(138,180,248,.2); }
     body.dark .store-card.expired { border-color: rgba(248,113,113,.2); background: linear-gradient(135deg, #161b22 80%, rgba(248,113,113,.04)); }
     body.dark .badge-status.active { background: rgba(16,185,129,.12); color: #6ee7b7; border-color: rgba(16,185,129,.25); }
     body.dark .badge-status.inactive { background: rgba(255,255,255,.04); color: #8b949e; border-color: rgba(255,255,255,.08); }
     body.dark .badge-status.suspended { background: rgba(248,113,113,.1); color: #fca5a5; border-color: rgba(248,113,113,.2); }
-    body.dark .badge-status.pro { background: rgba(96,165,250,.1); color: #93c5fd; border-color: rgba(96,165,250,.2); }
+    body.dark .badge-status.pro { background: rgba(138,180,248,.1); color: #93c5fd; border-color: rgba(138,180,248,.2); }
     body.dark .badge-status.free { background: rgba(255,255,255,.04); color: #8b949e; border-color: rgba(255,255,255,.08); }
     body.dark .badge-status.expired { background: rgba(248,113,113,.1); color: #fca5a5; border-color: rgba(248,113,113,.2); }
     body.dark .badge-status.ads { background: rgba(251,191,36,.1); color: #fcd34d; border-color: rgba(251,191,36,.2); }
     body.dark .badge-status.no-ads { background: rgba(255,255,255,.04); color: #8b949e; border-color: rgba(255,255,255,.08); }
     body.dark .action-btn { border-color: rgba(255,255,255,.08); color: #8b949e; background: transparent; }
     body.dark .action-btn:hover { background: rgba(255,255,255,.04); border-color: rgba(255,255,255,.12); color: #e6edf3; }
-    body.dark .action-btn.primary { background: #2563eb; border-color: #2563eb; color: #fff; }
-    body.dark .action-btn.primary:hover { background: #3b82f6; border-color: #3b82f6; }
+    body.dark .action-btn.primary { background: #454548; border-color: #454548; color: #fff; }
+    body.dark .action-btn.primary:hover { background: #4d4d50; border-color: #4d4d50; }
     body.dark .action-btn.danger { color: #fca5a5; border-color: rgba(248,113,113,.2); }
     body.dark .action-btn.danger:hover { background: rgba(248,113,113,.08); }
     body.dark .action-btn.success { color: #6ee7b7; border-color: rgba(16,185,129,.2); }
@@ -401,13 +399,13 @@
     body.dark .action-btn.warning { color: #fcd34d; border-color: rgba(251,191,36,.2); }
     body.dark .action-btn.warning:hover { background: rgba(251,191,36,.08); }
     body.dark .plan-select { background: #0d1117; border-color: rgba(255,255,255,.08); color: #e6edf3; }
-    body.dark .plan-select:focus { border-color: #60a5fa; box-shadow: 0 0 0 3px rgba(96,165,250,.12); }
+    body.dark .plan-select:focus { border-color: #d4d4d4; box-shadow: 0 0 0 3px rgba(138,180,248,.12); }
     body.dark .input-compact { background: #0d1117; border-color: rgba(255,255,255,.08); color: #e6edf3; }
-    body.dark .input-compact:focus { border-color: #60a5fa; box-shadow: 0 0 0 3px rgba(96,165,250,.12); }
+    body.dark .input-compact:focus { border-color: #d4d4d4; box-shadow: 0 0 0 3px rgba(138,180,248,.12); }
     body.dark .mt-tab:hover { color: #e6edf3; background: rgba(255,255,255,.04); }
     body.dark .mt-tab.active { background: #161b22; color: #fff; }
     body.dark .mt-tab-count { background: rgba(255,255,255,.06); color: #8b949e; }
-    body.dark .mt-tab.active .mt-tab-count { background: rgba(96,165,250,.15); color: #93c5fd; }
+    body.dark .mt-tab.active .mt-tab-count { background: rgba(138,180,248,.15); color: #93c5fd; }
   </style>
 </head>
 <body class="m-material min-h-screen bg-slate-100 dark:bg-[#0d1117]">
@@ -458,7 +456,7 @@
     <header class="panel-header sticky top-0 z-10">
       <div class="max-w-6xl mx-auto px-4 md:px-6 py-4 flex items-center justify-between gap-3">
         <div class="flex items-center gap-3">
-          <span class="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-800 to-blue-600 text-white flex items-center justify-center text-lg shadow-sm">🔐</span>
+          <span class="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-800 to-neutral-700 text-white flex items-center justify-center text-lg shadow-sm">🔐</span>
           <div>
             <h1 class="font-extrabold text-slate-900 dark:text-white leading-tight text-lg">Panel maestro</h1>
             <p class="text-xs text-slate-400 dark:text-slate-500"><%= list.length %> tiendas registradas</p>
@@ -534,14 +532,14 @@
 
       <!-- FILTROS DE TIENDAS -->
       <div class="flex flex-wrap items-center gap-2 mb-3">
-        <select id="giro-filtro" class="input-compact rounded-xl px-3 py-2 text-sm border border-slate-200 dark:bg-[#0d1117] dark:border-[#30363d] dark:text-white bg-white focus:outline-none focus:border-blue-400">
+        <select id="giro-filtro" class="input-compact rounded-xl px-3 py-2 text-sm border border-slate-200 dark:bg-[#0d1117] dark:border-[#30363d] dark:text-white bg-white focus:outline-none focus:border-neutral-500">
           <option value="">Todos los giros</option>
           <% GIROS.forEach(g => { %>
             <option value="<%= g %>"><%= g.charAt(0).toUpperCase() + g.slice(1) %></option>
           <% }) %>
         </select>
         <input id="busca-tienda" type="search" placeholder="Buscar por nombre o slug…"
-          class="input-compact flex-1 min-w-[180px] rounded-xl px-3 py-2 text-sm border border-slate-200 dark:bg-[#0d1117] dark:border-[#30363d] dark:text-white bg-white focus:outline-none focus:border-blue-400">
+          class="input-compact flex-1 min-w-[180px] rounded-xl px-3 py-2 text-sm border border-slate-200 dark:bg-[#0d1117] dark:border-[#30363d] dark:text-white bg-white focus:outline-none focus:border-neutral-500">
         <select id="orden-tiendas" class="sort-select rounded-xl">
           <option value="recientes">↓ Más recientes</option>
           <option value="visitas">👁 Más visitas</option>
@@ -569,7 +567,7 @@
                 <div class="min-w-0">
                   <p class="font-bold text-slate-900 dark:text-white truncate">
                     <%= b.name %>
-                    <a href="/<%= b.slug %>" target="_blank" class="text-blue-500 dark:text-[#8ab4f8] text-xs font-bold hover:underline">/<%= b.slug %></a>
+                    <a href="/<%= b.slug %>" target="_blank" class="text-neutral-600 dark:text-[#d4d4d4] text-xs font-bold hover:underline">/<%= b.slug %></a>
                   </p>
                   <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5">
                     <span>📦 <%= b.products_count || 0 %> productos</span>
@@ -651,7 +649,7 @@
       <div id="tab-planes" class="mt-tab-panel">
       <section class="bg-white dark:bg-[#161b22] rounded-2xl border border-slate-200 dark:border-[#21262d] p-4 md:p-5 shadow-sm">
         <div class="flex items-center gap-3 mb-4">
-          <div class="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center text-lg">🎛</div>
+          <div class="w-9 h-9 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 flex items-center justify-center text-lg">🎛</div>
           <div>
             <h2 class="font-extrabold text-slate-900 dark:text-white text-sm">Planes</h2>
             <p class="text-xs text-slate-400 dark:text-slate-500">Precio, duración, límite de productos y publicidad.</p>

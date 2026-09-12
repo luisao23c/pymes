@@ -4,9 +4,9 @@
   <%- include('admin/head', { title: 'Proveedores', biz }) %>
   <style>
     .suppliers-admin-page {
-      --sp-ink:#17232d; --sp-muted:#52616c; --sp-petrol:#1a3c5e; --sp-petrol-2:#214b70;
-      --sp-line:rgba(26,60,94,.13); --sp-soft:#edf4f7; --sp-cyan:#e7f8fb; --sp-violet:#f0edff;
-      background:radial-gradient(circle at 86% 5%,rgba(93,210,222,.13),transparent 27rem),radial-gradient(circle at 97% 48%,rgba(137,113,255,.07),transparent 25rem),#f3f6f8;
+      --sp-ink:#17232d; --sp-muted:#52616c; --sp-petrol:#2c2c2e; --sp-petrol-2:#454548;
+      --sp-line:rgba(44,44,46,.13); --sp-soft:#f0f0f1; --sp-cyan:#f0f0f1; --sp-violet:#eaeaeb;
+      background:#f7f7f8;
       color:var(--sp-ink); overflow-x:hidden;
     }
     .suppliers-admin-page main{min-width:0;max-width:100%;}
@@ -19,7 +19,7 @@
     .supplier-flow svg{width:15px;height:15px;color:var(--sp-petrol);}
     .supplier-flow .flow-arrow{color:#9aabb5;}
     .suppliers-workspace{display:grid;grid-template-columns:minmax(260px,330px) minmax(0,1fr);gap:18px;align-items:start;}
-    .supplier-panel{border:1px solid var(--sp-line);border-radius:15px;background:#fff;box-shadow:0 12px 30px -28px rgba(26,60,94,.65);min-width:0;}
+    .supplier-panel{border:1px solid var(--sp-line);border-radius:15px;background:#fff;box-shadow:0 12px 30px -28px rgba(44,44,46,.65);min-width:0;}
     .supplier-panel-pad{padding:20px;}
     .supplier-directory{position:sticky;top:18px;}
     .panel-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;}
@@ -33,12 +33,12 @@
     .suppliers-admin-page .m-field{min-width:0;}
     .suppliers-admin-page .m-field label{display:block;margin-bottom:5px;color:#40515d;font-size:10px;font-weight:750;letter-spacing:.055em;text-transform:uppercase;}
     .suppliers-admin-page .m-field input,.suppliers-admin-page .m-field select,.suppliers-admin-page textarea,
-    .suppliers-admin-page .po-row input{width:100%;max-width:100%;min-height:41px;box-sizing:border-box;border:1px solid rgba(26,60,94,.16);border-radius:9px;background:#fff;color:var(--sp-ink);font:500 13px/1.3 Inter,system-ui,sans-serif;outline:0;}
+    .suppliers-admin-page .po-row input{width:100%;max-width:100%;min-height:41px;box-sizing:border-box;border:1px solid rgba(44,44,46,.16);border-radius:9px;background:#fff;color:var(--sp-ink);font:500 13px/1.3 Inter,system-ui,sans-serif;outline:0;}
     .suppliers-admin-page .m-field input:focus,.suppliers-admin-page .m-field select:focus,.suppliers-admin-page textarea:focus,
-    .suppliers-admin-page .po-row input:focus{border-color:var(--sp-petrol-2)!important;box-shadow:0 0 0 3px rgba(33,75,112,.11)!important;}
-    .supplier-submit{width:100%;margin-top:2px;background:linear-gradient(135deg,var(--sp-petrol),var(--sp-petrol-2))!important;color:#fff!important;}
+    .suppliers-admin-page .po-row input:focus{border-color:var(--sp-petrol-2)!important;box-shadow:0 0 0 3px rgba(44,44,46,.11)!important;}
+    .supplier-submit{width:100%;margin-top:2px;background:var(--sp-petrol)!important;color:#fff!important;}
     .supplier-list{display:grid;gap:8px;margin-top:16px;padding-top:15px;border-top:1px solid var(--sp-line);}
-    .supplier-item{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;padding:11px;border-radius:11px;background:#f7f9fa;border:1px solid rgba(26,60,94,.08);}
+    .supplier-item{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;padding:11px;border-radius:11px;background:#f7f9fa;border:1px solid rgba(44,44,46,.08);}
     .supplier-item-name{font-size:12px;font-weight:800;color:var(--sp-ink);}
     .supplier-meta{display:flex;flex-wrap:wrap;gap:5px 9px;margin-top:4px;color:#71808a;font-size:10px;line-height:1.35;}
     .supplier-meta span{display:inline-flex;align-items:center;gap:4px;min-width:0;overflow-wrap:anywhere;}
@@ -58,18 +58,18 @@
     #po-grid table{border-collapse:separate;border-spacing:0;}
     #po-grid thead tr{background:#edf3f6!important;color:#5f707b!important;border-color:var(--sp-line)!important;}
     #po-grid th{height:38px;vertical-align:middle;}
-    .po-row td{background:#fff;border-color:rgba(26,60,94,.08)!important;}
+    .po-row td{background:#fff;border-color:rgba(44,44,46,.08)!important;}
     .po-row input{min-height:36px!important;padding:7px 9px!important;}
     .po-invalid{border-color:#dc2626!important;box-shadow:0 0 0 3px rgba(220,38,38,.13)!important;}
     .po-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:11px 0 16px;}
     .ui-icon{width:15px;height:15px;flex:0 0 auto;}
     .paste-summary{display:inline-flex;align-items:center;gap:6px;color:var(--sp-petrol);font-size:11px;font-weight:750;cursor:pointer;}
     .paste-panel{margin-top:8px;padding:10px;border-radius:11px;background:#f6f9fa;border:1px solid var(--sp-line);}
-    .purchase-total{display:flex;align-items:center;justify-content:space-between;padding:15px 16px;margin-bottom:13px;border-radius:12px;background:linear-gradient(135deg,#eaf6f8,#f2efff);}
+    .purchase-total{display:flex;align-items:center;justify-content:space-between;padding:15px 16px;margin-bottom:13px;border-radius:12px;background:#f0f0f1;}
     .purchase-total span:first-child{color:#536670;font-size:11px;font-weight:750;}
     .purchase-total strong{color:var(--sp-ink);font-size:21px;font-weight:880;letter-spacing:-.025em;font-variant-numeric:tabular-nums;}
-    .purchase-submit{width:100%;min-height:44px!important;background:linear-gradient(135deg,var(--sp-petrol),var(--sp-petrol-2))!important;color:#fff!important;}
-    .po-ac{max-width:calc(100vw - 16px)!important;box-sizing:border-box;border-color:rgba(26,60,94,.16)!important;border-radius:11px!important;box-shadow:0 16px 34px rgba(28,49,69,.18),0 3px 8px rgba(28,49,69,.08)!important;}
+    .purchase-submit{width:100%;min-height:44px!important;background:var(--sp-petrol)!important;color:#fff!important;}
+    .po-ac{max-width:calc(100vw - 16px)!important;box-sizing:border-box;border-color:rgba(44,44,46,.16)!important;border-radius:11px!important;box-shadow:0 16px 34px rgba(20,24,31,.18),0 3px 8px rgba(20,24,31,.08)!important;}
     .po-ac-it{white-space:normal;overflow-wrap:anywhere;}
     .purchase-history{margin-top:18px;}
     .history-list{display:grid;gap:10px;}
@@ -79,7 +79,7 @@
     .history-name{font-size:13px;font-weight:800;color:var(--sp-ink);}
     .history-total{font-weight:850;color:var(--sp-ink);font-variant-numeric:tabular-nums;}
     .history-lines{margin-top:8px;color:#60717d;font-size:11px;line-height:1.5;}
-    .history-lines > div{display:flex;justify-content:space-between;gap:12px;padding:3px 0;border-bottom:1px solid rgba(26,60,94,.06);}
+    .history-lines > div{display:flex;justify-content:space-between;gap:12px;padding:3px 0;border-bottom:1px solid rgba(44,44,46,.06);}
     .history-actions{display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin-top:11px;}
     .history-actions .m-btn{display:inline-flex;align-items:center;gap:6px;min-height:34px!important;padding:7px 10px!important;font-size:11px!important;font-weight:750;}
     .history-actions .history-wa{background:#25d366!important;color:#0d3520!important;border-color:#25d366!important;}
@@ -89,13 +89,13 @@
     .error-note{margin-bottom:14px;padding:11px 14px;border:1px solid #eec9c9;border-radius:11px;background:#fdf1f1;color:#8c2f2f;font-size:12px;font-weight:750;}
     @media(max-width:980px){.suppliers-workspace{grid-template-columns:1fr}.supplier-directory{position:static}.supplier-form{grid-template-columns:repeat(2,minmax(0,1fr))}.supplier-form .supplier-notes,.supplier-form .supplier-submit-wrap{grid-column:1/-1}.supplier-list{grid-template-columns:repeat(2,minmax(0,1fr))}}
     @media(max-width:640px){.suppliers-shell{padding:16px 12px 36px}.suppliers-header{display:block}.supplier-flow{margin-top:13px;overflow-x:auto;padding-bottom:2px}.supplier-panel-pad{padding:16px}.supplier-form,.supplier-list{grid-template-columns:1fr}.purchase-top{grid-template-columns:1fr}.purchase-help{text-align:left}.purchase-table-copy{display:block;margin-top:3px}.history-lines>div{align-items:flex-start}.suppliers-admin-page .m-btn{max-width:100%}}
-    body.dark.suppliers-admin-page{background:radial-gradient(circle at 86% 5%,rgba(28,109,128,.12),transparent 27rem),#0d1117;color:#e7eef3;}
+    body.dark.suppliers-admin-page{background:#0d1117;color:#e7eef3;}
     body.dark .suppliers-title,body.dark .panel-title,body.dark .supplier-item-name,body.dark .history-name,body.dark .history-total{color:#edf4f8;}
     body.dark .supplier-panel,body.dark .history-item,body.dark .po-row td{background:#151c23;border-color:#2b3741;}
     body.dark .supplier-item,body.dark #po-grid,body.dark .paste-panel{background:#101820;border-color:#303d47;}
     body.dark.suppliers-admin-page .m-field input,body.dark.suppliers-admin-page .m-field select,body.dark.suppliers-admin-page textarea,body.dark.suppliers-admin-page .po-row input{background:#0f171e;border-color:#34414b;color:#e7eef3;}
     body.dark #po-grid thead tr{background:#1b2730!important;color:#a8b5bd!important;}
-    body.dark .purchase-total{background:linear-gradient(135deg,#15313a,#211f3b);}
+    body.dark .purchase-total{background:#1c2128;}
     body.dark .purchase-total strong{color:#edf4f8;}
     body.dark .success-note{background:#12271c;border-color:#2b4a37;color:#8fd4ae;}
     body.dark .error-note{background:#2a1416;border-color:#543033;color:#e39a9a;}
@@ -197,7 +197,7 @@
             <details class="inline-block">
               <summary class="paste-summary"><svg class="ui-icon" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M9 5h6M9 3h6v4H9zM6 5H4v16h16V5h-2M8 12h8M8 16h6"/></svg>Pegar lista (Excel/CSV)</summary>
               <div class="paste-panel">
-                <textarea id="po-paste" rows="4" placeholder="producto, cantidad, costo, precio venta&#10;Tornillos 8mm, 10, 3.50, 6.00" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                <textarea id="po-paste" rows="4" placeholder="producto, cantidad, costo, precio venta&#10;Tornillos 8mm, 10, 3.50, 6.00" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-400"></textarea>
                 <button type="button" onclick="poPasteBox()" class="m-btn m-btn-tonal m-btn-sm mt-1">Cargar lista</button>
               </div>
             </details>
@@ -314,8 +314,8 @@
       var inp = row.querySelector('.po-name');
       var unlinked = !row.dataset.pid && inp.value.trim() && !inp.readOnly;
       inp.classList.toggle('border-dashed', unlinked);
-      inp.classList.toggle('border-blue-400', unlinked);
-      inp.classList.toggle('bg-blue-50/50', unlinked);
+      inp.classList.toggle('border-neutral-500', unlinked);
+      inp.classList.toggle('bg-neutral-100/50', unlinked);
     }
 
     // ===== Autocomplete de productos (estilo Excel) =====
@@ -354,14 +354,14 @@
       }) : PRODS;
       var matches = list.slice(0, q ? 8 : 50);
       var html = matches.map(function(p, i){
-        return '<button type="button" data-pid="' + p.id + '" class="po-ac-it w-full text-left px-3 py-2 text-sm hover:bg-blue-50 ' + (i === 0 ? 'bg-blue-50/60' : '') + ' border-b border-slate-50">' +
+        return '<button type="button" data-pid="' + p.id + '" class="po-ac-it w-full text-left px-3 py-2 text-sm hover:bg-neutral-100 ' + (i === 0 ? 'bg-neutral-100/60' : '') + ' border-b border-slate-50">' +
           '<b class="text-slate-800">' + esc(p.name) + '</b>' +
           (p.sku ? ' <span class="text-slate-400 text-xs">(' + esc(p.sku) + ')</span>' : '') +
           (p.variantOpts && p.variantOpts.length ? ' <span class="text-amber-700 text-xs">' + UI_ICONS.sliders + p.variantOpts.length + '</span>' : '') +
           (p.price ? ' <span class="text-slate-400 text-xs">$' + Number(p.price).toFixed(2) + '</span>' : '') +
         '</button>';
       }).join('');
-      if (q) html += '<button type="button" class="po-ac-new w-full text-left px-3 py-2 text-xs font-bold text-blue-700 hover:bg-blue-50">' + UI_ICONS.plus + 'Usar "' + esc(inp.value.trim()) + '" como producto nuevo</button>';
+      if (q) html += '<button type="button" class="po-ac-new w-full text-left px-3 py-2 text-xs font-bold text-neutral-700 hover:bg-neutral-100">' + UI_ICONS.plus + 'Usar "' + esc(inp.value.trim()) + '" como producto nuevo</button>';
       poAc.innerHTML = html;
       poAc._row = row;
       poAc.classList.remove('hidden');
@@ -379,7 +379,7 @@
       var items = poAc.querySelectorAll('.po-ac-it');
       if (poAc.classList.contains('hidden') || !items.length) return false;
       poAc._idx = (poAc._idx + dir + items.length) % items.length;
-      items.forEach(function(it, i){ it.classList.toggle('bg-blue-50', i === poAc._idx); });
+      items.forEach(function(it, i){ it.classList.toggle('bg-neutral-100', i === poAc._idx); });
       items[poAc._idx].scrollIntoView({ block: 'nearest' });
       return true;
     }
@@ -416,7 +416,7 @@
       row.dataset.var = opts.variant || '';
       row.innerHTML =
         '<td class="px-3 py-1.5 align-middle relative">' +
-          '<input type="text" class="po-name w-full min-w-[170px] border border-slate-200 rounded-lg px-2 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Producto (escribe para buscar)" autocomplete="off">' +
+          '<input type="text" class="po-name w-full min-w-[170px] border border-slate-200 rounded-lg px-2 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-neutral-400" placeholder="Producto (escribe para buscar)" autocomplete="off">' +
         '</td>' +
         '<td class="px-2 py-1.5 align-middle">' +
           '<span class="po-vstatic hidden bg-amber-100 text-amber-800 rounded-lg px-2 py-1.5 text-xs font-bold whitespace-nowrap"></span>' +

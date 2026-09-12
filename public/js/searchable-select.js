@@ -35,22 +35,25 @@
 .ss-search-wrap{padding:6px;border-bottom:1px solid var(--md-outline-soft,#eef1f6);position:relative;background:var(--md-surface,#fff);}\
 .ss-search{width:100%;min-width:0;padding:.5rem .7rem .5rem 2rem;border:1px solid var(--md-outline,#e2e8f0);border-radius:var(--md-radius-sm,8px);font-size:.85rem;font-family:var(--md-font-family,Inter,system-ui,sans-serif);line-height:1.25;outline:none;box-sizing:border-box;background:var(--md-surface-container-low,#f8fafc);color:var(--md-on-surface,#0f172a);transition:border-color var(--md-motion,.2s ease),background var(--md-motion,.2s ease);}\
 .ss-search::placeholder{color:var(--md-outline,#64748b);opacity:.6;}\
-.ss-search:focus{border-color:var(--md-primary,#3b82f6);background:var(--md-surface,#fff);box-shadow:none;}\
+.ss-search:focus{border-color:var(--md-primary,#2c2c2e);background:var(--md-surface,#fff);box-shadow:none;}\
 .ss-search-ico{position:absolute;left:14px;top:50%;transform:translateY(-50%);width:13px;height:13px;color:var(--md-on-surface-variant,#64748b);opacity:.65;pointer-events:none;}\
 .ss-list{max-height:240px;overflow-y:auto;padding:4px;}\
 .ss-opt{min-width:0;padding:7px 10px;border-radius:7px;font-size:13px;cursor:pointer;color:var(--md-on-surface,#1e293b);display:flex;align-items:center;justify-content:space-between;gap:8px;overflow-wrap:anywhere;}\
-.ss-opt:hover,.ss-opt.ss-hi{background:#eff6ff;color:#1d4ed8;}\
-.ss-opt.ss-selected{font-weight:700;color:#1d4ed8;}\
+.ss-opt:hover,.ss-opt.ss-hi{background:#f0f0f1;color:#2c2c2e;}\
+.ss-opt.ss-selected{font-weight:700;color:#2c2c2e;}\
 .ss-opt.ss-selected::after{content:"✓";font-size:11px;flex-shrink:0;}\
 .ss-opt.ss-disabled{opacity:.4;cursor:not-allowed;}\
 .ss-group-lbl{padding:6px 10px 3px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#94a3b8;}\
 .ss-empty{padding:14px 10px;text-align:center;font-size:12px;color:#94a3b8;}\
+.ss-opt.ss-add-new{color:var(--md-primary,#2c2c2e);font-weight:700;border-bottom:1px solid var(--md-outline-soft,#eef1f6);margin-bottom:2px;padding-bottom:9px;}\
+.ss-opt.ss-add-new:hover,.ss-opt.ss-add-new.ss-hi{background:var(--md-primary-container,#eaeaeb);color:var(--md-on-primary-container,#2c2c2e);}\
+body.dark .ss-opt.ss-add-new{border-color:#30363d;}\
 body.dark .ss-panel,body.dark .ss-btn{background:#0d1117;border-color:#30363d;}\
 body.dark .m-field .ss-btn{background:#0d1117;border-color:#30363d;color:#e6edf3;}\
-body.dark .m-field .ss-btn:focus-visible,body.dark .m-field .ss-wrap.ss-open .ss-btn{background:#161b22;border-color:#8ab4f8;}\
+body.dark .m-field .ss-btn:focus-visible,body.dark .m-field .ss-wrap.ss-open .ss-btn{background:#161b22;border-color:#d4d4d4;}\
 body.dark .ss-search{background:#161b22;border-color:#30363d;color:#e6edf3;}\
 body.dark .ss-opt{color:#e6edf3;}\
-body.dark .ss-opt:hover,body.dark .ss-opt.ss-hi{background:#1c2a3a;color:#8ab4f8;}\
+body.dark .ss-opt:hover,body.dark .ss-opt.ss-hi{background:#2a2a2d;color:#d4d4d4;}\
 ';
 
   function injectStyle() {
@@ -102,16 +105,24 @@ body.dark .ss-opt:hover,body.dark .ss-opt.ss-hi{background:#1c2a3a;color:#8ab4f8
     // original para que el layout no cambie.
     var parentDisplay = select.parentNode ? getComputedStyle(select.parentNode).display : '';
     var isFlexChild = parentDisplay === 'flex' || parentDisplay === 'inline-flex';
-    var hasOwnWidth = /\bw-(?:\d|full|auto|px|screen|min|max|fit)\b/.test(select.className || '') ||
-      /(?:^|;)\s*width\s*:/.test(select.getAttribute('style') || '');
+    var selCls = select.className || '';
+    var selStyle = select.getAttribute('style') || '';
+    // "w-full" (o width:100% inline) pide ancho fluido a propósito — se trata
+    // distinto de un ancho FIJO propio (w-52, width:180px…): ese sí se deja
+    // tal cual en el botón; el fluido necesita que el wrapper también sea
+    // block+100%, porque de otro modo un <div> inline-block se encoge a su
+    // contenido sin importar el width:100% que traiga el botón por dentro.
+    var wantsFullWidth = /\bw-full\b/.test(selCls) || /(?:^|;)\s*width\s*:\s*100%/.test(selStyle);
+    var hasFixedWidth = !wantsFullWidth && (/\bw-(?:\d|auto|px|screen|min|max|fit)\b/.test(selCls) ||
+      /(?:^|;)\s*width\s*:/.test(selStyle));
     var selectWidthPx = null;
-    if (!isFlexChild && !hasOwnWidth) {
+    if (!isFlexChild && !hasFixedWidth && !wantsFullWidth) {
       var w = getComputedStyle(select).width;
       if (w && w !== 'auto') selectWidthPx = w;
     }
 
     var wrap = document.createElement('div');
-    wrap.className = 'ss-wrap' + (!isFlexChild && !hasOwnWidth ? ' ss-block' : '');
+    wrap.className = 'ss-wrap' + (!isFlexChild && !hasFixedWidth ? ' ss-block' : '');
 
     var btn = document.createElement('button');
     btn.type = 'button';
@@ -167,17 +178,21 @@ body.dark .ss-opt:hover,body.dark .ss-opt.ss-hi{background:#1c2a3a;color:#8ab4f8
       btn.disabled = !!select.disabled;
     }
 
+    var allowCustom = select.dataset.allowCustom === '1';
+
     function buildList(filterText) {
       list.innerHTML = '';
       var q = norm(filterText || '');
       var items = readItems(select);
       var any = false;
+      var exactMatch = false;
       var pendingGroupLbl = null;
       items.forEach(function (it) {
         if (it.group !== undefined) { pendingGroupLbl = it.group; return; }
         var opt = it.opt;
         var text = opt.textContent || '';
         if (q && norm(text).indexOf(q) === -1) return;
+        if (q && norm(text) === q) exactMatch = true;
         if (pendingGroupLbl !== null) {
           var g = document.createElement('div');
           g.className = 'ss-group-lbl';
@@ -196,6 +211,17 @@ body.dark .ss-opt:hover,body.dark .ss-opt.ss-hi{background:#1c2a3a;color:#8ab4f8
         }
         list.appendChild(row);
       });
+      var query = (filterText || '').trim();
+      if (allowCustom && query && !exactMatch) {
+        var addRow = document.createElement('div');
+        addRow.className = 'ss-opt ss-add-new';
+        addRow.setAttribute('role', 'option');
+        addRow.textContent = '+ Usar «' + query + '»';
+        addRow._custom = query;
+        addRow.addEventListener('click', function () { chooseCustom(query); });
+        list.insertBefore(addRow, list.firstChild);
+        any = true;
+      }
       if (!any) {
         var empty = document.createElement('div');
         empty.className = 'ss-empty';
@@ -203,7 +229,23 @@ body.dark .ss-opt:hover,body.dark .ss-opt.ss-hi{background:#1c2a3a;color:#8ab4f8
         list.appendChild(empty);
       }
       hiIndex = -1;
-      highlightSelected();
+      if (allowCustom && query) setHi(0, true);
+      else highlightSelected();
+    }
+
+    function chooseCustom(text) {
+      var existing = null;
+      Array.prototype.forEach.call(select.options, function (o) {
+        if (!existing && norm(o.textContent) === norm(text)) existing = o;
+      });
+      var opt = existing;
+      if (!opt) {
+        opt = document.createElement('option');
+        opt.value = text;
+        opt.textContent = text;
+        select.appendChild(opt);
+      }
+      choose(opt);
     }
 
     function highlightSelected() {
@@ -266,6 +308,7 @@ body.dark .ss-opt:hover,body.dark .ss-opt.ss-hi{background:#1c2a3a;color:#8ab4f8
         rows = optionRows();
         var row = rows[hiIndex] || rows[0];
         if (row && row._opt) choose(row._opt);
+        else if (row && row._custom) chooseCustom(row._custom);
       } else if (e.key === 'Escape') { e.preventDefault(); close(); btn.focus(); }
       else if (e.key === 'Tab') { close(); }
     });

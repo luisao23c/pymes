@@ -414,6 +414,41 @@ function crearPaginasSugeridas(businessId, paginasSugeridas) {
   });
 }
 
+// Cuestionario de bienvenida: categorías sugeridas según el giro elegido.
+// No pisa nada si el negocio ya tiene categorías propias (evita duplicar o sobrescribir trabajo real).
+function crearCategoriasSugeridas(businessId, categoryNames) {
+  if (!Array.isArray(categoryNames) || !categoryNames.length) return;
+  const current = db.prepare('SELECT name, sort FROM categories WHERE business_id = ?').all(businessId);
+  const existingNames = new Set(current.map(row => String(row.name || '').trim().toLocaleLowerCase('es')));
+  let nextSort = current.reduce((max, row) => Math.max(max, Number(row.sort) || 0), -1) + 1;
+  const insert = db.prepare('INSERT INTO categories (business_id, name, sort) VALUES (?, ?, ?)');
+  categoryNames.forEach(name => {
+    const cleanName = String(name || '').trim().slice(0, 60);
+    const key = cleanName.toLocaleLowerCase('es');
+    if (!cleanName || existingNames.has(key)) return;
+    insert.run(businessId, cleanName, nextSort++);
+    existingNames.add(key);
+  });
+}
+
+// Cuestionario de bienvenida: plantillas de atributos (talla, color…) sugeridas según el giro.
+// Agrega solo las plantillas faltantes; nunca reemplaza las que el negocio ya personalizó.
+function crearAtributosSugeridos(businessId, attrsMap) {
+  if (!attrsMap || typeof attrsMap !== 'object') return;
+  const current = db.prepare('SELECT name FROM attribute_templates WHERE business_id = ?').all(businessId);
+  const existingNames = new Set(current.map(row => String(row.name || '').trim().toLocaleLowerCase('es')));
+  const insert = db.prepare('INSERT INTO attribute_templates (business_id, name, vals) VALUES (?, ?, ?)');
+  Object.keys(attrsMap).forEach(name => {
+    const cleanName = String(name || '').trim().slice(0, 60);
+    const key = cleanName.toLocaleLowerCase('es');
+    if (!cleanName || existingNames.has(key)) return;
+    insert.run(businessId, cleanName, JSON.stringify(attrsMap[name]));
+    existingNames.add(key);
+  });
+}
+
 module.exports = db;
 module.exports.crearPaginasSugeridas = crearPaginasSugeridas;
+module.exports.crearCategoriasSugeridas = crearCategoriasSugeridas;
+module.exports.crearAtributosSugeridos = crearAtributosSugeridos;
 require('./seed-demo');

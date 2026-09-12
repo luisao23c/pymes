@@ -13,7 +13,7 @@
       <% if (biz.logo) { %>
         <img src="<%= biz.logo %>" class="w-10 h-10 rounded-xl object-cover">
       <% } else { %>
-        <div class="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-black text-lg"><%= biz.name.charAt(0) %></div>
+        <div class="w-10 h-10 rounded-xl bg-[#2c2c2e] text-white flex items-center justify-center font-black text-lg"><%= biz.name.charAt(0) %></div>
       <% } %>
       <div class="min-w-0">
         <p class="font-extrabold text-sm text-slate-800 truncate"><%= biz.name %></p>
@@ -49,7 +49,7 @@
 
       <div class="mt-6 flex flex-col gap-2">
         <% if (home) { %>
-          <a href="<%= home %>" class="w-full inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold px-4 py-3 rounded-xl transition">
+          <a href="<%= home %>" class="w-full inline-flex items-center justify-center gap-2 bg-[#2c2c2e] hover:bg-[#454548] text-white text-sm font-bold px-4 py-3 rounded-xl transition">
             ← Ir a mi sección permitida
           </a>
         <% } %>

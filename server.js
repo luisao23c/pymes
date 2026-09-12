@@ -1072,40 +1072,276 @@ const PAG_SERVICIOS = [
 ];
 
 const GIRO_PRESETS = [
-  { id: 'ferreteria', nombre: 'Ferretería', emoji: '🔧', descripcion: 'Herramientas y material', template: 'clasica', estilo: 'moderno', color: 'azul', color_mode: 'degradado', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_BASE },
-  { id: 'abarrotes', nombre: 'Abarrotes', emoji: '🛒', descripcion: 'Tiendita de la esquina', template: 'minimal', estilo: 'moderno', color: 'esmeralda', color_mode: 'degradado', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_BASE },
-  { id: 'frutas', nombre: 'Frutas y verduras', emoji: '🍎', descripcion: 'Fresco y natural', template: 'ofertas', estilo: 'boho', color: 'bosque', color_mode: 'degradado', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_BASE },
-  { id: 'carniceria', nombre: 'Carnicería', emoji: '🥩', descripcion: 'Cortes y carnes', template: 'clasica', estilo: 'moderno', color: 'fuego', color_mode: 'degradado', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_BASE },
-  { id: 'papeleria', nombre: 'Papelería', emoji: '✏️', descripcion: 'Útiles y oficina', template: 'clasica', estilo: 'moderno', color: 'azul', color_mode: 'solido', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_BASE },
-  { id: 'electronica', nombre: 'Electrónica', emoji: '📱', descripcion: 'Gadgets y tecnología', template: 'premium', estilo: 'tech', color: 'neon', color_mode: 'degradado', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_BASE },
-  { id: 'ropa', nombre: 'Ropa / Boutique', emoji: '👗', descripcion: 'Moda y tendencias', template: 'galeria', estilo: 'moderno', color: 'rosa', color_mode: 'degradado', grid_cols: 2, font: '', radius: '20px', paginas_sugeridas: PAG_BASE },
-  { id: 'calzado', nombre: 'Calzado', emoji: '👟', descripcion: 'Zapatos y tenis', template: 'galeria', estilo: 'moderno', color: 'violeta', color_mode: 'degradado', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_BASE },
-  { id: 'farmacia', nombre: 'Farmacia', emoji: '💊', descripcion: 'Salud y medicinas', template: 'minimal', estilo: 'moderno', color: 'mar', color_mode: 'solido', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_BASE },
-  { id: 'belleza', nombre: 'Belleza / Salón', emoji: '💅', descripcion: 'Estética y cuidado', template: 'galeria', estilo: 'dulce', color: 'dulce', color_mode: 'degradado', grid_cols: 3, font: '', radius: '20px', paginas_sugeridas: PAG_SERVICIOS },
   { id: 'restaurante', nombre: 'Restaurante', emoji: '🍽️', descripcion: 'Comida y platillos', template: 'restaurante', estilo: 'cafe', color: 'ambar', color_mode: 'degradado', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_MENU },
   { id: 'taqueria', nombre: 'Taquería', emoji: '🌮', descripcion: 'Tacos y antojitos', template: 'restaurante', estilo: 'cafe', color: 'fuego', color_mode: 'degradado', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_MENU },
-  { id: 'cafeteria', nombre: 'Cafetería', emoji: '☕', descripcion: 'Café y postres', template: 'restaurante', estilo: 'cafe', color: 'ambar', color_mode: 'degradado', grid_cols: 3, font: '', radius: '20px', paginas_sugeridas: PAG_MENU },
+  { id: 'cafeteria', nombre: 'Cafetería', emoji: '☕', descripcion: 'Café y postres', template: 'restaurante', estilo: 'cafe', color: 'ambar', color_mode: 'degradado', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_MENU },
   { id: 'panaderia', nombre: 'Panadería', emoji: '🥐', descripcion: 'Pan y repostería', template: 'ofertas', estilo: 'cafe', color: 'oro', color_mode: 'degradado', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_BASE },
+  { id: 'pizzeria', nombre: 'Pizzería', emoji: '🍕', descripcion: 'Pizzas y combos', template: 'restaurante', estilo: 'cafe', color: 'fuego', color_mode: 'degradado', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_MENU },
+  { id: 'hamburgueseria', nombre: 'Hamburguesería', emoji: '🍔', descripcion: 'Hamburguesas y combos', template: 'restaurante', estilo: 'cafe', color: 'fuego', color_mode: 'degradado', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_MENU },
+  { id: 'pescaderia', nombre: 'Pescadería / Mariscos', emoji: '🐟', descripcion: 'Pescados y mariscos frescos', template: 'minimal', estilo: 'fresco', color: 'mar', color_mode: 'solido', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_BASE },
+  { id: 'rosticeria', nombre: 'Rosticería', emoji: '🍗', descripcion: 'Pollo rostizado y guisados', template: 'ofertas', estilo: 'cafe', color: 'ambar', color_mode: 'degradado', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_MENU },
+  { id: 'heladeria', nombre: 'Heladería / Nevería', emoji: '🍦', descripcion: 'Helados y postres fríos', template: 'galeria', estilo: 'dulce', color: 'dulce', color_mode: 'degradado', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_BASE },
+  { id: 'juguera', nombre: 'Jugos y licuados', emoji: '🥤', descripcion: 'Jugos, licuados y smoothies', template: 'minimal', estilo: 'fresco', color: 'tropical', color_mode: 'degradado', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_BASE },
+  { id: 'dulceria', nombre: 'Dulcería', emoji: '🍬', descripcion: 'Dulces típicos y golosinas', template: 'galeria', estilo: 'dulce', color: 'dulce', color_mode: 'degradado', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_BASE },
+  { id: 'cocinaeconomica', nombre: 'Cocina económica', emoji: '🍲', descripcion: 'Comida corrida y platillos caseros', template: 'minimal', estilo: 'moderno', color: 'ambar', color_mode: 'solido', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_MENU },
+  { id: 'mariscos', nombre: 'Marisquería', emoji: '🦐', descripcion: 'Cocteles y platillos de mar', template: 'restaurante', estilo: 'fresco', color: 'mar', color_mode: 'degradado', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_MENU },
+  { id: 'pasteleria', nombre: 'Pastelería / Repostería', emoji: '🎂', descripcion: 'Pasteles y postres para ocasiones especiales', template: 'galeria', estilo: 'dulce', color: 'dulce', color_mode: 'degradado', grid_cols: 2, font: '', radius: '', paginas_sugeridas: PAG_BASE },
+  { id: 'cerveceria', nombre: 'Cervecería / Six', emoji: '🍺', descripcion: 'Cervezas y bebidas para llevar', template: 'minimal', estilo: 'moderno', color: 'ambar', color_mode: 'solido', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_BASE },
+  { id: 'foodtruck', nombre: 'Food truck', emoji: '🚚', descripcion: 'Comida rápida sobre ruedas', template: 'ofertas', estilo: 'moderno', color: 'fuego', color_mode: 'degradado', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_MENU },
+  { id: 'banquetes', nombre: 'Banquetes y catering', emoji: '🍱', descripcion: 'Servicio de comida para eventos', template: 'premium', estilo: 'elegancia', color: 'vino', color_mode: 'degradado', grid_cols: 2, font: '', radius: '', paginas_sugeridas: PAG_SERVICIOS },
+  { id: 'abarrotes', nombre: 'Abarrotes', emoji: '🛒', descripcion: 'Tiendita de la esquina', template: 'minimal', estilo: 'moderno', color: 'esmeralda', color_mode: 'degradado', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_BASE },
+  { id: 'fruteria', nombre: 'Frutas y verduras', emoji: '🍎', descripcion: 'Fresco y natural', template: 'ofertas', estilo: 'boho', color: 'bosque', color_mode: 'degradado', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_BASE },
+  { id: 'carniceria', nombre: 'Carnicería', emoji: '🥩', descripcion: 'Cortes y carnes', template: 'clasica', estilo: 'moderno', color: 'fuego', color_mode: 'degradado', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_BASE },
   { id: 'tortilleria', nombre: 'Tortillería', emoji: '🌽', descripcion: 'Tortillas y masa', template: 'minimal', estilo: 'moderno', color: 'ambar', color_mode: 'solido', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_BASE },
-  { id: 'floreria', nombre: 'Florería', emoji: '💐', descripcion: 'Flores y arreglos', template: 'galeria', estilo: 'boho', color: 'rosa', color_mode: 'degradado', grid_cols: 2, font: '', radius: '20px', paginas_sugeridas: PAG_BASE },
-  { id: 'mascotas', nombre: 'Mascotas', emoji: '🐾', descripcion: 'Alimento y accesorios', template: 'clasica', estilo: 'fresco', color: 'esmeralda', color_mode: 'degradado', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_BASE },
-  { id: 'deportes', nombre: 'Deportes', emoji: '⚽', descripcion: 'Equipamiento y ropa', template: 'premium', estilo: 'fresco', color: 'esmeralda', color_mode: 'degradado', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_BASE },
-  { id: 'jugueteria', nombre: 'Juguetería', emoji: '🧸', descripcion: 'Juguetes y diversión', template: 'juvenil', estilo: 'dulce', color: 'dulce', color_mode: 'degradado', grid_cols: 3, font: '', radius: '24px', paginas_sugeridas: PAG_BASE },
-  { id: 'electrodomesticos', nombre: 'Electrodomésticos', emoji: '🧊', descripcion: 'Línea blanca', template: 'premium', estilo: 'tech', color: 'noche', color_mode: 'degradado', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_BASE },
-  { id: 'muebles', nombre: 'Muebles', emoji: '🛋️', descripcion: 'Hogar y decoración', template: 'premium', estilo: 'elegancia', color: 'oro', color_mode: 'degradado', grid_cols: 2, font: '', radius: '12px', paginas_sugeridas: PAG_BASE },
-  { id: 'viajes', nombre: 'Viajes', emoji: '✈️', descripcion: 'Agencia y tours', template: 'viaje', estilo: 'viaje', color: 'mar', color_mode: 'degradado', grid_cols: 2, font: '', radius: '18px', paginas_sugeridas: PAG_SERVICIOS },
-  { id: 'fotografia', nombre: 'Fotografía', emoji: '📷', descripcion: 'Sesiones y portafolio', template: 'fotografia', estilo: 'lujo', color: 'noche', color_mode: 'solido', grid_cols: 2, font: '', radius: '8px', paginas_sugeridas: PAG_SERVICIOS },
-  { id: 'eventos', nombre: 'Eventos', emoji: '🎉', descripcion: 'Fiestas y banquetes', template: 'portada', estilo: 'lujo', color: 'vino', color_mode: 'degradado', grid_cols: 2, font: '', radius: '12px', paginas_sugeridas: PAG_SERVICIOS },
-  { id: 'taller', nombre: 'Taller / Mecánica', emoji: '🔩', descripcion: 'Reparaciones y refacciones', template: 'clasica', estilo: 'tech', color: 'noche', color_mode: 'solido', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_SERVICIOS },
-  { id: 'joyeria', nombre: 'Joyería', emoji: '💍', descripcion: 'Joyas y relojes', template: 'premium', estilo: 'vintage', color: 'oro', color_mode: 'degradado', grid_cols: 2, font: '', radius: '8px', paginas_sugeridas: PAG_BASE },
-  { id: 'optica', nombre: 'Óptica', emoji: '👓', descripcion: 'Lentes y exámenes', template: 'minimal', estilo: 'moderno', color: 'azul', color_mode: 'solido', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_SERVICIOS },
-  { id: 'barberia', nombre: 'Barbería', emoji: '💈', descripcion: 'Cortes y afeitado', template: 'barrio', estilo: 'retro', color: 'noche', color_mode: 'degradado', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_SERVICIOS },
-  { id: 'gimnasio', nombre: 'Gimnasio', emoji: '💪', descripcion: 'Fitness y membresías', template: 'premium', estilo: 'fresco', color: 'esmeralda', color_mode: 'degradado', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_SERVICIOS },
   { id: 'hogar', nombre: 'Hogar y limpieza', emoji: '🧺', descripcion: 'Productos para casa', template: 'ofertas', estilo: 'moderno', color: 'mar', color_mode: 'degradado', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_BASE },
+  { id: 'naturista', nombre: 'Tienda naturista', emoji: '🌿', descripcion: 'Suplementos y productos naturales', template: 'minimal', estilo: 'boho', color: 'bosque', color_mode: 'degradado', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_BASE },
+  { id: 'colchones', nombre: 'Tienda de colchones', emoji: '🛏️', descripcion: 'Colchones y bases', template: 'premium', estilo: 'elegancia', color: 'noche', color_mode: 'solido', grid_cols: 2, font: '', radius: '', paginas_sugeridas: PAG_BASE },
+  { id: 'cortinas', nombre: 'Cortinas y decoración', emoji: '🪟', descripcion: 'Cortinas, persianas y textiles para casa', template: 'premium', estilo: 'elegancia', color: 'oro', color_mode: 'degradado', grid_cols: 2, font: '', radius: '', paginas_sugeridas: PAG_BASE },
+  { id: 'piniateria', nombre: 'Piñatería y fiestas', emoji: '🎉', descripcion: 'Piñatas y artículos de fiesta', template: 'galeria', estilo: 'dulce', color: 'dulce', color_mode: 'degradado', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_BASE },
+  { id: 'regalos', nombre: 'Tienda de regalos', emoji: '🎁', descripcion: 'Regalos y detalles para toda ocasión', template: 'galeria', estilo: 'dulce', color: 'rosa', color_mode: 'degradado', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_BASE },
+  { id: 'bazar', nombre: 'Bazar / Tienda departamental', emoji: '🏬', descripcion: 'De todo un poco para el hogar', template: 'clasica', estilo: 'moderno', color: 'azul', color_mode: 'degradado', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_BASE },
+  { id: 'ropa', nombre: 'Ropa / Boutique', emoji: '👗', descripcion: 'Moda y tendencias', template: 'galeria', estilo: 'moderno', color: 'rosa', color_mode: 'degradado', grid_cols: 2, font: '', radius: '', paginas_sugeridas: PAG_BASE },
+  { id: 'calzado', nombre: 'Calzado', emoji: '👟', descripcion: 'Zapatos y tenis', template: 'galeria', estilo: 'moderno', color: 'violeta', color_mode: 'degradado', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_BASE },
+  { id: 'ropabebe', nombre: 'Ropa de bebé y maternidad', emoji: '🍼', descripcion: 'Ropa y artículos para bebés', template: 'galeria', estilo: 'dulce', color: 'dulce', color_mode: 'degradado', grid_cols: 2, font: '', radius: '', paginas_sugeridas: PAG_BASE },
+  { id: 'ropausada', nombre: 'Ropa de segunda / bazar de ropa', emoji: '👚', descripcion: 'Ropa seminueva a buen precio', template: 'minimal', estilo: 'boho', color: 'esmeralda', color_mode: 'solido', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_BASE },
+  { id: 'perfumeria', nombre: 'Perfumería', emoji: '🌸', descripcion: 'Perfumes y esencias', template: 'premium', estilo: 'lujo', color: 'violeta', color_mode: 'degradado', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_BASE },
+  { id: 'joyeria', nombre: 'Joyería', emoji: '💍', descripcion: 'Joyas y relojes', template: 'premium', estilo: 'vintage', color: 'oro', color_mode: 'degradado', grid_cols: 2, font: '', radius: '', paginas_sugeridas: PAG_BASE },
+  { id: 'optica', nombre: 'Óptica', emoji: '👓', descripcion: 'Lentes y exámenes', template: 'minimal', estilo: 'moderno', color: 'azul', color_mode: 'solido', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_SERVICIOS },
+  { id: 'belleza', nombre: 'Belleza / Salón', emoji: '💅', descripcion: 'Estética y cuidado', template: 'galeria', estilo: 'dulce', color: 'dulce', color_mode: 'degradado', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_SERVICIOS },
+  { id: 'barberia', nombre: 'Barbería', emoji: '💈', descripcion: 'Cortes y afeitado', template: 'barrio', estilo: 'retro', color: 'noche', color_mode: 'degradado', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_SERVICIOS },
+  { id: 'spa', nombre: 'Spa y masajes', emoji: '🧖', descripcion: 'Relajación, masajes y tratamientos', template: 'premium', estilo: 'lujo', color: 'violeta', color_mode: 'degradado', grid_cols: 2, font: '', radius: '', paginas_sugeridas: PAG_SERVICIOS },
+  { id: 'unias', nombre: 'Estética de uñas', emoji: '💅', descripcion: 'Manicure, pedicure y uñas acrílicas', template: 'galeria', estilo: 'dulce', color: 'rosa', color_mode: 'degradado', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_SERVICIOS },
+  { id: 'tatuajes', nombre: 'Tatuajes y perforaciones', emoji: '🖋️', descripcion: 'Tatuajes, piercings y diseño', template: 'barrio', estilo: 'retro', color: 'noche', color_mode: 'solido', grid_cols: 2, font: '', radius: '', paginas_sugeridas: PAG_SERVICIOS },
+  { id: 'farmacia', nombre: 'Farmacia', emoji: '💊', descripcion: 'Salud y medicinas', template: 'minimal', estilo: 'moderno', color: 'mar', color_mode: 'solido', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_BASE },
+  { id: 'dental', nombre: 'Consultorio dental', emoji: '🦷', descripcion: 'Consultas y tratamientos dentales', template: 'minimal', estilo: 'fresco', color: 'mar', color_mode: 'solido', grid_cols: 2, font: '', radius: '', paginas_sugeridas: PAG_SERVICIOS },
+  { id: 'medico', nombre: 'Consultorio médico', emoji: '🩺', descripcion: 'Consultas médicas generales y especialidades', template: 'minimal', estilo: 'fresco', color: 'mar', color_mode: 'solido', grid_cols: 2, font: '', radius: '', paginas_sugeridas: PAG_SERVICIOS },
+  { id: 'veterinaria', nombre: 'Veterinaria', emoji: '🐾', descripcion: 'Consultas y salud para mascotas', template: 'clasica', estilo: 'fresco', color: 'esmeralda', color_mode: 'degradado', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_SERVICIOS },
+  { id: 'fisioterapia', nombre: 'Fisioterapia y rehabilitación', emoji: '🦵', descripcion: 'Terapias y rehabilitación física', template: 'minimal', estilo: 'fresco', color: 'mar', color_mode: 'solido', grid_cols: 2, font: '', radius: '', paginas_sugeridas: PAG_SERVICIOS },
+  { id: 'nutricion', nombre: 'Nutrición', emoji: '🥗', descripcion: 'Consultas y planes de alimentación', template: 'minimal', estilo: 'fresco', color: 'bosque', color_mode: 'solido', grid_cols: 2, font: '', radius: '', paginas_sugeridas: PAG_SERVICIOS },
+  { id: 'mascotas', nombre: 'Mascotas', emoji: '🐾', descripcion: 'Alimento y accesorios', template: 'clasica', estilo: 'fresco', color: 'esmeralda', color_mode: 'degradado', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_BASE },
+  { id: 'esteticacanina', nombre: 'Estética canina', emoji: '🐶', descripcion: 'Baño, corte y spa para mascotas', template: 'galeria', estilo: 'fresco', color: 'esmeralda', color_mode: 'degradado', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_SERVICIOS },
+  { id: 'jugueteria', nombre: 'Juguetería', emoji: '🧸', descripcion: 'Juguetes y diversión', template: 'juvenil', estilo: 'dulce', color: 'dulce', color_mode: 'degradado', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_BASE },
+  { id: 'guarderia', nombre: 'Guardería / Estancia infantil', emoji: '🧒', descripcion: 'Cuidado y actividades para niños', template: 'galeria', estilo: 'dulce', color: 'ambar', color_mode: 'degradado', grid_cols: 2, font: '', radius: '', paginas_sugeridas: PAG_SERVICIOS },
+  { id: 'articulosbebe', nombre: 'Artículos para bebé', emoji: '🍼', descripcion: 'Carriolas, cunas y accesorios', template: 'galeria', estilo: 'dulce', color: 'dulce', color_mode: 'degradado', grid_cols: 2, font: '', radius: '', paginas_sugeridas: PAG_BASE },
+  { id: 'deportes', nombre: 'Deportes', emoji: '⚽', descripcion: 'Equipamiento y ropa', template: 'premium', estilo: 'fresco', color: 'esmeralda', color_mode: 'degradado', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_BASE },
+  { id: 'gimnasio', nombre: 'Gimnasio', emoji: '💪', descripcion: 'Fitness y membresías', template: 'premium', estilo: 'fresco', color: 'esmeralda', color_mode: 'degradado', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_SERVICIOS },
+  { id: 'bicicletas', nombre: 'Bicicletas', emoji: '🚲', descripcion: 'Venta, renta y refacciones', template: 'clasica', estilo: 'fresco', color: 'esmeralda', color_mode: 'degradado', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_BASE },
+  { id: 'instrumentos', nombre: 'Instrumentos musicales', emoji: '🎸', descripcion: 'Venta y renta de instrumentos', template: 'premium', estilo: 'vintage', color: 'vino', color_mode: 'degradado', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_BASE },
+  { id: 'salonfiestas', nombre: 'Salón de fiestas', emoji: '🎊', descripcion: 'Renta de salón para eventos', template: 'premium', estilo: 'elegancia', color: 'vino', color_mode: 'degradado', grid_cols: 2, font: '', radius: '', paginas_sugeridas: PAG_SERVICIOS },
+  { id: 'ferreteria', nombre: 'Ferretería', emoji: '🔧', descripcion: 'Herramientas y material', template: 'clasica', estilo: 'moderno', color: 'azul', color_mode: 'degradado', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_BASE },
+  { id: 'materialesconstruccion', nombre: 'Materiales de construcción', emoji: '🧱', descripcion: 'Cemento, block y materiales', template: 'clasica', estilo: 'moderno', color: 'azul', color_mode: 'solido', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_BASE },
+  { id: 'pintura', nombre: 'Tienda de pinturas', emoji: '🎨', descripcion: 'Pinturas y recubrimientos', template: 'clasica', estilo: 'moderno', color: 'azul', color_mode: 'solido', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_BASE },
+  { id: 'vidrios', nombre: 'Vidrios y aluminio', emoji: '🪟', descripcion: 'Ventanas, cancelería y vidrio templado', template: 'clasica', estilo: 'tech', color: 'azul', color_mode: 'solido', grid_cols: 2, font: '', radius: '', paginas_sugeridas: PAG_SERVICIOS },
+  { id: 'pisos', nombre: 'Pisos y azulejos', emoji: '🧱', descripcion: 'Pisos, azulejos y recubrimientos', template: 'premium', estilo: 'elegancia', color: 'oro', color_mode: 'solido', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_BASE },
+  { id: 'electrodomesticos', nombre: 'Electrodomésticos', emoji: '🧊', descripcion: 'Línea blanca', template: 'premium', estilo: 'tech', color: 'noche', color_mode: 'degradado', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_BASE },
+  { id: 'muebles', nombre: 'Muebles', emoji: '🛋️', descripcion: 'Hogar y decoración', template: 'premium', estilo: 'elegancia', color: 'oro', color_mode: 'degradado', grid_cols: 2, font: '', radius: '', paginas_sugeridas: PAG_BASE },
+  { id: 'mueblesoficina', nombre: 'Muebles de oficina', emoji: '🪑', descripcion: 'Escritorios, sillas y mobiliario de oficina', template: 'premium', estilo: 'moderno', color: 'azul', color_mode: 'solido', grid_cols: 2, font: '', radius: '', paginas_sugeridas: PAG_BASE },
+  { id: 'jardineria', nombre: 'Jardinería y vivero', emoji: '🌳', descripcion: 'Plantas, vivero y servicio de jardín', template: 'minimal', estilo: 'boho', color: 'bosque', color_mode: 'degradado', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_BASE },
+  { id: 'fumigacion', nombre: 'Fumigación y control de plagas', emoji: '🐜', descripcion: 'Servicio de control de plagas', template: 'minimal', estilo: 'tech', color: 'esmeralda', color_mode: 'solido', grid_cols: 2, font: '', radius: '', paginas_sugeridas: PAG_SERVICIOS },
+  { id: 'cerrajeria', nombre: 'Cerrajería', emoji: '🔑', descripcion: 'Llaves, cerraduras y apertura', template: 'clasica', estilo: 'tech', color: 'noche', color_mode: 'solido', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_SERVICIOS },
+  { id: 'electricista', nombre: 'Electricista', emoji: '💡', descripcion: 'Instalaciones y reparaciones eléctricas', template: 'minimal', estilo: 'tech', color: 'ambar', color_mode: 'solido', grid_cols: 2, font: '', radius: '', paginas_sugeridas: PAG_SERVICIOS },
+  { id: 'plomeria', nombre: 'Plomería', emoji: '🚿', descripcion: 'Instalación y reparación de tuberías', template: 'minimal', estilo: 'tech', color: 'mar', color_mode: 'solido', grid_cols: 2, font: '', radius: '', paginas_sugeridas: PAG_SERVICIOS },
+  { id: 'mudanzas', nombre: 'Mudanzas y fletes', emoji: '🚛', descripcion: 'Servicio de mudanzas y transporte de carga', template: 'minimal', estilo: 'moderno', color: 'azul', color_mode: 'solido', grid_cols: 2, font: '', radius: '', paginas_sugeridas: PAG_SERVICIOS },
+  { id: 'taller', nombre: 'Taller / Mecánica', emoji: '🔩', descripcion: 'Reparaciones y refacciones', template: 'clasica', estilo: 'tech', color: 'noche', color_mode: 'solido', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_SERVICIOS },
+  { id: 'refaccionaria', nombre: 'Refaccionaria automotriz', emoji: '🚗', descripcion: 'Refacciones y autopartes', template: 'clasica', estilo: 'tech', color: 'fuego', color_mode: 'solido', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_BASE },
+  { id: 'llantera', nombre: 'Llantera', emoji: '🛞', descripcion: 'Llantas y balanceo', template: 'clasica', estilo: 'tech', color: 'noche', color_mode: 'solido', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_SERVICIOS },
+  { id: 'motos', nombre: 'Motos y refacciones', emoji: '🏍️', descripcion: 'Venta y refacciones de motocicletas', template: 'clasica', estilo: 'tech', color: 'fuego', color_mode: 'degradado', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_BASE },
+  { id: 'autolavado', nombre: 'Autolavado y detallado', emoji: '🧽', descripcion: 'Lavado, encerado y detallado automotriz', template: 'minimal', estilo: 'tech', color: 'mar', color_mode: 'degradado', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_SERVICIOS },
+  { id: 'imprenta', nombre: 'Imprenta y copias', emoji: '🖨️', descripcion: 'Impresiones, copias y papelería comercial', template: 'clasica', estilo: 'moderno', color: 'azul', color_mode: 'solido', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_SERVICIOS },
+  { id: 'disenio', nombre: 'Diseño gráfico y publicidad', emoji: '🎨', descripcion: 'Diseño, branding y material publicitario', template: 'portada', estilo: 'tech', color: 'violeta', color_mode: 'degradado', grid_cols: 2, font: '', radius: '', paginas_sugeridas: PAG_SERVICIOS },
+  { id: 'letreros', nombre: 'Letreros y rótulos', emoji: '🪧', descripcion: 'Letreros, lonas y señalización', template: 'clasica', estilo: 'tech', color: 'azul', color_mode: 'solido', grid_cols: 2, font: '', radius: '', paginas_sugeridas: PAG_SERVICIOS },
+  { id: 'fotografia', nombre: 'Fotografía', emoji: '📷', descripcion: 'Sesiones y portafolio', template: 'fotografia', estilo: 'lujo', color: 'noche', color_mode: 'solido', grid_cols: 2, font: '', radius: '', paginas_sugeridas: PAG_SERVICIOS },
+  { id: 'video', nombre: 'Video y producción', emoji: '🎬', descripcion: 'Producción de video y edición', template: 'portada', estilo: 'nocturno', color: 'violeta', color_mode: 'degradado', grid_cols: 2, font: '', radius: '', paginas_sugeridas: PAG_SERVICIOS },
+  { id: 'contable', nombre: 'Asesoría contable y fiscal', emoji: '📊', descripcion: 'Contabilidad, impuestos y nómina', template: 'minimal', estilo: 'moderno', color: 'azul', color_mode: 'solido', grid_cols: 2, font: '', radius: '', paginas_sugeridas: PAG_SERVICIOS },
+  { id: 'seguros', nombre: 'Agencia de seguros', emoji: '🛡️', descripcion: 'Seguros de auto, vida y gastos médicos', template: 'minimal', estilo: 'moderno', color: 'azul', color_mode: 'solido', grid_cols: 2, font: '', radius: '', paginas_sugeridas: PAG_SERVICIOS },
+  { id: 'inmobiliaria', nombre: 'Bienes raíces / Inmobiliaria', emoji: '🏠', descripcion: 'Venta y renta de propiedades', template: 'premium', estilo: 'elegancia', color: 'oro', color_mode: 'solido', grid_cols: 2, font: '', radius: '', paginas_sugeridas: PAG_SERVICIOS },
+  { id: 'abogados', nombre: 'Despacho de abogados', emoji: '⚖️', descripcion: 'Asesoría y trámites legales', template: 'premium', estilo: 'elegancia', color: 'noche', color_mode: 'solido', grid_cols: 2, font: '', radius: '', paginas_sugeridas: PAG_SERVICIOS },
+  { id: 'clasesparticulares', nombre: 'Clases particulares y tutorías', emoji: '📚', descripcion: 'Tutorías y regularización académica', template: 'minimal', estilo: 'moderno', color: 'azul', color_mode: 'solido', grid_cols: 2, font: '', radius: '', paginas_sugeridas: PAG_SERVICIOS },
+  { id: 'academiaidiomas', nombre: 'Academia de idiomas', emoji: '🗣️', descripcion: 'Clases de inglés y otros idiomas', template: 'minimal', estilo: 'fresco', color: 'mar', color_mode: 'degradado', grid_cols: 2, font: '', radius: '', paginas_sugeridas: PAG_SERVICIOS },
+  { id: 'escuelamanejo', nombre: 'Escuela de manejo', emoji: '🚦', descripcion: 'Clases de manejo y trámites de licencia', template: 'minimal', estilo: 'moderno', color: 'azul', color_mode: 'solido', grid_cols: 2, font: '', radius: '', paginas_sugeridas: PAG_SERVICIOS },
+  { id: 'papeleria', nombre: 'Papelería', emoji: '✏️', descripcion: 'Útiles y oficina', template: 'clasica', estilo: 'moderno', color: 'azul', color_mode: 'solido', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_BASE },
   { id: 'libreria', nombre: 'Librería', emoji: '📚', descripcion: 'Libros y lectura', template: 'revista', estilo: 'vintage', color: 'ambar', color_mode: 'solido', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_BLOG },
-  { id: 'vinos', nombre: 'Vinos / Licores', emoji: '🍷', descripcion: 'Bodega y catas', template: 'premium', estilo: 'elegancia', color: 'vino', color_mode: 'degradado', grid_cols: 2, font: '', radius: '8px', paginas_sugeridas: PAG_BASE },
-  { id: 'grande', nombre: 'Grande y simple', emoji: '🔍', descripcion: 'Letra grande y fácil de usar', template: 'minimal', estilo: 'moderno', color: 'azul', color_mode: 'solido', grid_cols: 2, font: "'Inter', sans-serif", radius: '24px', paginas_sugeridas: PAG_BASE },
-  { id: 'otros', nombre: 'Otro negocio', emoji: '🏪', descripcion: 'Sin giro específico', template: 'clasica', estilo: 'moderno', color: 'azul', color_mode: 'degradado', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_BASE }
+  { id: 'electronica', nombre: 'Electrónica', emoji: '📱', descripcion: 'Gadgets y tecnología', template: 'premium', estilo: 'tech', color: 'neon', color_mode: 'degradado', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_BASE },
+  { id: 'celularesreparacion', nombre: 'Reparación de celulares', emoji: '📲', descripcion: 'Reparación y accesorios para celular', template: 'clasica', estilo: 'tech', color: 'neon', color_mode: 'solido', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_SERVICIOS },
+  { id: 'computo', nombre: 'Cómputo y reparación', emoji: '💻', descripcion: 'Venta y reparación de computadoras', template: 'clasica', estilo: 'tech', color: 'noche', color_mode: 'solido', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_BASE },
+  { id: 'serviciotecnico', nombre: 'Servicio técnico de electrodomésticos', emoji: '🛠️', descripcion: 'Reparación de electrodomésticos', template: 'minimal', estilo: 'tech', color: 'azul', color_mode: 'solido', grid_cols: 2, font: '', radius: '', paginas_sugeridas: PAG_SERVICIOS },
+  { id: 'viajes', nombre: 'Viajes', emoji: '✈️', descripcion: 'Agencia y tours', template: 'viaje', estilo: 'viaje', color: 'mar', color_mode: 'degradado', grid_cols: 2, font: '', radius: '', paginas_sugeridas: PAG_SERVICIOS },
+  { id: 'eventos', nombre: 'Eventos', emoji: '🎉', descripcion: 'Fiestas y banquetes', template: 'portada', estilo: 'lujo', color: 'vino', color_mode: 'degradado', grid_cols: 2, font: '', radius: '', paginas_sugeridas: PAG_SERVICIOS },
+  { id: 'vinos', nombre: 'Vinos / Licores', emoji: '🍷', descripcion: 'Bodega y catas', template: 'premium', estilo: 'elegancia', color: 'vino', color_mode: 'degradado', grid_cols: 2, font: '', radius: '', paginas_sugeridas: PAG_BASE },
+  { id: 'lavanderia', nombre: 'Lavandería y tintorería', emoji: '🧺', descripcion: 'Lavado, planchado y tintorería', template: 'minimal', estilo: 'fresco', color: 'mar', color_mode: 'solido', grid_cols: 2, font: '', radius: '', paginas_sugeridas: PAG_SERVICIOS },
+  { id: 'floreria', nombre: 'Florería', emoji: '💐', descripcion: 'Flores y arreglos', template: 'galeria', estilo: 'boho', color: 'rosa', color_mode: 'degradado', grid_cols: 2, font: '', radius: '', paginas_sugeridas: PAG_BASE },
+  { id: 'grande', nombre: 'Grande y simple', emoji: '🔍', descripcion: 'Letra grande y fácil de usar', template: 'minimal', estilo: 'moderno', color: 'azul', color_mode: 'solido', grid_cols: 2, font: '', radius: '', paginas_sugeridas: PAG_BASE },
+  { id: 'otros', nombre: 'Otro negocio', emoji: '🏪', descripcion: 'Sin giro específico', template: 'clasica', estilo: 'moderno', color: 'azul', color_mode: 'degradado', grid_cols: 3, font: '', radius: '', paginas_sugeridas: PAG_BASE },
+];
+
+const GIRO_CATEGORIAS = {
+  restaurante: ['Entradas', 'Platos fuertes', 'Bebidas'],
+  taqueria: ['Tacos', 'Antojitos', 'Bebidas'],
+  cafeteria: ['Bebidas calientes', 'Bebidas frías', 'Postres'],
+  panaderia: ['Pan dulce', 'Pan salado', 'Pasteles'],
+  pizzeria: ['Pizzas', 'Entradas', 'Bebidas'],
+  hamburgueseria: ['Hamburguesas', 'Complementos', 'Bebidas'],
+  pescaderia: ['Pescados', 'Mariscos', 'Preparados'],
+  rosticeria: ['Pollo', 'Guisados', 'Complementos'],
+  heladeria: ['Helados', 'Paletas', 'Postres'],
+  juguera: ['Jugos', 'Licuados', 'Smoothies'],
+  dulceria: ['Dulces mexicanos', 'Chocolates', 'Fiestas'],
+  cocinaeconomica: ['Comida corrida', 'Platillos', 'Bebidas'],
+  mariscos: ['Cocteles', 'Platillos', 'Bebidas'],
+  pasteleria: ['Pasteles', 'Postres individuales', 'Personalizados'],
+  cerveceria: ['Cervezas', 'Bebidas preparadas', 'Botanas'],
+  foodtruck: ['Especialidades', 'Combos', 'Bebidas'],
+  banquetes: ['Menús', 'Paquetes', 'Servicio'],
+  abarrotes: ['Despensa', 'Bebidas', 'Limpieza'],
+  fruteria: ['Frutas', 'Verduras', 'Orgánicos'],
+  carniceria: ['Res', 'Cerdo', 'Pollo'],
+  tortilleria: ['Tortillas', 'Masa', 'Otros'],
+  hogar: ['Cocina', 'Limpieza', 'Decoración'],
+  naturista: ['Suplementos', 'Tés y hierbas', 'Cuidado natural'],
+  colchones: ['Colchones', 'Bases', 'Almohadas'],
+  cortinas: ['Cortinas', 'Persianas', 'Accesorios'],
+  piniateria: ['Piñatas', 'Decoración', 'Dulces'],
+  regalos: ['Para ella', 'Para él', 'Personalizados'],
+  bazar: ['Hogar', 'Ropa', 'Varios'],
+  ropa: ['Hombre', 'Mujer', 'Accesorios'],
+  calzado: ['Tenis', 'Casual', 'Accesorios'],
+  ropabebe: ['Recién nacido', 'Bebé', 'Maternidad'],
+  ropausada: ['Dama', 'Caballero', 'Niños'],
+  perfumeria: ['Para ella', 'Para él', 'Esencias'],
+  joyeria: ['Anillos', 'Collares', 'Relojes'],
+  optica: ['Armazones', 'Lentes de sol', 'Contacto'],
+  belleza: ['Cabello', 'Uñas', 'Faciales'],
+  barberia: ['Cortes', 'Barba', 'Combos'],
+  spa: ['Masajes', 'Faciales', 'Paquetes'],
+  unias: ['Manicure', 'Pedicure', 'Acrílicas'],
+  tatuajes: ['Tatuajes', 'Piercings', 'Diseños'],
+  farmacia: ['Medicamentos', 'Cuidado personal', 'Vitaminas'],
+  dental: ['Consultas', 'Limpiezas', 'Tratamientos'],
+  medico: ['Consultas', 'Estudios', 'Paquetes'],
+  veterinaria: ['Consultas', 'Vacunas', 'Cirugías'],
+  fisioterapia: ['Terapias', 'Evaluaciones', 'Paquetes'],
+  nutricion: ['Consultas', 'Planes', 'Seguimiento'],
+  mascotas: ['Alimento', 'Accesorios', 'Higiene'],
+  esteticacanina: ['Baño', 'Corte', 'Paquetes'],
+  jugueteria: ['Bebés', 'Niños', 'Juegos de mesa'],
+  guarderia: ['Horarios', 'Actividades', 'Paquetes'],
+  articulosbebe: ['Carriolas', 'Cunas', 'Accesorios'],
+  deportes: ['Ropa deportiva', 'Calzado', 'Equipo'],
+  gimnasio: ['Membresías', 'Suplementos', 'Ropa'],
+  bicicletas: ['Bicicletas', 'Refacciones', 'Accesorios'],
+  instrumentos: ['Cuerdas', 'Viento', 'Percusiones'],
+  salonfiestas: ['Paquetes', 'Horarios', 'Extras'],
+  ferreteria: ['Herramientas', 'Pintura', 'Plomería'],
+  materialesconstruccion: ['Cemento y block', 'Varilla', 'Acabados'],
+  pintura: ['Interiores', 'Exteriores', 'Accesorios'],
+  vidrios: ['Ventanas', 'Cancelería', 'Espejos'],
+  pisos: ['Pisos', 'Azulejos', 'Accesorios'],
+  electrodomesticos: ['Cocina', 'Lavado', 'Climatización'],
+  muebles: ['Sala', 'Recámara', 'Comedor'],
+  mueblesoficina: ['Escritorios', 'Sillas', 'Archiveros'],
+  jardineria: ['Plantas', 'Macetas', 'Servicio'],
+  fumigacion: ['Residencial', 'Comercial', 'Paquetes'],
+  cerrajeria: ['Cerraduras', 'Copiado de llaves', 'Emergencias'],
+  electricista: ['Instalaciones', 'Reparaciones', 'Mantenimiento'],
+  plomeria: ['Instalaciones', 'Reparaciones', 'Emergencias'],
+  mudanzas: ['Locales', 'Foráneas', 'Empaque'],
+  taller: ['Refacciones', 'Servicios', 'Llantas'],
+  refaccionaria: ['Motor', 'Frenos', 'Accesorios'],
+  llantera: ['Llantas', 'Rines', 'Servicios'],
+  motos: ['Motos', 'Refacciones', 'Accesorios'],
+  autolavado: ['Lavado', 'Encerado', 'Detallado'],
+  imprenta: ['Impresiones', 'Copias', 'Diseño'],
+  disenio: ['Branding', 'Impresos', 'Digital'],
+  letreros: ['Letreros', 'Lonas', 'Señalización'],
+  fotografia: ['Sesiones', 'Paquetes', 'Impresiones'],
+  video: ['Producción', 'Edición', 'Paquetes'],
+  contable: ['Contabilidad', 'Impuestos', 'Nómina'],
+  seguros: ['Auto', 'Vida', 'Gastos médicos'],
+  inmobiliaria: ['En venta', 'En renta', 'Terrenos'],
+  abogados: ['Civil', 'Laboral', 'Trámites'],
+  clasesparticulares: ['Primaria', 'Secundaria', 'Preparatoria'],
+  academiaidiomas: ['Inglés', 'Otros idiomas', 'Certificaciones'],
+  escuelamanejo: ['Clases', 'Paquetes', 'Trámites'],
+  papeleria: ['Escolar', 'Oficina', 'Arte'],
+  libreria: ['Novelas', 'Infantil', 'Escolar'],
+  electronica: ['Celulares', 'Audio', 'Accesorios'],
+  celularesreparacion: ['Reparaciones', 'Accesorios', 'Desbloqueo'],
+  computo: ['Equipos', 'Refacciones', 'Servicio técnico'],
+  serviciotecnico: ['Refrigeración', 'Lavado', 'Cocina'],
+  viajes: ['Tours', 'Experiencias', 'Paquetes'],
+  eventos: ['Banquetes', 'Decoración', 'Renta de mobiliario'],
+  vinos: ['Vinos tintos', 'Vinos blancos', 'Licores'],
+  lavanderia: ['Lavado', 'Planchado', 'Tintorería'],
+  floreria: ['Ramos', 'Arreglos', 'Plantas'],
+  grande: ['Productos', 'Novedades', 'Destacados'],
+  otros: ['Productos', 'Novedades', 'Destacados'],
+};
+
+const GIRO_ATTRS = {
+  restaurante: { 'Tamaño': ['Chico', 'Mediano', 'Grande'] },
+  taqueria: { 'Cantidad': ['3 piezas', '5 piezas', '10 piezas'] },
+  cafeteria: { 'Tamaño': ['Chico', 'Mediano', 'Grande'] },
+  panaderia: { 'Presentación': ['Pieza', 'Media docena', 'Docena'] },
+  pizzeria: { 'Tamaño': ['Individual', 'Mediana', 'Grande', 'Familiar'] },
+  hamburgueseria: { 'Tamaño': ['Sencilla', 'Doble', 'Triple'] },
+  pescaderia: { 'Presentación': ['Kilo', 'Medio kilo', 'Porción'] },
+  rosticeria: { 'Presentación': ['Cuarto', 'Medio', 'Entero'] },
+  heladeria: { 'Tamaño': ['Chico', 'Mediano', 'Grande'] },
+  juguera: { 'Tamaño': ['Chico', 'Mediano', 'Grande'] },
+  mariscos: { 'Tamaño': ['Chico', 'Grande'] },
+  pasteleria: { 'Tamaño': ['6 personas', '12 personas', '20 personas'] },
+  cerveceria: { 'Presentación': ['Lata', 'Botella', 'Six', 'Caja'] },
+  carniceria: { 'Presentación': ['Kilo', 'Medio kilo'] },
+  tortilleria: { 'Presentación': ['Kilo', 'Medio kilo'] },
+  naturista: { 'Presentación': ['Frasco', 'Bolsa', 'Caja'] },
+  colchones: { 'Tamaño': ['Individual', 'Matrimonial', 'Queen', 'King'] },
+  cortinas: { 'Medida': ['A la medida'] },
+  ropa: { 'Talla': ['CH', 'M', 'G', 'XG'], 'Color': ['Negro', 'Blanco', 'Azul', 'Rojo'] },
+  calzado: { 'Talla': ['22', '23', '24', '25', '26', '27', '28'], 'Color': ['Negro', 'Blanco', 'Café'] },
+  ropabebe: { 'Talla': ['RN', '0-3m', '3-6m', '6-12m', '12-18m'] },
+  ropausada: { 'Talla': ['CH', 'M', 'G', 'XG'] },
+  joyeria: { 'Material': ['Oro', 'Plata', 'Acero'] },
+  optica: { 'Graduación': ['Sin graduación', 'Con graduación'] },
+  belleza: { 'Duración': ['30 min', '1 hora', '1.5 horas'] },
+  barberia: { 'Duración': ['30 min', '45 min', '1 hora'] },
+  spa: { 'Duración': ['30 min', '1 hora', '1.5 horas'] },
+  unias: { 'Duración': ['30 min', '45 min', '1 hora'] },
+  farmacia: { 'Presentación': ['Caja', 'Frasco', 'Tableta suelta'] },
+  mascotas: { 'Tamaño': ['Chico', 'Mediano', 'Grande'] },
+  esteticacanina: { 'Tamaño': ['Chico', 'Mediano', 'Grande'] },
+  jugueteria: { 'Edad recomendada': ['0-2 años', '3-5 años', '6-8 años', '9+ años'] },
+  deportes: { 'Talla': ['CH', 'M', 'G', 'XG'] },
+  gimnasio: { 'Duración': ['Mensual', 'Trimestral', 'Anual'] },
+  ferreteria: { 'Presentación': ['Pieza', 'Caja', 'Metro'] },
+  pintura: { 'Presentación': ['Litro', 'Galón', 'Cubeta'] },
+  electrodomesticos: { 'Color': ['Negro', 'Blanco', 'Plata'] },
+  llantera: { 'Medida': ['A consultar'] },
+  electronica: { 'Color': ['Negro', 'Blanco', 'Plata'] },
+  vinos: { 'Presentación': ['750ml', '1L', 'Caja'] },
+  floreria: { 'Tamaño': ['Sencillo', 'Mediano', 'Grande'] },
+};
+
+// Profundidad global por giro: conserva los presets específicos anteriores y los
+// amplía con categorías y atributos sectoriales. El módulo valida que los 100
+// giros tengan al menos 7 categorías, 3 atributos y 4 valores por atributo.
+const { expandGiroCatalogs } = require('./giro-catalogs');
+const GIRO_CATALOGS_EXPANDED = expandGiroCatalogs(
+  GIRO_CATEGORIAS,
+  GIRO_ATTRS,
+  GIRO_PRESETS.map(p => p.id)
+);
+Object.assign(GIRO_CATEGORIAS, GIRO_CATALOGS_EXPANDED.categories);
+Object.assign(GIRO_ATTRS, GIRO_CATALOGS_EXPANDED.attrs);
+
+// Estilos alternativos que se ofrecen en el paso 2 del cuestionario para personalizar
+// más allá del preset por defecto del giro (referencian ids válidos de ESTILOS/COLORS).
+const VIBE_OPTIONS = [
+  { estilo: 'moderno', color: 'azul', nombre: 'Moderno y limpio' },
+  { estilo: 'cafe', color: 'ambar', nombre: 'Cálido y cercano' },
+  { estilo: 'elegancia', color: 'oro', nombre: 'Elegante y premium' },
+  { estilo: 'dulce', color: 'dulce', nombre: 'Divertido y colorido' },
+  { estilo: 'fresco', color: 'esmeralda', nombre: 'Fresco y natural' },
+  { estilo: 'tech', color: 'neon', nombre: 'Tech y audaz' }
 ];
 
 // ================= DIVISAS (ISO 4217) =================
@@ -1505,8 +1741,45 @@ app.post('/registrar', rateLimit(10), (req, res) => {
     giroOk,
     estSel
   );
-  // Directo al login del panel para entrar como administrador de la tienda recién creada
-  res.redirect('/' + cleanSlug + '/admin?nueva=1');
+  // Sesión abierta de inmediato: acaba de escribir su propio PIN, no tiene sentido
+  // pedírselo otra vez en la siguiente pantalla. Directo al cuestionario de bienvenida.
+  const token = createSession(r.lastInsertRowid, 'owner');
+  res.cookie('sid', token, { maxAge: 1000 * 60 * 60 * 12, httpOnly: true, sameSite: 'lax', path: '/', secure: req.secure });
+  res.redirect('/' + cleanSlug + '/admin/bienvenida');
+});
+
+// ================= CUESTIONARIO DE BIENVENIDA =================
+// Se muestra una sola vez, justo después del primer login del dueño en una tienda nueva
+// (ver el gate en POST /:slug/admin). Personaliza diseño y precarga categorías/atributos
+// reales en la base de datos para que Productos no arranque vacío.
+app.get('/:slug/admin/bienvenida', requireAuth, (req, res) => {
+  if (req.role !== 'owner') return res.redirect('/' + req.params.slug + '/admin/panel');
+  if (req.biz.onboarding_done) return res.redirect('/' + req.params.slug + '/admin/panel');
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+  res.render('bienvenida', { biz: req.biz, GIRO_PRESETS, VIBE_OPTIONS, COLORS, GIRO_CATEGORIAS, error: null });
+});
+
+app.post('/:slug/admin/bienvenida', requireAuth, (req, res) => {
+  if (req.role !== 'owner') return res.redirect('/' + req.params.slug + '/admin/panel');
+  const biz = req.biz;
+  if (req.body.skip) {
+    db.prepare('UPDATE businesses SET onboarding_done = 1 WHERE id = ?').run(biz.id);
+    return res.redirect('/' + req.params.slug + '/admin/panel');
+  }
+  const preset = GIRO_PRESETS.find(p => p.id === req.body.giro_preset) || GIRO_PRESETS.find(p => p.id === 'otros');
+  const vibe = VIBE_OPTIONS.find(v => v.estilo === req.body.estilo && v.color === req.body.color);
+  const estiloId = vibe ? vibe.estilo : preset.estilo;
+  const colorObj = getColor(vibe ? vibe.color : preset.color);
+  db.prepare(
+    `UPDATE businesses SET template = ?, estilo = ?, color = ?, color_hex = ?, color_hex2 = ?, color_mode = ?, grid_cols = ?, giro_preset = ?, onboarding_done = 1 WHERE id = ?`
+  ).run(
+    preset.template, estiloId, colorObj.id, colorObj.c1, colorObj.c2, preset.color_mode, preset.grid_cols,
+    preset.id, biz.id
+  );
+  db.crearPaginasSugeridas(biz.id, preset.paginas_sugeridas);
+  db.crearCategoriasSugeridas(biz.id, GIRO_CATEGORIAS[preset.id] || GIRO_CATEGORIAS.otros);
+  db.crearAtributosSugeridos(biz.id, GIRO_ATTRS[preset.id] || {});
+  res.redirect('/' + req.params.slug + '/admin/panel?bienvenida=1');
 });
 
 // ================= PANEL MAESTRO =================
@@ -1771,6 +2044,35 @@ app.get('/:slug/manifest.webmanifest', (req, res) => {
     background_color: '#ffffff',
     theme_color: pal.accent || '#2563eb',
     lang: 'es',
+    icons: [
+      { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+      { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+      { src: '/icons/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }
+    ]
+  });
+});
+
+// Manifest dedicado al panel: al instalarlo desde administración abre el
+// espacio de trabajo, no la vitrina pública de la tienda.
+app.get('/:slug/admin/manifest.webmanifest', (req, res) => {
+  const biz = getBusiness(req.params.slug);
+  if (!biz || !biz.active) return res.status(404).end();
+  const name = biz.name || 'Mi negocio';
+  res.set('Content-Type', 'application/manifest+json');
+  res.set('Cache-Control', 'no-store');
+  res.json({
+    name: 'Administrar · ' + name,
+    short_name: ('Admin ' + name).slice(0, 12),
+    description: 'Panel móvil para administrar ' + name,
+    id: '/' + biz.slug + '/admin',
+    start_url: '/' + biz.slug + '/admin/panel',
+    scope: '/' + biz.slug + '/admin',
+    display: 'standalone',
+    display_override: ['standalone', 'minimal-ui'],
+    orientation: 'portrait-primary',
+    background_color: '#f7f7f8',
+    theme_color: '#f7f7f8',
+    lang: 'es-MX',
     icons: [
       { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
       { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
@@ -2107,6 +2409,16 @@ app.post('/:slug/admin', loginRateLimit, (req, res) => {
     // Volver a la página protegida desde la que vino (solo rutas admin de esta tienda)
     const next_ = String(req.query.next || '');
     if (next_ && next_.startsWith('/' + req.params.slug + '/admin')) return res.redirect(next_);
+    // Tienda recién creada y sin nada propio todavía: cuestionario de bienvenida antes del panel.
+    // Si ya tiene categorías o productos (tienda real en uso), no se molesta aunque
+    // onboarding_done siga en 0 — solo se marca para no volver a checarlo cada login.
+    if (!biz.onboarding_done) {
+      const hasContent = db.prepare(
+        'SELECT (SELECT COUNT(*) FROM products WHERE business_id = ?) + (SELECT COUNT(*) FROM categories WHERE business_id = ?) AS c'
+      ).get(biz.id, biz.id).c;
+      if (!hasContent) return res.redirect('/' + req.params.slug + '/admin/bienvenida');
+      db.prepare('UPDATE businesses SET onboarding_done = 1 WHERE id = ?').run(biz.id);
+    }
     return res.redirect('/' + req.params.slug + '/admin/panel');
   }
   // 2) Empleado
@@ -2232,7 +2544,7 @@ app.get('/:slug/admin/panel', requireAuth, can(['reportes', 'pedidos.gestionar']
   const biz = req.biz;
   const data = panelData(biz);
   data.qrUrl = await qrFor(biz);
-  res.render('panel', { biz, ...data, error: null });
+  res.render('panel', { biz, ...data, error: null, bienvenida: req.query.bienvenida === '1' });
 }));
 
 app.get('/:slug/admin/productos', requireAuth, can('productos.ver'), (req, res) => {

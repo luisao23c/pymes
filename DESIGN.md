@@ -10,13 +10,11 @@ colors:
   catalog-muted: "#5C6B64"
   catalog-border: "#E5E1D6"
   surface-white: "#FFFFFF"
-  petrol-action: "#1A3C5E"
-  petrol-operate: "#214B70"
-  admin-pearl-ground: "#F3F6F8"
-  admin-ink: "#17232D"
-  admin-muted: "#52616C"
-  cyan-light: "rgba(109,220,230,.16)"
-  violet-light: "rgba(143,122,246,.10)"
+  petrol-action: "#2C2C2E"
+  petrol-operate: "#454548"
+  admin-neutral-ground: "#F7F7F8"
+  admin-ink: "#15181D"
+  admin-muted: "#61666E"
   offer-terra: "#B5461C"
   whatsapp-green: "#25D366"
 typography:
@@ -102,48 +100,48 @@ components:
 
 **Creative North Star: "El Mercado Renovado, con Trastienda de Precisión"**
 
-Nessik tiene dos temperaturas coordinadas. La vitrina pública conserva el mercado cuidado: fondos cálidos, verde profundo, dorado comedido, tipografía de exhibición y detalles que hacen tangible la compra. El panel administrativo es la trastienda precisa: Inter conduce la operación sobre un campo gris perla frío, la tinta y las acciones viran a azul petróleo y una luz cian/violeta distingue el espacio de trabajo sin convertirlo en una nueva marca.
+Nessik tiene dos temperaturas coordinadas. La vitrina pública conserva el mercado cuidado: fondos cálidos, verde profundo, dorado comedido, tipografía de exhibición y detalles que hacen tangible la compra. El panel administrativo es la trastienda precisa: Inter conduce la operación sobre un campo gris neutro y grafito, con un único acento — grafito neutro, sin tinte azul — para acción y selección. Sin luz ambiental, sin degradados decorativos: la superficie y la tipografía hacen el trabajo, al estilo de un dashboard empresarial serio.
 
 La unidad no depende de hacer todas las pantallas iguales. Ambas familias comparten superficies blancas, esquinas amables, controles compactos, foco visible y movimiento breve con desaceleración suave. En Productos, la imagen abre cada tarjeta, el estado se lee en capas pequeñas y el inspector acompaña la edición sin sacar al dueño del catálogo.
 
 **Key Characteristics:**
-- Vitrina pública cálida y comercial; administración fría, clara y operativa
-- Azul petróleo para acciones, selección, foco y navegación del panel
-- Luz cian/violeta reservada al campo y al inspector de Productos
+- Vitrina pública cálida y comercial; administración neutra, minimalista y operativa
+- Grafito neutro como único acento para acciones, selección, foco y navegación del panel — deliberadamente sin azul
+- Sin luz ambiental ni degradados decorativos en el panel — bordes finos y sombras muy sutiles en su lugar
 - Tarjetas redondeadas, fotográficas y con elevación teñida por la temperatura de cada superficie
 - Inter lidera la operación; Space Grotesk y Playfair se reservan para exhibición pública
 - Densidad compacta con adaptación móvil que conserva contexto y controles accesibles
 
 ## Colors
 
-La paleta comparte tinta profunda y superficies blancas, pero cambia de temperatura según la tarea: mercado cálido al vender, perla fría y luz espectral al administrar.
+La paleta comparte tinta profunda y superficies blancas, pero cambia de temperatura según la tarea: mercado cálido al vender, gris neutro y minimalista al administrar.
 
 ### Primary
 - **Verde Mercado:** acción principal, selección y precio en el catálogo público.
-- **Petróleo Nessik:** acción, navegación, foco y selección en el panel administrativo; en Productos se profundiza para los filtros activos.
+- **Grafito Nessik:** acción, navegación, foco y selección en el panel administrativo — un neutro puro, sin tinte azul, para que el panel se sienta serio y no "tech genérico".
 
 ### Secondary
 - **Dorado de Puesto:** precios especiales, estados premium y acentos comerciales medidos en la vitrina pública.
 - **Verde WhatsApp:** se usa exclusivamente para acciones que abren o envían un pedido por WhatsApp.
 
 ### Tertiary
-- **Luz Cian:** halo ambiental superior del fondo de Productos y extremo frío del inspector.
-- **Luz Violeta:** segundo halo ambiental y cierre cromático del inspector de Productos.
 - **Terracota de Oferta:** descuento y liquidación; evita el rojo genérico en la vitrina.
 
 ### Neutral
 - **Suelo Mercado:** base cálida de catálogo y detalle de producto.
-- **Suelo Perla:** base fría exclusiva del administrador de Productos.
+- **Suelo Neutro:** base gris clara y sin matiz exclusiva del panel administrativo.
 - **Tinta Mercado:** texto principal con matiz verde en superficies públicas.
-- **Tinta Admin:** texto principal azul-negro en Productos.
+- **Tinta Admin:** grafito casi negro, sin tinte azul, en el panel.
 - **Gris Operativo:** metadata, placeholders y controles secundarios.
 - **Borde Cálido:** división de tarjetas públicas sin gris industrial.
 - **Blanco de Superficie:** tarjetas, campos y superficies elevadas en ambos mundos; no es el fondo de página.
 
 ### Named Rules
-**The Two Temperatures Rule.** La vitrina pública usa una base cálida; el panel Productos usa perla fría con luz cian/violeta. Comparten marca, pero no intercambian sus fondos.
+**The Two Temperatures Rule.** La vitrina pública usa una base cálida; el panel administrativo usa gris neutro sin matiz. Comparten marca, pero no intercambian sus fondos.
 
-**The Petrol Does the Work Rule.** En administración, el petróleo señala la acción, la selección y el foco; los halos cian/violeta crean ambiente y nunca compiten como controles.
+**The Petrol Does the Work Rule.** En administración, el grafito neutro (sin azul) es el único acento — señala la acción, la selección y el foco. No hay halos ni luces ambientales compitiendo por atención: el color se reserva para lo que el usuario debe notar.
+
+**The Flat Corporate Rule.** El panel evita degradados decorativos, sombras pronunciadas y elevaciones grandes al hover. Un borde fino y una sombra casi imperceptible bastan para separar superficies; la jerarquía viene de tipografía y espaciado, no de efectos.
 
 **The WhatsApp Green Rule.** El verde WhatsApp aparece solo en acciones que terminan en WhatsApp, nunca como éxito genérico, filtro o decoración.
 
@@ -187,20 +185,22 @@ Los selects buscables respetan el ancho resuelto del control y de su contenedor:
 
 ## Elevation & Depth
 
-Nessik usa capas suaves, no superficies planas. La vitrina pública emplea sombras con matiz verde-tierra; el administrador utiliza sombras azul petróleo de baja opacidad. En Productos, el suelo perla y los halos radiales establecen profundidad ambiental, las tarjetas suben 3px al hover y el inspector recibe una elevación mayor para sostener su papel persistente.
+La vitrina pública sigue usando capas suaves con matiz verde-tierra: es un espacio comercial y puede permitirse algo de teatralidad. El panel administrativo, en cambio, es deliberadamente plano — un borde fino de 1px hace la mayor parte del trabajo de separar superficies, y la sombra es casi imperceptible incluso al hover. Nada sube más de 1-2px ni gana un halo de color al interactuar; el cambio de estado se lee en el borde, no en el movimiento.
 
-La profundidad interactiva también es estructural: cuando una tarjeta de producto contiene foco o abre su menú contextual, la tarjeta completa sube a `z-index: 30`. El menú puede desbordar la silueta y seguir visible sobre las tarjetas posteriores de la cuadrícula.
+La profundidad interactiva sigue siendo estructural en Productos: cuando una tarjeta contiene foco o abre su menú contextual, la tarjeta completa sube a `z-index: 30`. El menú puede desbordar la silueta y seguir visible sobre las tarjetas posteriores de la cuadrícula.
 
 ### Shadow Vocabulary
 - **Mercado bajo** (`0 1px 2px rgba(26,36,32,.05), 0 1px 3px rgba(26,36,32,.07)`): tarjetas públicas en reposo.
 - **Mercado alto** (`0 14px 30px rgba(26,36,32,.08), 0 4px 12px rgba(26,36,32,.05)`): tarjeta pública en hover.
-- **Producto reposo** (`0 7px 20px rgba(28,49,69,.09), 0 2px 5px rgba(28,49,69,.05)`): tarjeta administrativa de producto.
-- **Producto hover** (`0 14px 28px rgba(28,49,69,.13), 0 3px 8px rgba(28,49,69,.06)`): elevación de tarjeta al explorar.
-- **Inspector** (`0 16px 36px rgba(34,62,82,.14), 0 3px 8px rgba(34,62,82,.06)`): panel persistente de alta prioridad.
-- **Menú contextual** (`0 16px 34px rgba(28,49,69,.18), 0 3px 8px rgba(28,49,69,.08)`): menú de acciones que flota sobre tarjetas vecinas.
+- **Admin reposo** (`0 1px 2px rgba(20,24,31,.04)`): tarjetas, cards de métrica y contenedores del panel en reposo.
+- **Admin hover** (`0 2px 8px rgba(20,24,31,.06)`): único paso de elevación al hover; sin traslación ni escala.
+- **Admin elevado** (`0 8px 24px rgba(20,24,31,.09)`): modales, menús flotantes y el toggle del sidebar.
+- **Inspector** (`0 16px 36px rgba(34,62,82,.14), 0 3px 8px rgba(34,62,82,.06)`): panel persistente de alta prioridad en Productos.
 
 ### Named Rules
-**The Temperature-Matched Shadow Rule.** Las sombras toman el matiz del mundo que elevan: verde-tierra en la vitrina y petróleo en Productos; el negro neutro no es el valor por defecto.
+**The Border Before Shadow Rule.** En el panel administrativo, el borde de 1px es la primera herramienta de separación; la sombra es un refuerzo casi invisible, nunca el efecto principal.
+
+**The Temperature-Matched Shadow Rule.** Las sombras toman el matiz del mundo que elevan: verde-tierra en la vitrina y grafito/petróleo neutro en el panel; el negro puro no es el valor por defecto.
 
 **The Open Menu Owns the Stack Rule.** El foco o menú abierto eleva la tarjeta propietaria completa a `z-index: 30`; un menú contextual nunca queda detrás de la siguiente tarjeta.
 
@@ -253,8 +253,9 @@ El inspector es la firma operativa de Productos. A partir de 1180px acompaña la
 ## Do's and Don'ts
 
 ### Do:
-- **Do** mantener cálida la vitrina pública y fría la superficie administrativa de Productos.
-- **Do** usar petróleo para acción, selección y foco en el panel; usar cian y violeta solo como luz ambiental.
+- **Do** mantener cálida la vitrina pública y gris neutra la superficie administrativa.
+- **Do** usar petróleo como único acento para acción, selección y foco en el panel.
+- **Do** resolver la jerarquía del panel con tipografía, espaciado y un borde fino — no con degradados, glow ni elevación grande.
 - **Do** abrir cada tarjeta administrativa con la imagen y mantener estado y acciones como capas secundarias compactas.
 - **Do** convertir las tarjetas a composición horizontal de 104px en móvil.
 - **Do** mantener el inspector sticky de 350px desde 1180px y devolverlo al flujo en pantallas menores.
@@ -264,7 +265,8 @@ El inspector es la firma operativa de Productos. A partir de 1180px acompaña la
 - **Do** elevar a `z-index: 30` la tarjeta con foco o menú contextual abierto.
 
 ### Don't:
-- **Don't** aplicar el suelo perla ni los halos cian/violeta al catálogo público.
+- **Don't** aplicar el suelo cálido del catálogo público al panel administrativo, ni viceversa.
+- **Don't** reintroducir halos ambientales, glow de color o degradados decorativos en el panel — el acento se reserva para acción y selección.
 - **Don't** usar Space Grotesk o Playfair dentro del flujo operativo de Productos.
 - **Don't** encerrar las tabs de Productos en una barra visual continua; deben leerse como controles independientes.
 - **Don't** reducir la tarjeta vertical hasta volver ilegibles sus estados; cambia su composición en móvil.

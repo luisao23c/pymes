@@ -4,10 +4,10 @@
    ============================================================ */
 
 :root {
-  --md-primary: #4f46e5;
+  --md-primary: #2c2c2e;
   --md-on-primary: #ffffff;
-  --md-primary-container: #e0e7ff;
-  --md-on-primary-container: #1e1b4b;
+  --md-primary-container: #eaeaeb;
+  --md-on-primary-container: #2c2c2e;
   --md-secondary-container: #f1f5f9;
   --md-on-secondary-container: #1e293b;
   --md-surface: #ffffff;
@@ -42,7 +42,7 @@
 }
 
 /* ---- Selección de texto ---- */
-::selection { background: rgba(79,70,229,0.12); color: var(--md-on-surface); }
+::selection { background: rgba(44,44,46,0.12); color: var(--md-on-surface); }
 
 /* ---- Focus visible global ---- */
 :focus-visible {
@@ -138,7 +138,7 @@
   transition: all var(--md-motion-standard);
 }
 .m-btn-outlined:hover {
-  background: rgba(79,70,229,0.04);
+  background: rgba(44,44,46,0.04);
   border-color: var(--md-primary);
 }
 .m-btn-text {
@@ -147,7 +147,7 @@
   padding: 0 0.8rem;
   transition: all var(--md-motion-standard);
 }
-.m-btn-text:hover { background: rgba(79,70,229,0.04); }
+.m-btn-text:hover { background: rgba(44,44,46,0.04); }
 .m-btn-danger {
   background: var(--md-error);
   color: #fff;
@@ -554,10 +554,10 @@
    ============================================================ */
 body.dark {
   background: #0d1117;
-  --md-primary: #8ab4f8;
-  --md-on-primary: #062e6f;
-  --md-primary-container: #1a2a4a;
-  --md-on-primary-container: #d6e3ff;
+  --md-primary: #d4d4d4;
+  --md-on-primary: #1c1c1e;
+  --md-primary-container: #3a3a3d;
+  --md-on-primary-container: #ececed;
   --md-secondary-container: #1c2a3a;
   --md-on-secondary-container: #cfd5df;
   --md-surface: #161b22;

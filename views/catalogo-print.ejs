@@ -6,22 +6,22 @@
   <title><%= biz.name %> · Catálogo imprimible</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: -apple-system, 'Segoe UI', Roboto, Arial, sans-serif; background: #f1f5f9; color: #0f172a; padding: 16px; }
-    .toolbar { position: sticky; top: 0; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,.05); }
-    .btn { background: #2563eb; color: #fff; border: none; border-radius: 10px; padding: 10px 16px; font-weight: 700; font-size: 14px; cursor: pointer; }
-    .btn.secondary { background: #f1f5f9; color: #334155; }
-    h1 { font-size: 22px; }
-    .sub { color: #64748b; font-size: 13px; margin: 4px 0 16px; }
+    body { font-family: 'Inter', -apple-system, 'Segoe UI', Roboto, Arial, sans-serif; background: #f3f6f8; color: #17232d; padding: 16px; }
+    .toolbar { position: sticky; top: 0; background: #fff; border: 1px solid rgba(23,35,45,.08); border-radius: 14px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(20,24,31,.05), 0 1px 2px rgba(20,24,31,.06); }
+    .btn { background: #2c2c2e; color: #fff; border: none; border-radius: 10px; padding: 10px 16px; font-weight: 700; font-size: 14px; cursor: pointer; }
+    .btn.secondary { background: #f3f6f8; color: #52616c; }
+    h1 { font-size: 22px; font-weight: 800; }
+    .sub { color: #52616c; font-size: 13px; margin: 4px 0 16px; }
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; }
-    .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; page-break-inside: avoid; break-inside: avoid; }
-    .card img { width: 100%; height: 130px; object-fit: cover; display: block; background: #e2e8f0; }
+    .card { background: #fff; border: 1px solid rgba(23,35,45,.08); border-radius: 14px; overflow: hidden; page-break-inside: avoid; break-inside: avoid; }
+    .card img { width: 100%; height: 130px; object-fit: cover; display: block; background: #f3f6f8; }
     .card .body { padding: 10px; }
     .card h3 { font-size: 14px; line-height: 1.25; }
-    .cat { font-size: 10px; font-weight: 800; color: #2563eb; text-transform: uppercase; letter-spacing: .04em; margin: 2px 0; }
+    .cat { font-size: 10px; font-weight: 800; color: #2c2c2e; text-transform: uppercase; letter-spacing: .04em; margin: 2px 0; }
     .price { font-weight: 800; font-size: 16px; margin-top: 4px; }
     .old { color: #94a3b8; text-decoration: line-through; font-size: 12px; font-weight: 500; }
-    .desc { color: #64748b; font-size: 11px; margin-top: 4px; }
-    .attr { font-size: 10px; color: #475569; margin-top: 4px; }
+    .desc { color: #52616c; font-size: 11px; margin-top: 4px; }
+    .attr { font-size: 10px; color: #52616c; margin-top: 4px; }
     @media print {
       body { background: #fff; padding: 0; }
       .toolbar { display: none; }

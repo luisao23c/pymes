@@ -124,13 +124,13 @@
     }
     body.dark .template-radio:checked + .template-option,
     body.dark .cols-radio:checked + .cols-option {
-      border-color: #8ab4f8 !important;
+      border-color: #d4d4d4 !important;
       box-shadow: 0 0 0 3px rgba(138, 180, 248, 0.25);
     }
     body.dark .template-radio:checked + .template-option::after,
     body.dark .cols-radio:checked + .cols-option::after,
     body.dark .color-radio:checked + .color-preview::after {
-      background: #8ab4f8;
+      background: #d4d4d4;
       color: #062e6f;
     }
 
@@ -318,7 +318,7 @@
       border-color: #30363d;
     }
     body.dark .social-field:focus-within {
-      border-color: #8ab4f8;
+      border-color: #d4d4d4;
       box-shadow: 0 0 0 4px rgba(138, 180, 248, .12);
     }
     body.dark .social-name {
@@ -337,15 +337,12 @@
     .config-admin-page {
       --cfg-ink: #17232d;
       --cfg-muted: #60717d;
-      --cfg-line: rgba(26, 60, 94, .13);
-      --cfg-petrol: #1a3c5e;
-      --cfg-petrol-2: #214b70;
-      --cfg-cyan: #e7f8fb;
-      --cfg-violet: #f0edff;
-      background:
-        radial-gradient(circle at 82% 7%, rgba(87, 214, 225, .14), transparent 25rem),
-        radial-gradient(circle at 96% 55%, rgba(137, 113, 255, .09), transparent 27rem),
-        #f3f6f8;
+      --cfg-line: rgba(44, 44, 46, .13);
+      --cfg-petrol: #2c2c2e;
+      --cfg-petrol-2: #454548;
+      --cfg-cyan: #f0f0f1;
+      --cfg-violet: #eaeaeb;
+      background: #f7f7f8;
       color: var(--cfg-ink);
     }
     .config-admin-page main { width: 100%; min-width: 0; max-width: 100%; }
@@ -359,7 +356,7 @@
     .config-hero > div { min-width: 0; }
     .config-title { margin-top: 4px; color: var(--cfg-ink); font-size: clamp(1.55rem, 2vw, 2rem); font-weight: 850; letter-spacing: -.035em; line-height: 1.05; }
     .config-lede { margin-top: 8px; max-width: 670px; color: var(--cfg-muted); font-size: 13px; line-height: 1.55; overflow-wrap: anywhere; }
-    .config-catalog-link { flex: 0 0 auto; border-color: rgba(26,60,94,.2) !important; background: #eef4f7 !important; color: var(--cfg-petrol) !important; }
+    .config-catalog-link { flex: 0 0 auto; border-color: rgba(44,44,46,.2) !important; background: #f0f0f1 !important; color: var(--cfg-petrol) !important; }
     .config-catalog-link:hover { background: #e2edf2 !important; }
 
     .config-workspace { display: grid; grid-template-columns: 216px minmax(0, 1fr); gap: 18px; align-items: start; }
@@ -372,9 +369,9 @@
       border-radius: 11px; color: #52616c; font-size: 13px; font-weight: 720; transition: .18s ease;
     }
     .config-nav-link + .config-nav-link { margin-top: 3px; }
-    .config-nav-link:hover { color: var(--cfg-petrol); background: #edf4f7; }
-    .config-nav-link.is-active { color: #fff; background: linear-gradient(135deg, var(--cfg-petrol), var(--cfg-petrol-2)); box-shadow: 0 9px 20px -13px rgba(26,60,94,.85); }
-    .config-nav-icon { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 9px; background: rgba(26,60,94,.08); }
+    .config-nav-link:hover { color: var(--cfg-petrol); background: #f0f0f1; }
+    .config-nav-link.is-active { color: #fff; background: var(--cfg-petrol); box-shadow: 0 9px 20px -13px rgba(44,44,46,.85); }
+    .config-nav-icon { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 9px; background: rgba(44,44,46,.08); }
     .config-nav-link.is-active .config-nav-icon { background: rgba(255,255,255,.14); }
     .config-nav-icon svg { width: 15px; height: 15px; }
     .config-content { min-width: 0; max-width: 100%; display: grid; gap: 18px; }
@@ -400,39 +397,39 @@
     .config-admin-page input[type="time"],
     .config-admin-page input[type="password"] {
       width: 100%; max-width: 100%; box-sizing: border-box;
-      min-height: 42px; padding: 10px 12px; border: 1px solid rgba(26,60,94,.16);
+      min-height: 42px; padding: 10px 12px; border: 1px solid rgba(44,44,46,.16);
       border-radius: 9px; background: rgba(255,255,255,.96); color: var(--cfg-ink);
-      box-shadow: 0 1px 1px rgba(26,60,94,.03); font-size: 13px;
+      box-shadow: 0 1px 1px rgba(44,44,46,.03); font-size: 13px;
     }
     .config-admin-page textarea.config-input { min-height: 76px; resize: vertical; }
     .config-admin-page .config-input:focus,
     .config-admin-page input[type="date"]:focus,
     .config-admin-page input[type="time"]:focus,
     .config-admin-page input[type="password"]:focus {
-      border-color: var(--cfg-petrol-2); box-shadow: 0 0 0 3px rgba(33,75,112,.12); outline: 0;
+      border-color: var(--cfg-petrol-2); box-shadow: 0 0 0 3px rgba(44,44,46,.12); outline: 0;
     }
     .config-admin-page .config-label { color: #40515d; font-size: 10.5px; letter-spacing: .075em; }
-    .config-admin-page .social-field { min-height: 66px; padding: 10px 12px; border: 1px solid rgba(26,60,94,.13); border-radius: 12px; box-shadow: none; }
-    .config-admin-page .social-field:hover { transform: none; border-color: rgba(26,60,94,.25); box-shadow: 0 8px 22px -20px rgba(26,60,94,.7); }
-    .config-admin-page .social-field:focus-within { border-color: var(--cfg-petrol-2); box-shadow: 0 0 0 3px rgba(33,75,112,.1); }
+    .config-admin-page .social-field { min-height: 66px; padding: 10px 12px; border: 1px solid rgba(44,44,46,.13); border-radius: 12px; box-shadow: none; }
+    .config-admin-page .social-field:hover { transform: none; border-color: rgba(44,44,46,.25); box-shadow: 0 8px 22px -20px rgba(44,44,46,.7); }
+    .config-admin-page .social-field:focus-within { border-color: var(--cfg-petrol-2); box-shadow: 0 0 0 3px rgba(44,44,46,.1); }
     .config-admin-page .social-chip { width: 36px; height: 36px; border-radius: 10px; box-shadow: none; }
-    .config-admin-page .m-btn-filled { background: linear-gradient(135deg, var(--cfg-petrol), var(--cfg-petrol-2)) !important; color: #fff !important; }
+    .config-admin-page .m-btn-filled { background: var(--cfg-petrol) !important; color: #fff !important; }
 
     .config-admin-page #config-design .cat-design-card {
       display: block !important;
-      border-width: 1px !important; border-color: rgba(26,60,94,.14) !important; border-radius: 13px !important;
-      background: #fff; box-shadow: 0 8px 22px -22px rgba(26,60,94,.8); transition: border-color .18s, box-shadow .18s, transform .18s;
+      border-width: 1px !important; border-color: rgba(44,44,46,.14) !important; border-radius: 13px !important;
+      background: #fff; box-shadow: 0 8px 22px -22px rgba(44,44,46,.8); transition: border-color .18s, box-shadow .18s, transform .18s;
     }
-    .config-admin-page #config-design .cat-design-card:hover { transform: translateY(-1px); border-color: rgba(26,60,94,.34) !important; box-shadow: 0 14px 28px -23px rgba(26,60,94,.7); }
-    .config-admin-page #config-design .cat-design-card.border-blue-500 { border-color: var(--cfg-petrol-2) !important; box-shadow: 0 0 0 3px rgba(33,75,112,.11) !important; }
+    .config-admin-page #config-design .cat-design-card:hover { transform: translateY(-1px); border-color: rgba(44,44,46,.34) !important; box-shadow: 0 14px 28px -23px rgba(44,44,46,.7); }
+    .config-admin-page #config-design .cat-design-card.border-neutral-800 { border-color: var(--cfg-petrol-2) !important; box-shadow: 0 0 0 3px rgba(44,44,46,.11) !important; }
     .config-admin-page #config-design .cat-design-preview { min-height: 64px; padding: 9px; }
     .config-admin-page #config-design .cat-design-card > .p-3 { padding: 10px 11px 11px !important; }
     .config-admin-page #config-design .cat-design-card p.text-xs { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 32px; }
     .catalog-design-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 18px 0 12px; }
     .catalog-design-count { display: inline-flex; align-items: center; gap: 7px; color: #52616c; font-size: 12px; font-weight: 700; }
-    .catalog-design-count strong { display: grid; place-items: center; min-width: 27px; height: 27px; padding-inline: 7px; border-radius: 9px; background: #e7f8fb; color: var(--cfg-petrol); font-size: 12px; }
+    .catalog-design-count strong { display: grid; place-items: center; min-width: 27px; height: 27px; padding-inline: 7px; border-radius: 9px; background: #f0f0f1; color: var(--cfg-petrol); font-size: 12px; }
 
-    .config-upload-row { display: grid !important; grid-template-columns: minmax(0,1fr) 160px; gap: 16px !important; align-items: center; padding: 14px; border: 1px dashed rgba(26,60,94,.22); border-radius: 13px; background: #f8fafb; }
+    .config-upload-row { display: grid !important; grid-template-columns: minmax(0,1fr) 160px; gap: 16px !important; align-items: center; padding: 14px; border: 1px dashed rgba(44,44,46,.22); border-radius: 13px; background: #f8fafb; }
     .config-upload-row img { justify-self: end; }
     .config-admin-page #config-security .security-reset { padding: 15px; border: 1px solid rgba(180,72,72,.17); border-radius: 12px; background: #fff8f7; }
 
@@ -459,7 +456,7 @@
       .config-admin-page #config-design form > .grid { grid-template-columns: 1fr 1fr; gap: 9px; }
       .config-admin-page #config-design .cat-design-card p.text-xs { display: none; min-height: 0; }
     }
-    body.dark.config-admin-page { background: radial-gradient(circle at 85% 4%, rgba(28,109,128,.13), transparent 26rem), #0d1117; }
+    body.dark.config-admin-page { background: #0d1117; }
     body.dark .config-hero, body.dark .config-rail, body.dark.config-admin-page .config-section { background: rgba(22,27,34,.92) !important; border-color: #28333d !important; }
     body.dark .config-title, body.dark.config-admin-page .config-section h2 { color: #edf4f8 !important; }
     body.dark .config-lede { color: #9aa7b4; }
@@ -556,7 +553,7 @@
       ============================================================ -->
       <section id="config-business" class="m-card config-section p-5 md:p-6 dark:bg-[#161b22] dark:border-[#21262d]">
         <div class="config-section-head flex items-center gap-3 mb-5">
-          <div class="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+          <div class="w-10 h-10 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 flex items-center justify-center shrink-0">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
           </div>
           <div>
@@ -636,7 +633,7 @@
             <input type="hidden" name="horario_set" value="1">
             <div class="flex items-center justify-between mb-1 flex-wrap gap-2">
               <label class="config-label !mb-0">Horario de atención</label>
-              <button type="button" onclick="copiarHorarioATodos()" class="text-xs font-bold text-blue-600 hover:text-blue-700">Copiar Lunes → días abiertos</button>
+              <button type="button" onclick="copiarHorarioATodos()" class="text-xs font-bold text-neutral-600 hover:text-neutral-800">Copiar Lunes → días abiertos</button>
             </div>
             <p class="text-xs text-slate-400 dark:text-slate-500 mb-3">Enciende los días que abres y marca su horario.</p>
             <% const diasSemana = [['1','Lunes'],['2','Martes'],['3','Miércoles'],['4','Jueves'],['5','Viernes'],['6','Sábado'],['7','Domingo']]; %>
@@ -648,9 +645,9 @@
                     <span class="track"><span class="thumb"></span></span>
                   </label>
                   <span class="w-20 shrink-0 text-xs font-bold <%= isOpen ? 'text-slate-700 dark:text-slate-200' : 'text-slate-400 dark:text-slate-500' %>"><%= d[1] %></span>
-                  <input type="time" name="h_open_<%= d[0] %>" value="<%= diaData ? diaData.o : '' %>" <%= isOpen ? '' : 'disabled' %> class="flex-1 min-w-0 border border-slate-200 dark:border-[#30363d] rounded-lg px-2 py-1.5 text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-40">
+                  <input type="time" name="h_open_<%= d[0] %>" value="<%= diaData ? diaData.o : '' %>" <%= isOpen ? '' : 'disabled' %> class="flex-1 min-w-0 border border-slate-200 dark:border-[#30363d] rounded-lg px-2 py-1.5 text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-neutral-400 disabled:opacity-40">
                   <span class="text-slate-400 text-xs shrink-0">a</span>
-                  <input type="time" name="h_close_<%= d[0] %>" value="<%= diaData ? diaData.c : '' %>" <%= isOpen ? '' : 'disabled' %> class="flex-1 min-w-0 border border-slate-200 dark:border-[#30363d] rounded-lg px-2 py-1.5 text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-40">
+                  <input type="time" name="h_close_<%= d[0] %>" value="<%= diaData ? diaData.c : '' %>" <%= isOpen ? '' : 'disabled' %> class="flex-1 min-w-0 border border-slate-200 dark:border-[#30363d] rounded-lg px-2 py-1.5 text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-neutral-400 disabled:opacity-40">
                 </div>
               <% }) %>
             </div>
@@ -707,12 +704,12 @@
               <input name="campaign_text" value="<%= (biz.sections && biz.sections.indexOf('campaign') !== -1 && (JSON.parse(biz.sections||'{}').campaign||{}).text) || '' %>" maxlength="120" class="config-input" placeholder="🔥 Buen Fin: -30% en toda la tienda">
               <div class="flex items-center gap-2 mt-2">
                 <label class="text-xs font-semibold text-slate-600 dark:text-slate-300 shrink-0">Termina el</label>
-                <input name="campaign_ends" type="date" value="<%= (biz.sections && (JSON.parse(biz.sections||'{}').campaign||{}).ends) || '' %>" class="border border-slate-200 dark:border-[#30363d] rounded-lg px-2 py-1.5 text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <input name="campaign_ends" type="date" value="<%= (biz.sections && (JSON.parse(biz.sections||'{}').campaign||{}).ends) || '' %>" class="border border-slate-200 dark:border-[#30363d] rounded-lg px-2 py-1.5 text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-neutral-400">
                 <span class="text-[11px] text-slate-400">(opcional — muestra cuenta regresiva)</span>
               </div>
             </div>
             <div class="flex flex-wrap gap-2 mt-1">
-              <button type="button" onclick="faqAgregarFila()" class="m-btn m-btn-outline m-btn-sm !text-blue-600 dark:!text-[#8ab4f8] dark:!border-[#8ab4f8] dark:hover:!bg-blue-500/10">
+              <button type="button" onclick="faqAgregarFila()" class="m-btn m-btn-outline m-btn-sm !text-neutral-700 dark:!text-[#d4d4d4] dark:!border-[#d4d4d4] dark:hover:!bg-neutral-500/10">
                 <svg class="config-ui-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg> Agregar pregunta
               </button>
               <button type="button" onclick="faqCargarEjemplos()" class="m-btn m-btn-outline m-btn-sm !text-amber-600 dark:!text-amber-400 dark:!border-amber-700 dark:hover:!bg-amber-500/10">
@@ -722,7 +719,7 @@
           </div>
 
           <div class="flex gap-3 pt-2">
-            <button class="m-btn m-btn-filled flex-1 !min-h-11 dark:bg-[#8ab4f8] dark:text-[#062e6f] dark:hover:bg-[#a0c4ff]">
+            <button class="m-btn m-btn-filled flex-1 !min-h-11 dark:bg-[#d4d4d4] dark:text-[#062e6f] dark:hover:bg-[#a0c4ff]">
               Guardar cambios
             </button>
           </div>
@@ -760,7 +757,7 @@
             <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
               <% CAT_DESIGNS.forEach(function(d) { %>
               <% var t = d.tokens; %>
-              <label class="cat-design-card relative block cursor-pointer rounded-2xl border-2 transition overflow-hidden <%= catDesign.id === d.id ? 'border-blue-500' : 'border-slate-200 dark:border-[#30363d] hover:border-slate-300 dark:hover:border-[#3d444d]' %>">
+              <label class="cat-design-card relative block cursor-pointer rounded-2xl border-2 transition overflow-hidden <%= catDesign.id === d.id ? 'border-neutral-800' : 'border-slate-200 dark:border-[#30363d] hover:border-slate-300 dark:hover:border-[#3d444d]' %>">
                 <input type="radio" name="catalog_design" value="<%= d.id %>" class="sr-only" <%= catDesign.id === d.id ? 'checked' : '' %>>
 
                 <!-- Preview: mini tarjeta de producto renderizada con la paleta y tipografía reales del estilo -->
@@ -778,7 +775,7 @@
                 <div class="p-3">
                   <div class="flex items-center justify-between">
                     <span class="text-sm"><%= d.emoji %></span>
-                    <% if (catDesign.id === d.id) { %><span class="text-[10px] font-black uppercase tracking-wider text-blue-600 bg-blue-100 dark:bg-blue-900/40 dark:text-blue-300 px-2 py-0.5 rounded-full">En uso</span><% } %>
+                    <% if (catDesign.id === d.id) { %><span class="text-[10px] font-black uppercase tracking-wider text-neutral-700 bg-neutral-100 dark:bg-neutral-800 dark:text-neutral-300 px-2 py-0.5 rounded-full">En uso</span><% } %>
                   </div>
                   <p class="font-extrabold text-sm text-slate-900 dark:text-white mt-1"><%= d.name %></p>
                   <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5"><%= d.desc %></p>
@@ -797,7 +794,7 @@
             .cdp-heading { font-size:12px; font-weight:700; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
             .cdp-body { font-size:11px; margin-top:2px; }
             .cdp-btn { width:26px; height:26px; flex-shrink:0; }
-            .cat-design-card.border-blue-500 { box-shadow:0 0 0 3px rgba(59,130,246,.15); }
+            .cat-design-card.border-neutral-800 { box-shadow:0 0 0 3px rgba(44,44,46,.15); }
           </style>
           <script>
             (function () {
@@ -809,9 +806,9 @@
                 r.addEventListener('change', function () {
                   form.querySelectorAll('.cat-design-card').forEach(function (c) {
                     var on = c.querySelector('input').checked;
-                    c.classList.toggle('border-blue-500', on);
-                    c.classList.toggle('bg-blue-50/40', on);
-                    c.classList.toggle('dark:bg-blue-900/10', on);
+                    c.classList.toggle('border-neutral-800', on);
+                    c.classList.toggle('bg-neutral-100/40', on);
+                    c.classList.toggle('dark:bg-neutral-800/40', on);
                     c.classList.toggle('border-slate-200', !on);
                     c.classList.toggle('dark:border-[#30363d]', !on);
                   });
@@ -861,7 +858,7 @@
           </div>
 
           <div class="flex gap-3 pt-2">
-            <button class="m-btn m-btn-filled flex-1 !min-h-11 dark:bg-[#8ab4f8] dark:text-[#062e6f] dark:hover:bg-[#a0c4ff]">
+            <button class="m-btn m-btn-filled flex-1 !min-h-11 dark:bg-[#d4d4d4] dark:text-[#062e6f] dark:hover:bg-[#a0c4ff]">
               Guardar cambios
             </button>
           </div>
@@ -890,7 +887,7 @@
             <label><span class="config-label">PIN nuevo</span><input name="pin_nuevo" type="password" inputmode="numeric" autocomplete="new-password" placeholder="6 a 12 dígitos" class="config-input" required></label>
             <label><span class="config-label">Confirmar PIN</span><input name="pin_repite" type="password" inputmode="numeric" autocomplete="new-password" placeholder="Repite el PIN nuevo" class="config-input" required></label>
           </div>
-          <button class="m-btn m-btn-filled m-btn-sm dark:bg-[#8ab4f8] dark:text-[#062e6f] dark:hover:bg-[#a0c4ff]">
+          <button class="m-btn m-btn-filled m-btn-sm dark:bg-[#d4d4d4] dark:text-[#062e6f] dark:hover:bg-[#a0c4ff]">
             Cambiar PIN
           </button>
         </form>

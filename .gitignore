@@ -2,10 +2,23 @@
 node_modules/
 
 # ================= Secretos / entorno =================
-.env
-.env.local
-.env.*.local
-# (la plantilla .env.example SÍ se versiona)
+# Cualquier variante de .env queda fuera (.env, .env.local, .env.production,
+# .env.docker, etc.) — solo se permite explícitamente la plantilla de ejemplo.
+.env*
+!.env.example
+
+# Credenciales, llaves y certificados sueltos (por si algún día aparecen)
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+id_rsa*
+*.pgp
+credentials.json
+secrets.json
+docker-compose.override.yml
+docker-compose.*.local.yml
 
 # ================= Base de datos =================
 # Ya no se usa SQLite, pero si regresa no debe versionarse:
@@ -37,6 +50,9 @@ yarn-error.log*
 
 # ================= Sesiones de Freebuff (previews, run-doc, logs) =================
 .freebuff/
+
+# ================= Sesiones de Impeccable (config local, capturas de review) =================
+.impeccable/
 
 # ================= Archivos de trabajo temporales / basura =================
 cookies*.txt

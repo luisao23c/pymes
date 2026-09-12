@@ -1,0 +1,29 @@
+<!--
+  Encabezado estándar de página administrativa: icono en cuadro redondeado +
+  título + subtítulo, con acciones opcionales a la derecha. Antes esta misma
+  marca (icono/color/tamaños) estaba copiada y pegada en cada vista — cambiar
+  un detalle significaba editarlo archivo por archivo. Ahora se edita aquí
+  una sola vez y se refleja en todas las páginas que lo usan.
+
+  Uso: include('admin/page-header', { icon, title, subtitle, actions })
+    icon:     "d" del <path> del ícono (viewBox 24x24, stroke)
+    title:    texto del título
+    subtitle: opcional, admite HTML (<b>, etc.)
+    actions:  opcional, HTML crudo para botones a la derecha
+-->
+<%
+const _phActions = typeof actions !== 'undefined' ? actions : '';
+const _phSubtitle = typeof subtitle !== 'undefined' ? subtitle : '';
+%>
+<div class="admin-page-header flex items-center <%= _phActions ? 'justify-between flex-wrap gap-2' : '' %> mb-4">
+  <div class="admin-page-header__identity flex items-center gap-3">
+    <div class="admin-page-header__icon w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style="background:rgba(44,44,46,.08);color:var(--ap-accent-text)">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8"><path d="<%= icon %>"/></svg>
+    </div>
+    <div>
+      <h1 class="text-lg md:text-xl font-extrabold tracking-tight" style="color:var(--ap-text)"><%= title %></h1>
+      <% if (_phSubtitle) { %><p class="text-xs mt-0.5" style="color:var(--ap-text-sec)"><%- _phSubtitle %></p><% } %>
+    </div>
+  </div>
+  <% if (_phActions) { %><div class="admin-page-header__actions shrink-0"><%- _phActions %></div><% } %>
+</div>

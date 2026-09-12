@@ -12,7 +12,7 @@
     { id: 'config', label: 'Configuración', show: () => has('config'), href: '/' + biz.slug + '/admin/config', icon: 'M4 6h16M4 12h16M4 18h10M14 18h6' },
     { id: 'planes', label: 'Planes', show: () => has('config'), href: '/' + biz.slug + '/admin/planes', icon: 'M5 3h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2zm4 12h6m-6-4h6m-6-4h6' }
   ].filter(it => it.show());
-  const avatar = biz.logo || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(biz.name) + '&background=4f46e5&color=fff');
+  const avatar = biz.logo || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(biz.name) + '&background=17324a&color=fff');
   const isPro = biz.plan === 'pro';
   const esEmpleado = typeof isEmployee !== 'undefined' && isEmployee;
 %>
@@ -34,50 +34,42 @@ SIDEBAR NUEVO (diseño totalmente distinto)
 <!-- Overlay móvil -->
 <div class="sidebar-overlay" onclick="closeSidebarMobile()"></div>
 
-<aside class="fixed inset-y-0 left-0 w-56 backdrop-blur-sm hidden md:flex flex-col z-40 transition-all duration-300" style="background:var(--ap-card);border-right:1px solid var(--ap-border);color:var(--ap-text);box-shadow:var(--ap-shadow-md)">
-  
-  <!-- Perfil: logo + nombre + plan, alineado horizontalmente -->
-  <div class="px-4 pt-5 pb-3 shrink-0" style="border-bottom:1px solid var(--ap-border)">
+<aside class="fixed inset-y-0 left-0 w-60 hidden md:flex flex-col z-40 transition-all duration-300" style="background:var(--ap-card);border-right:1px solid var(--ap-border);color:var(--ap-text)">
+
+  <!-- Perfil: logo + nombre + plan (padding-right reserva el espacio del botón de colapsar,
+       que es position:fixed y no empuja el layout por sí solo) -->
+  <div class="pl-5 pr-14 pt-6 pb-5 shrink-0" style="border-bottom:1px solid var(--ap-border)">
     <div class="flex items-center gap-3">
-      <div class="relative shrink-0">
-        <img src="<%= avatar %>" class="w-10 h-10 rounded-xl object-cover ring-2 ring-white/20 dark:ring-slate-700/30 shadow-sm">
-        <span class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-400 ring-2 ring-white dark:ring-slate-900"></span>
-      </div>
+      <img src="<%= avatar %>" class="w-9 h-9 rounded-lg object-cover shrink-0" style="border:1px solid var(--ap-border)">
       <div class="min-w-0 flex-1">
-        <p class="font-semibold text-sm truncate leading-tight"><%= esEmpleado ? (typeof empName !== 'undefined' ? empName : 'Empleado') : biz.name %></p>
-        <span class="inline-block text-[10px] font-bold tracking-wide mt-0.5 px-2 py-0.5 rounded-full <%= esEmpleado ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : (isPro ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400') %>">
-          <%= esEmpleado ? 'EMPLEADO' : (isPro ? '★ PRO' : (biz.plan === 'demo' ? 'DEMO' : 'GRATIS')) %>
-        </span>
+        <p class="font-semibold text-[13.5px] truncate leading-tight" style="color:var(--ap-text)"><%= esEmpleado ? (typeof empName !== 'undefined' ? empName : 'Empleado') : biz.name %></p>
+        <p class="text-[10.5px] font-semibold uppercase tracking-[0.1em] mt-1" style="color:<%= isPro ? 'var(--ap-accent-text)' : 'var(--ap-text-sec)' %>">
+          <%= esEmpleado ? 'Empleado' : (isPro ? 'Plan Pro' : (biz.plan === 'demo' ? 'Demo' : 'Plan gratis')) %>
+        </p>
       </div>
     </div>
   </div>
 
-  <!-- Enlaces principales (centrados, estilo botón) -->
-  <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto m-scroll">
+  <!-- Enlaces principales -->
+  <nav class="m-sidebar flex-1 px-3 py-5 space-y-0.5 overflow-y-auto m-scroll">
     <% items.forEach(it => { %>
       <% const act = active === it.id; %>
       <a href="<%= it.href %>"
-         class="m-ripple group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200
+         class="m-ripple group flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13.5px] font-medium transition-colors duration-150
                 <%= act ? 'm-active-nav' : '' %>" style="<%= act ? '' : 'color:var(--ap-text-sec)' %>">
-        <span class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition"
-                     style="<%= act ? 'background:rgba(255,255,255,0.2);color:#fff' : 'background:transparent;color:var(--ap-text-sec)' %>">
-          <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="1.9"><path d="<%= it.icon %>"/></svg>
-        </span>
+        <svg class="w-[17px] h-[17px] shrink-0" fill="none" stroke="currentColor" stroke-width="1.75"><path d="<%= it.icon %>"/></svg>
         <span class="flex-1"><%= it.label %></span>
         <% if (it.id === 'panel') { %><span id="new-orders-badge" style="display:none" class="min-w-5 h-5 px-1.5 rounded-full bg-red-500 text-white text-[10px] font-black items-center justify-center">0</span><% } %>
         <% if (it.id === 'productos') { %><span id="low-stock-badge" style="display:<%= (typeof lowStockCount !== 'undefined' && lowStockCount > 0) ? 'flex' : 'none' %>" class="min-w-5 h-5 px-1.5 rounded-full bg-red-500 text-white text-[10px] font-black items-center justify-center" title="Productos con stock bajo o agotado"><%= (typeof lowStockCount !== 'undefined') ? lowStockCount : 0 %></span><% } %>
-        <% if (act) { %>
-          <span class="w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_8px_2px_rgba(255,255,255,.3)]"></span>
-        <% } %>
       </a>
     <% }) %>
   </nav>
 
   <!-- Pie: opciones secundarias (modo oscuro, salir) -->
-  <div class="px-3 pb-3 space-y-2 pt-2" style="border-top:1px solid var(--ap-border)">
-    <div class="flex items-center justify-between px-2 py-1.5">
-      <span class="flex items-center gap-2 text-xs font-medium" style="color:var(--ap-text-sec)">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12.8A9 9 0 1111.2 3 7 7 0 0021 12.8z"/></svg>
+  <div class="px-3 pb-5 space-y-1 pt-3" style="border-top:1px solid var(--ap-border)">
+    <div class="flex items-center justify-between px-3 py-2">
+      <span class="flex items-center gap-2.5 text-[13px] font-medium" style="color:var(--ap-text-sec)">
+        <svg class="w-[17px] h-[17px]" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M21 12.8A9 9 0 1111.2 3 7 7 0 0021 12.8z"/></svg>
         Modo oscuro
       </span>
       <button type="button" onclick="toggleDark()" class="m-switch m-ripple">
@@ -87,8 +79,9 @@ SIDEBAR NUEVO (diseño totalmente distinto)
     </div>
 
     <a href="/<%= biz.slug %>/admin/salir"
-       class="m-ripple flex items-center gap-3 px-2 py-2 rounded-xl text-xs font-semibold" style="color:#b43232">
-      <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4m7 14l5-5-5-5m5 5H9"/></svg>
+       class="m-ripple flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors" style="color:var(--ap-text-sec)"
+       onmouseover="this.style.color='#b43232'" onmouseout="this.style.color='var(--ap-text-sec)'">
+      <svg class="w-[17px] h-[17px] shrink-0" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4m7 14l5-5-5-5m5 5H9"/></svg>
       Salir
     </a>
   </div>
@@ -215,22 +208,22 @@ SCRIPT: Toggle modo oscuro
 <!-- ============================================================
 BARRA SUPERIOR MÓVIL (sin cambios, solo para móvil)
 ============================================================ -->
-<div class="md:hidden sticky top-0 z-40 backdrop-blur-sm" style="background:var(--ap-card);border-bottom:1px solid var(--ap-border);color:var(--ap-text);box-shadow:var(--ap-shadow)">
-  <div class="flex items-center justify-between px-4 h-14">
-    <a href="<%= items.length ? items[0].href : '/' + biz.slug + '/admin/panel' %>" class="flex items-center gap-2 min-w-0">
+<header class="admin-mobile-topbar md:hidden" style="color:var(--ap-text)">
+  <div class="admin-mobile-topbar__inner flex items-center justify-between">
+    <a href="<%= items.length ? items[0].href : '/' + biz.slug + '/admin/panel' %>" class="admin-mobile-topbar__brand flex items-center gap-2 min-w-0" aria-label="Inicio del panel de <%= biz.name %>">
       <img src="<%= avatar %>" class="w-8 h-8 rounded-lg object-cover shrink-0">
       <span class="font-extrabold text-sm truncate"><%= biz.name %></span>
     </a>
-    <div class="flex items-center gap-1">
-      <a href="/<%= biz.slug %>" target="_blank" class="p-2 text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 rounded-lg transition" title="Ver catálogo">
+    <div class="admin-mobile-topbar__actions">
+      <a href="/<%= biz.slug %>" target="_blank" class="admin-mobile-topbar__action" title="Ver catálogo" aria-label="Ver catálogo público">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0zM2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z"/></svg>
       </a>
-      <a href="/<%= biz.slug %>/admin/salir" class="p-2 text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition" title="Salir">
+      <a href="/<%= biz.slug %>/admin/salir" class="admin-mobile-topbar__action" title="Salir" aria-label="Cerrar sesión">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4m7 14l5-5-5-5m5 5H9"/></svg>
       </a>
     </div>
   </div>
-</div>
+</header>
 
 <!-- ============================================================
 BOTTOM NAV MÓVIL (máx 4 opciones + "Más")
@@ -238,16 +231,16 @@ BOTTOM NAV MÓVIL (máx 4 opciones + "Más")
 <% const PRIO = { panel:0, productos:1, clientes:2, proveedores:3, config:4, importar:5, empleados:6, planes:7 }; %>
 <% const navItems = items.slice().sort((a, b) => ((PRIO[a.id] !== undefined ? PRIO[a.id] : 99) - (PRIO[b.id] !== undefined ? PRIO[b.id] : 99))); %>
 <% const mainNav = navItems.slice(0, 4); const moreNav = navItems.slice(4); %>
-<nav class="m-bottomnav md:hidden m-scroll">
+<nav class="m-bottomnav md:hidden m-scroll" aria-label="Navegación principal">
   <div class="flex w-full">
     <% mainNav.forEach(it => { %>
-      <a href="<%= it.href %>" class="m-ripple <%= active === it.id ? 'm-active' : '' %>">
+      <a href="<%= it.href %>" class="m-ripple <%= active === it.id ? 'm-active' : '' %>" <%= active === it.id ? 'aria-current="page"' : '' %>>
         <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8"><path d="<%= it.icon %>"/></svg>
         <span><%= it.label %></span>
       </a>
     <% }) %>
     <% if (moreNav.length) { %>
-      <button type="button" class="m-ripple <%= moreNav.some(x => x.id === active) ? 'm-active' : '' %>" onclick="abrirMasMenu()">
+      <button type="button" class="m-ripple <%= moreNav.some(x => x.id === active) ? 'm-active' : '' %>" onclick="abrirMasMenu()" aria-controls="mas-menu" aria-expanded="false" id="mas-menu-trigger">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z"/></svg>
         <span>Más</span>
       </button>
@@ -256,25 +249,43 @@ BOTTOM NAV MÓVIL (máx 4 opciones + "Más")
 </nav>
 
 <!-- Menú "Más" (móvil) -->
-<div id="mas-menu" class="md:hidden fixed inset-0 z-[60] hidden">
-  <div class="absolute inset-0 bg-black/50" onclick="document.getElementById('mas-menu').classList.add('hidden')"></div>
-  <div class="absolute bottom-0 left-0 right-0 bg-white dark:bg-slate-900 rounded-t-2xl p-4 pb-8 max-h-[72vh] overflow-y-auto m-scroll">
-    <div class="flex items-center justify-between mb-3">
-      <p class="font-extrabold text-slate-800 dark:text-white text-sm">Más opciones</p>
-      <button type="button" onclick="document.getElementById('mas-menu').classList.add('hidden')" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 font-bold">✕</button>
+<div id="mas-menu" class="md:hidden fixed inset-0 z-[60] hidden" role="dialog" aria-modal="true" aria-labelledby="mas-menu-title">
+  <div class="mobile-sheet-backdrop absolute inset-0 bg-black/50" onclick="cerrarMasMenu()"></div>
+  <div class="mobile-sheet-panel absolute bottom-0 left-0 right-0 rounded-t-2xl p-5 pb-8 max-h-[72vh] overflow-y-auto m-scroll" style="background:var(--ap-card)">
+    <span class="mobile-sheet-handle" aria-hidden="true"></span>
+    <div class="flex items-center justify-between mb-4">
+      <p id="mas-menu-title" class="font-semibold text-[15px]" style="color:var(--ap-text)">Más opciones</p>
+      <button type="button" onclick="cerrarMasMenu()" class="w-11 h-11 rounded-xl grid place-items-center" style="background:var(--ap-bg);color:var(--ap-text-sec)" aria-label="Cerrar más opciones"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 5 8 8m0-8-8 8"/></svg></button>
     </div>
-    <div class="grid grid-cols-3 gap-2">
+    <div class="mobile-more-grid grid grid-cols-3 gap-2">
       <% moreNav.forEach(it => { %>
-        <a href="<%= it.href %>" class="flex flex-col items-center gap-1.5 py-3 rounded-xl <%= active === it.id ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300' %>">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8"><path d="<%= it.icon %>"/></svg>
-          <span class="text-[11px] font-bold text-center leading-tight"><%= it.label %></span>
+        <a href="<%= it.href %>" class="flex flex-col items-center gap-2 py-3.5 rounded-lg" style="<%= active === it.id ? 'background:var(--ap-accent);color:#fff' : 'background:var(--ap-bg);color:var(--ap-text-sec)' %>">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.75"><path d="<%= it.icon %>"/></svg>
+          <span class="text-[11px] font-medium text-center leading-tight"><%= it.label %></span>
         </a>
       <% }) %>
     </div>
   </div>
 </div>
 <script>
-  function abrirMasMenu() { var m = document.getElementById('mas-menu'); if (m) m.classList.remove('hidden'); }
+  function abrirMasMenu() {
+    var m = document.getElementById('mas-menu');
+    var trigger = document.getElementById('mas-menu-trigger');
+    if (!m) return;
+    m.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    if (trigger) trigger.setAttribute('aria-expanded', 'true');
+    var close = m.querySelector('[aria-label="Cerrar más opciones"]');
+    if (close) close.focus();
+  }
+  function cerrarMasMenu() {
+    var m = document.getElementById('mas-menu');
+    var trigger = document.getElementById('mas-menu-trigger');
+    if (!m) return;
+    m.classList.add('hidden');
+    document.body.style.overflow = '';
+    if (trigger) { trigger.setAttribute('aria-expanded', 'false'); trigger.focus(); }
+  }
 </script>
 
 <script>

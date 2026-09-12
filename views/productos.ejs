@@ -93,15 +93,15 @@
       <% } %>
 
       <% if (biz.plan === 'free') { %>
-        <div class="mb-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl shadow-[var(--md-elevation-1)] px-4 py-3 flex items-center justify-between flex-wrap gap-2 m-ripple">
+        <div class="mb-3 bg-gradient-to-r from-neutral-800 to-neutral-800 text-white rounded-2xl shadow-[var(--md-elevation-1)] px-4 py-3 flex items-center justify-between flex-wrap gap-2 m-ripple">
           <div class="flex items-center gap-3">
             <span class="text-xl">🚀</span>
             <div>
               <p class="font-extrabold text-sm">Plan Gratuito · <%= allProducts.length %>/<%= planMax %> productos</p>
-              <p class="text-[11px] text-blue-100 mt-0.5">Productos ilimitados y atributos con el plan Pro.</p>
+              <p class="text-[11px] text-neutral-100 mt-0.5">Productos ilimitados y atributos con el plan Pro.</p>
             </div>
           </div>
-          <a href="/<%= biz.slug %>/admin/config" class="m-btn m-btn-filled m-btn-sm !bg-white !text-blue-700">Mejorar plan</a>
+          <a href="/<%= biz.slug %>/admin/config" class="m-btn m-btn-filled m-btn-sm !bg-white !text-neutral-800">Mejorar plan</a>
         </div>
       <% } %>
 
@@ -117,7 +117,7 @@
         <div class="flex items-center justify-between flex-wrap gap-2 mb-2">
           <h2 class="font-extrabold text-slate-900 text-sm">Catálogo <span class="m-badge m-badge-neutral !ml-1.5"><%= allProducts.length %></span></h2>
           <div class="relative">
-            <input id="prod-search" type="search" placeholder="Buscar producto…" aria-label="Buscar productos por nombre, etiqueta o descripción" autocomplete="off" class="w-36 sm:w-56 border border-slate-200 rounded-full pl-9 pr-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+            <input id="prod-search" type="search" placeholder="Buscar producto…" aria-label="Buscar productos por nombre, etiqueta o descripción" autocomplete="off" class="w-36 sm:w-56 border border-slate-200 rounded-full pl-9 pr-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-neutral-1000 focus:border-neutral-1000 transition">
             <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z"/></svg>
           </div>
         </div>
@@ -191,7 +191,7 @@
                     <i class="bi bi-qr-code text-base leading-none"></i>
                   </a>
                   <% if (puedeEditarP) { %>
-                  <button class="m-btn-icon !w-8 !h-8 hover:!bg-blue-50 hover:!text-blue-600" title="Editar" onclick="editarProducto(this.closest('[data-edit-id]'))">
+                  <button class="m-btn-icon !w-8 !h-8 hover:!bg-neutral-100 hover:!text-neutral-800" title="Editar" onclick="editarProducto(this.closest('[data-edit-id]'))">
                     <i class="bi bi-pencil-square text-base leading-none"></i>
                   </button>
                   <% } %>
@@ -281,7 +281,7 @@
                   <option value="<%= c.id %>"><%= c.name %></option>
                 <% }) %>
               </select>
-              <p id="f-cat-hint" class="text-[11px] text-slate-400 mt-1 <%= categories.length ? 'hidden' : '' %>"><% if (puedeCategorias) { %>Aún no tienes categorías. Créala en la pestaña <button type="button" class="font-bold text-blue-600 hover:underline" onclick="switchCrudTab('categorias')">Categorías</button>.<% } else { %>Aún no hay categorías. Pídele al dueño de la tienda que las cree.<% } %></p>
+              <p id="f-cat-hint" class="text-[11px] text-slate-400 mt-1 <%= categories.length ? 'hidden' : '' %>"><% if (puedeCategorias) { %>Aún no tienes categorías. Créala en la pestaña <button type="button" class="font-bold text-neutral-800 hover:underline" onclick="switchCrudTab('categorias')">Categorías</button>.<% } else { %>Aún no hay categorías. Pídele al dueño de la tienda que las cree.<% } %></p>
             </div>
             <div class="m-field">
               <label for="f-price">Precio *</label>
@@ -376,7 +376,7 @@
           <div data-step-pane="2" class="md:col-span-2 hidden">
             <label class="font-bold text-xs text-slate-600 mb-1.5 block">Fotos del producto <span class="font-normal text-slate-400">(puedes subir varias — la primera es la portada)</span></label>
             <div class="grid grid-cols-3 sm:grid-cols-4 gap-2" id="f-fotos"></div>
-            <label class="group cursor-pointer border-2 border-dashed border-slate-200 hover:border-[var(--md-primary)] hover:bg-blue-50/30 rounded-2xl p-4 text-center transition block mt-2">
+            <label class="group cursor-pointer border-2 border-dashed border-slate-200 hover:border-[var(--md-primary)] hover:bg-neutral-100/30 rounded-2xl p-4 text-center transition block mt-2">
               <input id="f-fotos-input" type="file" accept="image/*" multiple class="hidden" onchange="subirVarias('f', this)">
               <div class="text-2xl mb-1 group-hover:scale-110 transition">📷</div>
               <p class="text-xs font-bold text-slate-600">Subir fotos</p>
@@ -426,7 +426,7 @@
         <div class="flex items-center justify-between flex-wrap gap-2 mb-3">
           <h3 class="font-bold text-sm text-slate-700">Categorías <span class="m-badge m-badge-neutral !ml-1.5"><span id="cat-count"><%= categories.length %></span></span></h3>
           <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-            <input id="cat-name" placeholder="Nueva categoría" class="w-full sm:w-52 border border-slate-200 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+            <input id="cat-name" placeholder="Nueva categoría" class="w-full sm:w-52 border border-slate-200 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-1000 focus:border-neutral-1000 transition">
             <button type="button" onclick="agregarCategoria()" class="m-btn m-btn-tonal m-btn-sm shrink-0">Crear</button>
           </div>
         </div>
@@ -442,8 +442,8 @@
           <h3 class="font-bold text-sm text-slate-700">Mis atributos <span class="m-badge m-badge-neutral !ml-1.5"><span id="attr-count">0</span></span></h3>
         </div>
         <div class="flex flex-col sm:flex-row gap-2 w-full mb-3">
-          <input id="attr-name" placeholder="Nombre (ej: Talla)" class="w-full sm:w-44 border border-slate-200 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
-          <input id="attr-values" placeholder="Valores separados por coma (XS, M, L)" class="w-full sm:flex-1 border border-slate-200 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+          <input id="attr-name" placeholder="Nombre (ej: Talla)" class="w-full sm:w-44 border border-slate-200 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-1000 focus:border-neutral-1000 transition">
+          <input id="attr-values" placeholder="Valores separados por coma (XS, M, L)" class="w-full sm:flex-1 border border-slate-200 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-1000 focus:border-neutral-1000 transition">
           <button type="button" onclick="agregarAtributo()" class="m-btn m-btn-tonal m-btn-sm shrink-0">Guardar</button>
         </div>
         <p class="text-[11px] text-slate-400 mb-3">Guárdalos una sola vez y úsalos en cualquier producto. Guardar con el mismo nombre actualiza los valores.</p>
@@ -495,8 +495,8 @@
     /* Tabs: Productos | Categorías | Atributos */
     .prod-tabs { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; background:var(--ap-card); border:1px solid var(--ap-border); padding:6px; border-radius:var(--ap-radius); box-shadow:var(--ap-shadow); }
     .prod-tab { display:inline-flex; align-items:center; gap:8px; padding:8px 14px; border-radius:12px; font-size:12px; font-weight:800; color:var(--ap-text-sec); background:transparent; border:none; cursor:pointer; transition:all .25s cubic-bezier(.22,1,.36,1); }
-    .prod-tab:hover { background:rgba(26,60,94,.06); color:var(--ap-text); }
-    .prod-tab.active { background:var(--ap-accent); color:#fff; box-shadow:0 4px 10px rgba(26,60,94,.25); }
+    .prod-tab:hover { background:rgba(44,44,46,.06); color:var(--ap-text); }
+    .prod-tab.active { background:var(--ap-accent); color:#fff; box-shadow:0 4px 10px rgba(44,44,46,.25); }
     .prod-tab .cnt { background:rgba(100,116,139,.14); color:var(--ap-text-sec); font-size:10px; font-weight:900; padding:1px 7px; border-radius:999px; transition:background .25s cubic-bezier(.22,1,.36,1), color .25s cubic-bezier(.22,1,.36,1); }
     .prod-tab.active .cnt { background:rgba(255,255,255,.22); color:#fff; }
     .prod-tab-panel { display:none; }
@@ -505,15 +505,12 @@
     #prod-loading { display:none; }
     .bg-checker { background-image: linear-gradient(45deg,#eef1f6 25%,transparent 25%),linear-gradient(-45deg,#eef1f6 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#eef1f6 75%),linear-gradient(-45deg,transparent 75%,#eef1f6 75%); background-size:16px 16px; background-position:0 0,0 8px,8px -8px,-8px 0; }
     .img-aspect { font-size:10px; font-weight:700; padding:4px 8px; border-radius:999px; border:1px solid #e2e8f0; color:#64748b; transition:all .2s cubic-bezier(.22,1,.36,1); }
-    .img-aspect.on { border-color:#2563eb; background:#eff6ff; color:#2563eb; }
+    .img-aspect.on { border-color:#2c2c2e; background:#f0f0f1; color:#2c2c2e; }
     #prod-grid > * { transition:opacity .2s cubic-bezier(.22,1,.36,1); }
 
     /* Catálogo visual con inspector lateral — dirección aprobada para esta superficie */
     .products-admin-page {
-      background-color:#f3f6f8;
-      background-image:
-        radial-gradient(circle at 88% 12%, rgba(109,220,230,.16), transparent 28rem),
-        radial-gradient(circle at 82% 58%, rgba(143,122,246,.10), transparent 26rem);
+      background-color:#f7f7f8;
     }
     .products-admin-page .prod-tabs {
       width:max-content;
@@ -528,16 +525,16 @@
     .products-admin-page .prod-tab {
       min-height:36px;
       padding:8px 15px;
-      border:1px solid rgba(23,62,99,.08);
+      border:1px solid rgba(44,44,46,.08);
       border-radius:12px;
       color:#46525b;
       background:rgba(255,255,255,.76);
-      box-shadow:0 6px 16px rgba(28,49,69,.07),0 1px 3px rgba(28,49,69,.05);
+      box-shadow:0 6px 16px rgba(20,24,31,.07),0 1px 3px rgba(20,24,31,.05);
     }
     .products-admin-page .prod-tab i { font-size:13px; }
     .products-admin-page .prod-tab.active {
-      background:linear-gradient(135deg,#173e63,#285679);
-      box-shadow:0 5px 13px rgba(23,62,99,.28);
+      background:#2c2c2e;
+      box-shadow:0 5px 13px rgba(44,44,46,.28);
     }
     .products-admin-page h1 { color:#151d23; letter-spacing:-.025em; }
     .products-workspace { min-width:0; }
@@ -548,30 +545,30 @@
     }
     .product-catalog > .flex:first-of-type {
       padding-bottom:10px;
-      border-bottom:1px solid rgba(23,62,99,.10);
+      border-bottom:1px solid rgba(44,44,46,.10);
     }
     .product-catalog #prod-search {
       min-height:36px;
       background:rgba(255,255,255,.86);
-      border-color:rgba(23,62,99,.12);
+      border-color:rgba(44,44,46,.12);
       color:#17232d;
-      box-shadow:0 3px 10px rgba(28,49,69,.04);
+      box-shadow:0 3px 10px rgba(20,24,31,.04);
     }
     .product-catalog #prod-search::placeholder { color:#687781; opacity:1; }
     .product-catalog #prod-filters { gap:6px; margin-bottom:14px; }
     .product-catalog #prod-filters .m-chip {
       min-height:30px;
       padding:0 11px;
-      border:1px solid rgba(23,62,99,.10);
+      border:1px solid rgba(44,44,46,.10);
       background:rgba(255,255,255,.66);
       color:#52616c;
-      box-shadow:0 2px 7px rgba(28,49,69,.035);
+      box-shadow:0 2px 7px rgba(20,24,31,.035);
     }
     .product-catalog #prod-filters .m-chip-selected {
       border-color:transparent;
-      background:#214b70 !important;
+      background:#454548 !important;
       color:#fff;
-      box-shadow:0 4px 10px rgba(23,62,99,.22);
+      box-shadow:0 4px 10px rgba(44,44,46,.22);
     }
     .product-result-summary {
       min-height:18px;
@@ -590,12 +587,12 @@
       gap:7px;
       text-align:center;
       color:#687781;
-      border:1px dashed rgba(23,62,99,.18);
+      border:1px dashed rgba(44,44,46,.18);
       border-radius:14px;
       background:rgba(255,255,255,.52);
     }
     .product-filter-empty.hidden { display:none; }
-    .product-filter-empty > i { font-size:22px; color:#214b70; }
+    .product-filter-empty > i { font-size:22px; color:#454548; }
     .product-filter-empty > strong { color:#27343d; font-size:14px; }
     .product-filter-empty > span { margin-bottom:7px; font-size:12px; }
     .product-pager {
@@ -612,7 +609,7 @@
       place-items:center;
       width:34px;
       height:34px;
-      border:1px solid rgba(23,62,99,.13);
+      border:1px solid rgba(44,44,46,.13);
       border-radius:10px;
       background:rgba(255,255,255,.78);
       color:#425461;
@@ -621,11 +618,11 @@
       transition:background .18s ease,color .18s ease,border-color .18s ease,transform .18s ease;
     }
     .product-page-arrow:not(:disabled):hover,
-    .product-page-number:hover { border-color:rgba(33,75,112,.32); background:#fff; transform:translateY(-1px); }
-    .product-page-number.is-current { border-color:#214b70; background:#214b70; color:#fff; }
+    .product-page-number:hover { border-color:rgba(44,44,46,.32); background:#fff; transform:translateY(-1px); }
+    .product-page-number.is-current { border-color:#454548; background:#454548; color:#fff; }
     .product-page-arrow:disabled { cursor:not-allowed; opacity:.38; }
     .product-page-arrow:focus-visible,
-    .product-page-number:focus-visible { outline:3px solid rgba(33,75,112,.20); outline-offset:2px; }
+    .product-page-number:focus-visible { outline:3px solid rgba(44,44,46,.20); outline-offset:2px; }
     .product-grid {
       display:grid;
       grid-template-columns:repeat(2,minmax(0,1fr));
@@ -639,17 +636,17 @@
       overflow:visible;
       border-radius:14px;
       background:var(--ap-card);
-      box-shadow:0 7px 20px rgba(28,49,69,.09), 0 2px 5px rgba(28,49,69,.05);
+      box-shadow:0 7px 20px rgba(20,24,31,.09), 0 2px 5px rgba(20,24,31,.05);
       transition:transform .24s cubic-bezier(.22,1,.36,1), box-shadow .24s cubic-bezier(.22,1,.36,1);
     }
     .product-card.hidden { display:none !important; }
     .product-card:hover {
       transform:translateY(-3px);
-      box-shadow:0 14px 28px rgba(28,49,69,.13), 0 3px 8px rgba(28,49,69,.06);
+      box-shadow:0 14px 28px rgba(20,24,31,.13), 0 3px 8px rgba(20,24,31,.06);
     }
     .product-card:focus-within {
       z-index:30;
-      box-shadow:0 0 0 3px rgba(33,75,112,.16), 0 12px 26px rgba(28,49,69,.12);
+      box-shadow:0 0 0 3px rgba(44,44,46,.16), 0 12px 26px rgba(20,24,31,.12);
     }
     .product-card:has(.product-card__more[open]) { z-index:30; }
     .product-card__main { display:block; min-width:0; }
@@ -683,8 +680,8 @@
       place-items:center;
       border-radius:9px;
       background:rgba(255,255,255,.92);
-      color:#214b70;
-      box-shadow:0 5px 14px rgba(28,49,69,.16);
+      color:#454548;
+      box-shadow:0 5px 14px rgba(20,24,31,.16);
       opacity:0;
       transform:translateY(4px);
       transition:opacity .2s ease,transform .2s cubic-bezier(.22,1,.36,1);
@@ -725,7 +722,7 @@
       border-radius:8px !important;
       color:#667681;
     }
-    .product-card__actions .m-btn-icon:hover { color:#214b70; background:#edf4f8; }
+    .product-card__actions .m-btn-icon:hover { color:#454548; background:#edf4f8; }
     .product-card__actions .m-switch { transform:scale(.86); transform-origin:center; }
     .product-card__more { position:relative; }
     .product-card__more > summary {
@@ -736,7 +733,7 @@
       user-select:none;
     }
     .product-card__more > summary::-webkit-details-marker { display:none; }
-    .product-card__more[open] > summary { color:#214b70; background:#edf4f8; }
+    .product-card__more[open] > summary { color:#454548; background:#edf4f8; }
     .product-card__menu {
       position:absolute;
       right:0;
@@ -744,10 +741,10 @@
       z-index:20;
       width:168px;
       padding:6px;
-      border:1px solid rgba(23,62,99,.10);
+      border:1px solid rgba(44,44,46,.10);
       border-radius:12px;
       background:var(--ap-card);
-      box-shadow:0 16px 34px rgba(28,49,69,.18),0 3px 8px rgba(28,49,69,.08);
+      box-shadow:0 16px 34px rgba(20,24,31,.18),0 3px 8px rgba(20,24,31,.08);
     }
     .product-card__menu form { display:block; }
     .product-card__menu button {
@@ -763,7 +760,7 @@
       font-weight:700;
       text-align:left;
     }
-    .product-card__menu button:hover { color:#214b70; background:#edf4f8; }
+    .product-card__menu button:hover { color:#454548; background:#edf4f8; }
     .product-card__menu button.danger { color:#b43232; }
     .product-card__menu button.danger:hover { background:#fff1f1; }
 
@@ -828,14 +825,13 @@
       color:#fff;
       box-shadow:0 5px 16px rgba(0,0,0,.22);
     }
-    .product-image-dialog__close:hover { background:#214b70; }
+    .product-image-dialog__close:hover { background:#454548; }
 
     .products-admin-page #nuevo-producto {
-      border:0;
+      border:1px solid rgba(44,44,46,.09);
       border-radius:15px;
-      background:
-        linear-gradient(145deg,rgba(230,250,250,.96),rgba(249,247,255,.98) 58%,rgba(238,234,255,.96));
-      box-shadow:0 16px 36px rgba(34,62,82,.14), 0 3px 8px rgba(34,62,82,.06);
+      background:#fff;
+      box-shadow:0 8px 24px rgba(20,24,31,.09);
     }
     .products-admin-page #nuevo-producto::before { display:none; }
     .products-admin-page #nuevo-producto:hover { transform:none; }
@@ -849,7 +845,7 @@
     .products-admin-page #nuevo-producto .m-field textarea,
     .products-admin-page #nuevo-producto .m-field .ss-btn {
       background:rgba(255,255,255,.78);
-      border-color:rgba(35,74,106,.16);
+      border-color:rgba(44,44,46,.16);
     }
     .products-admin-page #nuevo-producto .m-field input:focus,
     .products-admin-page #nuevo-producto .m-field select:focus,
@@ -862,7 +858,7 @@
     .products-admin-page .pf-tipo-card {
       min-height:76px;
       padding:10px;
-      border:1px solid rgba(35,74,106,.14);
+      border:1px solid rgba(44,44,46,.14);
       background:rgba(255,255,255,.60);
     }
     .products-admin-page .pf-tipo-card.active {
@@ -916,19 +912,19 @@
       .product-card__image-button { width:104px; height:104px; border-radius:14px 0 0 0; }
       .product-card__image { width:104px; height:104px; border-radius:14px 0 0 0; }
       .product-card__info { min-height:104px; padding:12px 10px 8px; }
-      .product-card__actions { padding:4px 7px 7px; border-top:1px solid rgba(23,62,99,.07); }
+      .product-card__actions { padding:4px 7px 7px; border-top:1px solid rgba(44,44,46,.07); }
       .products-admin-page #nuevo-producto { margin-top:18px; }
     }
     body.dark.products-admin-page {
-      background-color:#0d141a;
-      background-image:radial-gradient(circle at 88% 12%,rgba(52,124,145,.18),transparent 28rem);
+      background-color:#0d1117;
     }
     body.dark.products-admin-page .prod-tabs,
     body.dark.products-admin-page .product-card,
     body.dark.products-admin-page .product-card__info,
     body.dark.products-admin-page .product-card__actions { background:var(--ap-card); }
     body.dark.products-admin-page #nuevo-producto {
-      background:linear-gradient(145deg,#142329,#1b1c28 60%,#201c31);
+      background:#161b22;
+      border-color:rgba(255,255,255,.08);
     }
   </style>
 
@@ -1037,7 +1033,7 @@
               '<button type="button" class="var-attr-del text-slate-400 hover:text-red-500 font-bold px-1.5 shrink-0" title="Quitar atributo">✕</button>' +
             '</div>' +
             '<div class="var-values flex flex-wrap gap-1.5 items-center">' +
-              '<input type="text" placeholder="Valor + Enter (ej: XS)" class="var-val-input flex-1 min-w-[90px] text-xs bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-blue-400">' +
+              '<input type="text" placeholder="Valor + Enter (ej: XS)" class="var-val-input flex-1 min-w-[90px] text-xs bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-neutral-500">' +
             '</div>';
           var valuesWrap = row.querySelector('.var-values');
           var valInput = row.querySelector('.var-val-input');
@@ -1045,7 +1041,7 @@
             valuesWrap.querySelectorAll('.var-chip').forEach(function (c) { c.remove(); });
             attr.values.forEach(function (v, vi) {
               var chip = document.createElement('span');
-              chip.className = 'var-chip inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-xs font-bold px-2 py-0.5 rounded-full';
+              chip.className = 'var-chip inline-flex items-center gap-1 bg-neutral-100 text-neutral-800 text-xs font-bold px-2 py-0.5 rounded-full';
               chip.innerHTML = esc(v) + ' <button type="button" class="var-chip-del leading-none hover:text-red-500">✕</button>';
               chip.querySelector('.var-chip-del').onclick = function () { attr.values.splice(vi, 1); renderValues(); renderCombos(); save(); };
               valuesWrap.insertBefore(chip, valInput);
@@ -1076,7 +1072,7 @@
         var cs = combos();
         if (!cs.length) return;
         var m = document.createElement('p');
-        m.className = 'text-[11px] font-bold text-blue-600 bg-blue-50 border border-blue-100 rounded-lg px-2.5 py-1.5 mb-2';
+        m.className = 'text-[11px] font-bold text-neutral-800 bg-neutral-100 border border-neutral-100 rounded-lg px-2.5 py-1.5 mb-2';
         m.textContent = 'Sigue siendo 1 producto: una descripción para todos, y cada variante con su propia foto, precio y stock. Los atributos crean ' + cs.length + ' variante' + (cs.length === 1 ? '' : 's') + '.';
         cbox.appendChild(m);
         var t = document.createElement('p');
@@ -1103,19 +1099,19 @@
             '<span class="block text-[9px] font-bold text-white bg-black/60 truncate px-1 py-0.5">' + esc(label) + '</span>' +
             '<div class="flex items-center gap-1 px-1 py-1 bg-slate-50 border-t border-slate-100">' +
               '<span class="text-[9px] font-bold text-slate-400">$</span>' +
-              '<input type="number" min="0" step="0.01" placeholder="Precio" value="' + esc(pr) + '" class="combo-price w-full text-[10px] border border-slate-200 rounded px-1 py-0.5 focus:outline-none focus:border-blue-400" title="Precio de esta combinación (vacío = usa el del producto)">' +
+              '<input type="number" min="0" step="0.01" placeholder="Precio" value="' + esc(pr) + '" class="combo-price w-full text-[10px] border border-slate-200 rounded px-1 py-0.5 focus:outline-none focus:border-neutral-500" title="Precio de esta combinación (vacío = usa el del producto)">' +
             '</div>' +
             '<div class="flex items-center gap-1 px-1 py-1 bg-slate-50 border-t border-slate-100">' +
               '<span class="text-[9px] font-bold text-slate-400">Stock*</span>' +
-              '<input type="number" min="0" placeholder="0" value="' + esc(st) + '" class="combo-stock w-full text-[10px] border border-slate-200 rounded px-1 py-0.5 focus:outline-none focus:border-blue-400" title="Stock obligatorio de esta variante (0 = agotada)">' +
+              '<input type="number" min="0" placeholder="0" value="' + esc(st) + '" class="combo-stock w-full text-[10px] border border-slate-200 rounded px-1 py-0.5 focus:outline-none focus:border-neutral-500" title="Stock obligatorio de esta variante (0 = agotada)">' +
             '</div>' +
             '<div class="flex items-center gap-1 px-1 py-1 bg-slate-50 border-t border-slate-100">' +
               '<span class="text-[9px] font-bold text-slate-400">SKU</span>' +
-              '<input type="text" placeholder="—" value="' + esc(sk) + '" class="combo-sku w-full text-[10px] border border-slate-200 rounded px-1 py-0.5 focus:outline-none focus:border-blue-400">' +
+              '<input type="text" placeholder="—" value="' + esc(sk) + '" class="combo-sku w-full text-[10px] border border-slate-200 rounded px-1 py-0.5 focus:outline-none focus:border-neutral-500">' +
             '</div>' +
             '<div class="flex items-center gap-1 px-1 py-1 bg-slate-50 border-t border-slate-100">' +
               '<span class="text-[9px] font-bold text-slate-400">Barra</span>' +
-              '<input type="text" placeholder="—" value="' + esc(bc) + '" class="combo-barcode w-full text-[10px] border border-slate-200 rounded px-1 py-0.5 focus:outline-none focus:border-blue-400">' +
+              '<input type="text" placeholder="—" value="' + esc(bc) + '" class="combo-barcode w-full text-[10px] border border-slate-200 rounded px-1 py-0.5 focus:outline-none focus:border-neutral-500">' +
             '</div>';
           cell.querySelector('.aspect-square').onclick = function () { subirCombo(key); };
           var stInp = cell.querySelector('.combo-stock');
@@ -1194,7 +1190,7 @@
           '<img src="' + u + '" class="w-full h-full object-cover">' +
           (i === 0 ? '<span class="absolute top-1 left-1 text-[9px] font-black text-white bg-black/60 rounded-md px-1.5 py-0.5">Portada</span>' : '') +
           '<div class="absolute top-1 right-1 flex flex-col gap-1">' +
-            '<button type="button" title="Editar imagen" class="photo-edit w-6 h-6 rounded-full bg-black/50 text-white text-xs font-bold flex items-center justify-center hover:bg-blue-600 transition">✎</button>' +
+            '<button type="button" title="Editar imagen" class="photo-edit w-6 h-6 rounded-full bg-black/50 text-white text-xs font-bold flex items-center justify-center hover:bg-neutral-800 transition">✎</button>' +
             '<button type="button" title="Quitar" class="photo-del w-6 h-6 rounded-full bg-black/50 text-white text-xs font-bold flex items-center justify-center hover:bg-red-600 transition">✕</button>' +
           '</div>';
         w.querySelector('.photo-edit').addEventListener('click', function (e) { e.stopPropagation(); abrirEditorImagen(w); });
@@ -1580,7 +1576,7 @@
           h += '<div class="flex items-start gap-2 py-1.5 border-b border-slate-100">';
           h += '<span class="text-xs font-bold text-slate-700 w-16 shrink-0 pt-0.5">' + escHTML(a.name || '(sin nombre)') + '</span>';
           h += '<span class="flex flex-wrap gap-1">';
-          (a.values || []).forEach(function (v) { h += '<span class="text-[11px] bg-blue-50 text-blue-700 font-bold px-2 py-0.5 rounded-full">' + escHTML(v) + '</span>'; });
+          (a.values || []).forEach(function (v) { h += '<span class="text-[11px] bg-neutral-100 text-neutral-800 font-bold px-2 py-0.5 rounded-full">' + escHTML(v) + '</span>'; });
           h += '</span></div>';
         });
         var nCombos = 1;
@@ -1833,8 +1829,8 @@
         b.type = 'button';
         b.title = (isSel ? 'Quitar ' : 'Usar ') + t.name + ' (' + t.values.join(', ') + ')';
         b.className = isSel
-          ? 'tpl-pill inline-flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-full border transition border-blue-600 bg-blue-600 text-white'
-          : 'tpl-pill inline-flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-full border transition border-slate-200 bg-white text-slate-600 hover:border-blue-300 hover:bg-blue-50';
+          ? 'tpl-pill inline-flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-full border transition border-neutral-800 bg-neutral-800 text-white'
+          : 'tpl-pill inline-flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-full border transition border-slate-200 bg-white text-slate-600 hover:border-neutral-400 hover:bg-neutral-100';
         b.innerHTML = (isSel ? '✓ ' : '＋ ') + escHTML(t.name) + ' <span class="opacity-70 font-semibold">' + t.values.length + '</span>';
         b.onclick = function () {
           if (!ed) return;
@@ -1851,7 +1847,7 @@
           empty.textContent = 'Aún no tienes atributos guardados. Créalos en la pestaña ';
           var go = document.createElement('button');
           go.type = 'button';
-          go.className = 'font-bold text-blue-600 hover:underline';
+          go.className = 'font-bold text-neutral-800 hover:underline';
           go.textContent = 'Atributos';
           go.onclick = function () { switchCrudTab('atributos'); };
           empty.appendChild(go);
@@ -1927,7 +1923,7 @@
         info.innerHTML = '<b class="text-slate-700">' + escHTML(t.name) + '</b> <span class="text-slate-300">·</span> <span class="text-slate-500">' + t.values.map(escHTML).join(', ') + '</span>';
         var editar = document.createElement('button');
         editar.type = 'button';
-        editar.className = 'text-slate-400 hover:text-blue-500 font-bold px-0.5';
+        editar.className = 'text-slate-400 hover:text-neutral-1000 font-bold px-0.5';
         editar.title = 'Editar atributo (nombre y valores)';
         editar.textContent = '✎';
         editar.onclick = function () { editarAtributo(t.id, t.name, t.values, chip); };
@@ -1994,7 +1990,7 @@
         var info = document.createElement('span'); info.textContent = c.name;
         var editar = document.createElement('button');
         editar.type = 'button';
-        editar.className = 'text-slate-400 hover:text-blue-500 font-bold leading-none';
+        editar.className = 'text-slate-400 hover:text-neutral-1000 font-bold leading-none';
         editar.title = 'Editar nombre';
         editar.textContent = '✎';
         editar.onclick = function () { editarCategoria(c.id, c.name, chip); };
@@ -2029,7 +2025,7 @@
       var inp = document.createElement('input');
       inp.type = 'text';
       inp.value = nombre;
-      inp.className = 'text-xs font-semibold border border-blue-300 rounded-full px-2 py-1 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 w-28';
+      inp.className = 'text-xs font-semibold border border-neutral-400 rounded-full px-2 py-1 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-neutral-1000 w-28';
       var save = document.createElement('button');
       save.type = 'button'; save.className = 'text-emerald-600 hover:bg-emerald-50 rounded-full px-1.5 py-0.5 font-bold'; save.textContent = '✓';
       var cancel = document.createElement('button');
@@ -2063,10 +2059,10 @@
     function editarAtributo(id, nombre, valores, chip) {
       var inpName = document.createElement('input');
       inpName.type = 'text'; inpName.value = nombre;
-      inpName.className = 'text-xs font-bold border border-blue-300 rounded-full px-2 py-1 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 w-24';
+      inpName.className = 'text-xs font-bold border border-neutral-400 rounded-full px-2 py-1 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-neutral-1000 w-24';
       var inpVals = document.createElement('input');
       inpVals.type = 'text'; inpVals.value = (valores || []).join(', ');
-      inpVals.className = 'text-xs border border-blue-300 rounded-full px-2 py-1 bg-white text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 w-40';
+      inpVals.className = 'text-xs border border-neutral-400 rounded-full px-2 py-1 bg-white text-slate-600 focus:outline-none focus:ring-2 focus:ring-neutral-1000 w-40';
       var save = document.createElement('button');
       save.type = 'button'; save.className = 'text-emerald-600 hover:bg-emerald-50 rounded-full px-1.5 py-0.5 font-bold'; save.textContent = '✓';
       var cancel = document.createElement('button');
