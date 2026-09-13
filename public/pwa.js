@@ -1,7 +1,21 @@
 (function () {
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () {
-      navigator.serviceWorker.register('/sw.js').catch(function () {});
+      navigator.serviceWorker.register('/sw.js').then(function (reg) {
+        // Revisa de una vez si el sw.js del servidor cambió desde la última
+        // visita (el navegador solo lo checa solo cada tanto por su cuenta).
+        reg.update().catch(function () {});
+      }).catch(function () {});
+    });
+    // En cuanto una versión nueva del service worker toma el control (gracias
+    // a skipWaiting()+clients.claim() en sw.js), recarga una sola vez para que
+    // la página use los archivos actualizados en vez de quedarse con los viejos
+    // que ya estaban cargados en memoria.
+    var _swRefreshed = false;
+    navigator.serviceWorker.addEventListener('controllerchange', function () {
+      if (_swRefreshed) return;
+      _swRefreshed = true;
+      window.location.reload();
     });
   }
 

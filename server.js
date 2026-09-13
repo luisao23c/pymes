@@ -41,6 +41,12 @@ process.on('uncaughtException', (err) => {
 const MASTER_KEY = process.env.MASTER_KEY || crypto.randomBytes(12).toString('hex');
 const BASE_URL = process.env.BASE_URL || '';
 
+// Sesión persistente: mientras el dueño/empleado siga usando el panel, cada
+// request renueva tanto la cookie como la fila en `sessions` por otros 30 días
+// (ver touchSession) — así solo se cierra sesión si él lo pide o si de plano
+// deja de entrar por 30 días seguidos.
+const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+
 // En producción (Dokploy/Traefik u otro proxy) la TLS se termina ANTES de
 // llegar al contenedor: Express recibe todo por HTTP plano. Sin "trust proxy"
 // req.protocol siempre da 'http' aunque el visitante entre por https, lo que
@@ -287,6 +293,13 @@ app.locals.safeJson = function (v) {
 };
 app.use(express.urlencoded({ extended: true, limit: '60mb' }));
 app.use(express.json({ limit: '60mb' }));
+// El service worker debe llegar SIEMPRE fresco: si el navegador lo cachea, nunca
+// detecta que hay una versión nueva y la app se queda pegada en la vieja para
+// siempre (aunque subamos cambios al servidor). Va antes del static general.
+app.get('/sw.js', (req, res) => {
+  res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.sendFile(path.join(__dirname, 'public', 'sw.js'));
+});
 app.use(express.static(path.join(__dirname, 'public')));
 // === RATE LIMITER ===
 var _rateLimit = {};
@@ -1768,7 +1781,7 @@ app.post('/registrar', rateLimit(10), (req, res) => {
   // Sesión abierta de inmediato: acaba de escribir su propio PIN, no tiene sentido
   // pedírselo otra vez en la siguiente pantalla. Directo al cuestionario de bienvenida.
   const token = createSession(r.lastInsertRowid, 'owner');
-  res.cookie('sid', token, { maxAge: 1000 * 60 * 60 * 12, httpOnly: true, sameSite: 'lax', path: '/', secure: req.secure });
+  res.cookie('sid', token, { maxAge: SESSION_TTL_MS, httpOnly: true, sameSite: 'lax', path: '/', secure: req.secure });
   res.redirect('/' + cleanSlug + '/admin/bienvenida');
 });
 
@@ -1816,7 +1829,7 @@ app.get('/maestro', (req, res) => {
 app.post('/maestro', (req, res) => {
   if (req.body.master === MASTER_KEY || verifyPin(req.body.master, MASTER_KEY)) {
     const token = createSession(null, 'maestro');
-    res.cookie('sid', token, { maxAge: 24 * 60 * 60 * 1000, httpOnly: true, sameSite: 'lax', path: '/', secure: req.secure });
+    res.cookie('sid', token, { maxAge: SESSION_TTL_MS, httpOnly: true, sameSite: 'lax', path: '/', secure: req.secure });
     return res.redirect('/maestro/panel');
   }
   res.render('maestro', { error: 'Código maestro incorrecto.', list: null });
@@ -1825,6 +1838,7 @@ app.post('/maestro', (req, res) => {
 function maestroAuth(req, res, next) {
   const s = findSession(req.cookies && req.cookies.sid);
   if (!(s && s.kind === 'maestro')) return res.redirect('/maestro');
+  touchSession(res, s.token);
   next();
 }
 
@@ -2297,7 +2311,7 @@ function verifyPin(pin, stored) {
 // Sesión con token aleatorio (se guarda en la tabla sessions)
 function createSession(bizId, kind, empId) {
   const token = crypto.randomBytes(32).toString('hex');
-  const expiresAt = new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString();
+  const expiresAt = new Date(Date.now() + SESSION_TTL_MS).toISOString();
   db.prepare('INSERT INTO sessions (token, biz_id, kind, emp_id, expires_at) VALUES (?, ?, ?, ?, ?)').run(token, bizId || null, kind || 'owner', empId || null, expiresAt);
   return token;
 }
@@ -2309,6 +2323,15 @@ function findSession(token) {
     return null;
   }
   return sess;
+}
+// Sesión deslizante: cada request autenticado empuja el vencimiento otros 30
+// días hacia adelante, tanto en la tabla `sessions` como en la cookie del
+// navegador — así solo se cierra sesión con logout explícito o 30 días de
+// inactividad total, nunca "a las 12 horas en punto" sin importar el uso.
+function touchSession(res, token) {
+  const expiresAt = new Date(Date.now() + SESSION_TTL_MS).toISOString();
+  db.prepare('UPDATE sessions SET expires_at = ? WHERE token = ?').run(expiresAt, token);
+  res.cookie('sid', token, { maxAge: SESSION_TTL_MS, httpOnly: true, sameSite: 'lax', path: '/', secure: res.req.secure });
 }
 function deleteSession(token) {
   if (token) db.prepare('DELETE FROM sessions WHERE token = ?').run(token);
@@ -2345,6 +2368,7 @@ function requireAuth(req, res, next) {
   }
   const sess = findSession(req.cookies && req.cookies.sid);
   if (sess && sess.biz_id === biz.id && (sess.kind === 'owner' || sess.kind === 'employee')) {
+    touchSession(res, sess.token);
     req.biz = biz;
     req.role = sess.kind;
     req.perms = permsOf(sess);
@@ -2429,7 +2453,7 @@ app.post('/:slug/admin', loginRateLimit, (req, res) => {
   }
   if (ok) {
     const token = createSession(biz.id, 'owner');
-    res.cookie('sid', token, { maxAge: 1000 * 60 * 60 * 12, httpOnly: true, sameSite: 'lax', path: '/', secure: req.secure });
+    res.cookie('sid', token, { maxAge: SESSION_TTL_MS, httpOnly: true, sameSite: 'lax', path: '/', secure: req.secure });
     // Volver a la página protegida desde la que vino (solo rutas admin de esta tienda)
     const next_ = String(req.query.next || '');
     if (next_ && next_.startsWith('/' + req.params.slug + '/admin')) return res.redirect(next_);
@@ -2450,7 +2474,7 @@ app.post('/:slug/admin', loginRateLimit, (req, res) => {
   const emp = emps.find(e => verifyPin(pin, e.pin_hash));
   if (emp) {
     const token = createSession(biz.id, 'employee', emp.id);
-    res.cookie('sid', token, { maxAge: 1000 * 60 * 60 * 12, httpOnly: true, sameSite: 'lax', path: '/', secure: req.secure });
+    res.cookie('sid', token, { maxAge: SESSION_TTL_MS, httpOnly: true, sameSite: 'lax', path: '/', secure: req.secure });
     let empPerms = [];
     try { empPerms = JSON.parse(emp.perms || '[]'); } catch (e) { empPerms = []; }
     const dest = firstEmployeePage(empPerms);

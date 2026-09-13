@@ -675,6 +675,10 @@
       .filter-fab { display:flex; align-items:center; gap:6px; }
       .main-inner { flex-direction:column; gap:0; padding-top:16px; }
       .cf-row { flex-direction:column; }
+      /* El botón de filtros y el carrito quedan fijos abajo (fixed): sin este
+         espacio, la última fila de productos queda tapada y sus botones
+         "Agregar"/"Ver" no se pueden tocar al hacer scroll hasta el final. */
+      .main-content { padding-bottom:104px; }
     }
     @media(max-width:768px) {
       .hero { min-height:240px; }
@@ -1164,12 +1168,33 @@
           <% } %>
         </div>
         <% } %>
+        <div id="prodGridEnd" style="height:1px;"></div>
       </div>
     </div>
   </div>
 
-  <!-- Botón filtros móvil -->
+  <!-- Botón filtros móvil: solo tiene sentido mientras se ven los productos, así
+       que se oculta en cuanto el usuario baja hacia otras secciones (preguntas,
+       footer, etc.) — antes se quedaba fijo en toda la página y tapaba botones. -->
   <button class="filter-fab" onclick="document.getElementById('filterSidebar').classList.toggle('sidebar-open')"><i class="bi bi-funnel"></i> Filtros</button>
+  <script>
+    (function () {
+      var fab = document.querySelector('.filter-fab');
+      // Sentinel al final de la cuadrícula: mientras siga a la vista, seguimos
+      // "dentro" de la sección de productos; en cuanto se pierde de vista hacia
+      // arriba, ya se bajó a otra sección y el botón no pinta nada ahí.
+      var sentinel = document.getElementById('prodGridEnd');
+      if (!fab || !sentinel) return;
+      function isMobile() { return window.matchMedia('(max-width:900px)').matches; }
+      var obs = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          fab.style.display = (isMobile() && e.boundingClientRect.top > 0) ? 'flex' : 'none';
+        });
+      }, { threshold: [0, 1] });
+      obs.observe(sentinel);
+      window.addEventListener('resize', function () { if (!isMobile()) fab.style.display = 'none'; });
+    })();
+  </script>
 
   <!-- ===== GALERÍA ===== -->
   <% if (_gallery.length) { %>
