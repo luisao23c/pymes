@@ -4,6 +4,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Nessik · Tu tienda en línea con WhatsApp</title>
+  <!-- ===== PWA: permite instalar el sitio de Nessik ===== -->
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#11100e">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Nessik">
+  <link rel="icon" href="/icons/icon-192.png">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <script src="/pwa.js" defer></script>
   <script src="/vendor/tailwind.js"></script>
   <script>
     tailwind.config = {
@@ -256,10 +266,23 @@
       <div class="flex items-center gap-4">
         <a href="#como-funciona" class="hidden md:block text-sm font-medium text-slate-500 hover:text-slate-900 transition">Cómo funciona</a>
         <a href="#tiendas" class="hidden md:block text-sm font-medium text-slate-500 hover:text-slate-900 transition">Tiendas</a>
+        <button type="button" id="pwa-install-btn-landing" style="display:none" onclick="window.installPWA && window.installPWA()" class="items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-900 transition border border-slate-200 rounded-lg px-3 py-1.5">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 19h14"/></svg>
+          Instalar
+        </button>
         <a href="/registrar" class="btn-solid text-sm py-1.5 px-4">Registrar tienda</a>
       </div>
     </div>
   </nav>
+  <script>
+    (function () {
+      var btn = document.getElementById('pwa-install-btn-landing');
+      if (!btn) return;
+      function apply(can) { btn.style.display = can ? 'inline-flex' : 'none'; }
+      document.addEventListener('pwa-installable-change', function (e) { apply(e.detail.installable); });
+      if (document.documentElement.classList.contains('pwa-installable')) apply(true);
+    })();
+  </script>
 
   <!-- ============================================================
   HERO (más compacto y con glow)

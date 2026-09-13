@@ -74,6 +74,16 @@
   <% if (typeof ogImage !== 'undefined' && ogImage) { %><meta property="og:image" content="<%= ogImage %>" /><meta name="twitter:image" content="<%= ogImage %>" /><% } %>
   <meta property="og:url" content="<%= typeof ogUrl !== 'undefined' ? ogUrl : '' %>" />
   <meta name="twitter:card" content="summary_large_image" />
+  <!-- ===== PWA: permite instalar el catálogo como app en el teléfono del cliente ===== -->
+  <link rel="manifest" href="/<%= biz.slug %>/manifest.webmanifest">
+  <meta name="theme-color" content="<%= (typeof catDesignTokens !== 'undefined' && catDesignTokens && catDesignTokens.accent) ? catDesignTokens.accent : '#1a3c5e' %>">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="<%= biz.name %>">
+  <link rel="icon" href="/icons/icon-192.png">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <script src="/pwa.js" defer></script>
   <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.min.css">
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="<%= _designFontHref %>" rel="stylesheet" />
@@ -221,6 +231,24 @@
       box-shadow:0 8px 22px rgba(26,60,94,.28);
     }
     .admin-pill:active { transform:scale(0.97); }
+    .install-pill {
+      display:none;
+      align-items:center;
+      gap:8px;
+      background:var(--accent);
+      color:#fff;
+      border:none;
+      cursor:pointer;
+      padding:8px 16px;
+      border-radius:12px;
+      font-weight:700;
+      font-size:13px;
+      font-family:inherit;
+      box-shadow:0 4px 14px rgba(26,60,94,.18);
+      transition:all .25s cubic-bezier(.22,1,.36,1);
+    }
+    .install-pill:hover { transform:translateY(-2px) scale(1.02); }
+    .install-pill:active { transform:scale(0.97); }
 
     /* ===== OFERTAS SLIDER ===== */
     .ofertas-section { margin:20px 0 6px; position:relative; }
@@ -959,11 +987,21 @@
         <span class="hdr-title"><%= biz.name %></span>
       </div>
       <div class="hdr-right">
+        <button type="button" id="pwa-install-btn-public" class="install-pill" onclick="window.installPWA && window.installPWA()"><i class="bi bi-download"></i> Instalar app</button>
         <% if (adminLink) { %><a href="<%= adminLink %>" class="admin-pill"><i class="bi bi-speedometer2"></i> Panel</a><% } %>
         <% if (_whatsapp) { %><a href="https://wa.me/<%= _whatsapp %>" target="_blank" rel="noopener" class="wa-pill"><i class="bi bi-whatsapp"></i> Pedir</a><% } %>
       </div>
     </div>
   </header>
+  <script>
+    (function () {
+      var btn = document.getElementById('pwa-install-btn-public');
+      if (!btn) return;
+      function apply(can) { btn.style.display = can ? 'inline-flex' : 'none'; }
+      document.addEventListener('pwa-installable-change', function (e) { apply(e.detail.installable); });
+      if (document.documentElement.classList.contains('pwa-installable')) apply(true);
+    })();
+  </script>
   <% } %>
 
   <!-- ===== OFERTAS (full width) ===== -->

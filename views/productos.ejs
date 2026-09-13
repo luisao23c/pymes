@@ -2177,7 +2177,7 @@
 
   <script>
     // ===== Tarjeta de producto para redes (canvas → PNG) =====
-    var TPCARD_BIZ = <%- safeJson({ name: biz.name, slug: biz.slug, cur: biz.currency || 'MXN', accent: biz.color_hex || '#17324a', accent2: biz.color_hex2 || biz.color_hex || '#2c2c2e', logo: biz.logo || '' }) %>;
+    var TPCARD_BIZ = <%- safeJson({ name: biz.name, slug: biz.slug, cur: biz.currency || 'MXN', accent: biz.color_hex || '#17324a', accent2: biz.color_hex2 || biz.color_hex || '#2c2c2e' }) %>;
     // Cuatro formatos con las proporciones que de verdad se usan en pauta y
     // redes (nada de improvisar tamaños): cuadrado 1:1 es el más compatible
     // entre plataformas, 4:5 es el que más alto ocupa en el feed (más
@@ -2189,7 +2189,7 @@
       story:     { label: 'Historia 9:16',     note: '1080 × 1920 px · Historias y estados de WhatsApp',      w: 1080, h: 1920 },
       landscape: { label: 'Horizontal 1.91:1', note: '1200 × 628 px · Anuncios de enlace y banners',          w: 1200, h: 628 }
     };
-    var TPCARD = { row: null, url: '', photo: '', photoImg: null, canvases: {}, format: 'square', logoImg: null, opener: null };
+    var TPCARD = { row: null, url: '', photo: '', photoImg: null, canvases: {}, format: 'square', opener: null };
 
     function tpSym(n) {
       var SYM = { MXN:'$', USD:'$', EUR:'€', COP:'$', ARS:'$', CLP:'$', PEN:'S/', GBP:'£', BRL:'R$' };
@@ -2239,11 +2239,6 @@
       if (!row) return;
       TPCARD.row = row; TPCARD.url = ''; TPCARD.photo = ''; TPCARD.photoImg = null; TPCARD.canvases = {}; TPCARD.opener = document.activeElement;
       seleccionarFormatoTarjeta('square');
-      if (TPCARD_BIZ.logo && !TPCARD.logoImg) {
-        var lg = new Image();
-        lg.onload = function () { TPCARD.logoImg = lg; tpPintar(); };
-        lg.src = '/<%= biz.slug %>/admin/img-proxy?u=' + encodeURIComponent(TPCARD_BIZ.logo);
-      }
       document.getElementById('tp-modal').classList.add('open');
       document.getElementById('tp-preview').innerHTML = '<span class="w-8 h-8 border-[3px] border-[var(--md-primary,#2563eb)] border-t-transparent rounded-full animate-spin"></span>';
       fetch('/<%= biz.slug %>/admin/producto/' + row.getAttribute('data-edit-id') + '/qr')
@@ -2304,36 +2299,6 @@
       im.src = proxy;
     }
 
-    // Sin logo propio: en vez de iniciales (poco profesional, "PT" no dice
-    // nada de la tienda) se dibuja un ícono genérico de tienda/local, igual
-    // al que ya usa el resto del sistema para representar un negocio.
-    function tpDrawStoreGlyph(ctx, x, y, size, fg, bg) {
-      ctx.save();
-      ctx.fillStyle = fg;
-      ctx.beginPath();
-      ctx.moveTo(x + size*0.16, y + size*0.52);
-      ctx.lineTo(x + size*0.5, y + size*0.15);
-      ctx.lineTo(x + size*0.84, y + size*0.52);
-      ctx.closePath();
-      ctx.fill();
-      ctx.fillRect(x + size*0.24, y + size*0.5, size*0.52, size*0.32);
-      ctx.fillStyle = bg;
-      ctx.fillRect(x + size*0.42, y + size*0.62, size*0.16, size*0.2);
-      ctx.restore();
-    }
-    function tpDrawLogo(ctx, x, y, size, inverse) {
-      ctx.save();
-      tpRR(ctx, x, y, size, size, Math.round(size * .24)); ctx.clip();
-      if (TPCARD.logoImg) tpCover(ctx, TPCARD.logoImg, x, y, size, size);
-      else {
-        var bg = inverse ? 'rgba(255,255,255,.16)' : TPCARD_BIZ.accent;
-        var fg = inverse ? '#FFFFFF' : tpText(TPCARD_BIZ.accent);
-        ctx.fillStyle = bg;
-        ctx.fillRect(x, y, size, size);
-        tpDrawStoreGlyph(ctx, x, y, size, fg, bg);
-      }
-      ctx.restore(); ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
-    }
     function tpDrawPlaceholder(ctx, x, y, w, h) {
       ctx.fillStyle = '#E7E5E0'; ctx.fillRect(x, y, w, h);
       ctx.strokeStyle = '#C9C6BE'; ctx.lineWidth = 5;
@@ -2369,9 +2334,8 @@
       var ctx=c.getContext('2d'), name=row.getAttribute('data-edit-name')||'', desc=row.getAttribute('data-edit-desc')||'';
       ctx.fillStyle='#F4F2EC';ctx.fillRect(0,0,W,H);
       ctx.fillStyle=TPCARD_BIZ.accent;ctx.fillRect(0,0,W,218);
-      tpDrawLogo(ctx,64,54,92,true);
-      ctx.fillStyle=tpText(TPCARD_BIZ.accent);ctx.font='800 36px Inter, "Segoe UI", Arial, sans-serif';ctx.fillText(TPCARD_BIZ.name,180,102);
-      ctx.font='650 21px Inter, "Segoe UI", Arial, sans-serif';ctx.globalAlpha=.78;ctx.fillText('Pide en línea · Entrega fácil',180,140);ctx.globalAlpha=1;
+      ctx.fillStyle=tpText(TPCARD_BIZ.accent);ctx.font='800 42px Inter, "Segoe UI", Arial, sans-serif';ctx.fillText(TPCARD_BIZ.name,64,120);
+      ctx.font='650 22px Inter, "Segoe UI", Arial, sans-serif';ctx.globalAlpha=.78;ctx.fillText('Pide en línea · Entrega fácil',64,158);ctx.globalAlpha=1;
       var px=56,py=178,pw=968,ph=640;ctx.save();tpRR(ctx,px,py,pw,ph,26);ctx.clip(); if(photo)tpCover(ctx,photo,px,py,pw,ph);else tpDrawPlaceholder(ctx,px,py,pw,ph);ctx.restore();
       tpDrawOffer(ctx,row,82,206);
       ctx.fillStyle='#101828';ctx.font='850 56px Inter, "Segoe UI", Arial, sans-serif';var lines=tpWrap(ctx,name,64,904,952,66,2);
@@ -2389,9 +2353,8 @@
       var W=1080,H=1920,row=TPCARD.row,c=document.createElement('canvas'); c.width=W;c.height=H;
       var ctx=c.getContext('2d'),name=row.getAttribute('data-edit-name')||'',desc=row.getAttribute('data-edit-desc')||'';
       ctx.fillStyle=TPCARD_BIZ.accent;ctx.fillRect(0,0,W,H);
-      tpDrawLogo(ctx,64,70,94,true);
-      ctx.fillStyle=tpText(TPCARD_BIZ.accent);ctx.font='800 38px Inter, "Segoe UI", Arial, sans-serif';ctx.fillText(TPCARD_BIZ.name,184,120);
-      ctx.font='650 22px Inter, "Segoe UI", Arial, sans-serif';ctx.globalAlpha=.78;ctx.fillText('Disponible para pedir en línea',184,155);ctx.globalAlpha=1;
+      ctx.fillStyle=tpText(TPCARD_BIZ.accent);ctx.font='800 44px Inter, "Segoe UI", Arial, sans-serif';ctx.fillText(TPCARD_BIZ.name,64,140);
+      ctx.font='650 23px Inter, "Segoe UI", Arial, sans-serif';ctx.globalAlpha=.78;ctx.fillText('Disponible para pedir en línea',64,177);ctx.globalAlpha=1;
       var px=48,py=232,pw=984,ph=930;ctx.save();tpRR(ctx,px,py,pw,ph,30);ctx.clip();if(photo)tpCover(ctx,photo,px,py,pw,ph);else tpDrawPlaceholder(ctx,px,py,pw,ph);ctx.restore();
       tpDrawOffer(ctx,row,78,264);
       ctx.fillStyle='#F4F2EC';ctx.fillRect(0,1128,W,792);
@@ -2414,9 +2377,8 @@
       var ctx=c.getContext('2d'), name=row.getAttribute('data-edit-name')||'', desc=row.getAttribute('data-edit-desc')||'';
       ctx.fillStyle='#F4F2EC';ctx.fillRect(0,0,W,H);
       ctx.fillStyle=TPCARD_BIZ.accent;ctx.fillRect(0,0,W,178);
-      tpDrawLogo(ctx,54,42,80,true);
-      ctx.fillStyle=tpText(TPCARD_BIZ.accent);ctx.font='800 32px Inter, "Segoe UI", Arial, sans-serif';ctx.fillText(TPCARD_BIZ.name,158,84);
-      ctx.font='650 19px Inter, "Segoe UI", Arial, sans-serif';ctx.globalAlpha=.78;ctx.fillText('Pide en línea · Entrega fácil',158,116);ctx.globalAlpha=1;
+      ctx.fillStyle=tpText(TPCARD_BIZ.accent);ctx.font='800 38px Inter, "Segoe UI", Arial, sans-serif';ctx.fillText(TPCARD_BIZ.name,54,100);
+      ctx.font='650 20px Inter, "Segoe UI", Arial, sans-serif';ctx.globalAlpha=.78;ctx.fillText('Pide en línea · Entrega fácil',54,134);ctx.globalAlpha=1;
       var px=48,py=146,pw=984,ph=468;ctx.save();tpRR(ctx,px,py,pw,ph,24);ctx.clip(); if(photo)tpCover(ctx,photo,px,py,pw,ph);else tpDrawPlaceholder(ctx,px,py,pw,ph);ctx.restore();
       tpDrawOffer(ctx,row,74,172);
       ctx.fillStyle='#101828';ctx.font='800 44px Inter, "Segoe UI", Arial, sans-serif';var lines=tpWrap(ctx,name,54,684,972,52,2);
@@ -2442,9 +2404,8 @@
       ctx.save();ctx.beginPath();ctx.rect(0,0,pw,H);ctx.clip(); if(photo)tpCover(ctx,photo,0,0,pw,H);else tpDrawPlaceholder(ctx,0,0,pw,H);ctx.restore();
       tpDrawOffer(ctx,row,26,26);
       var tx=pw+48,tw=W-pw-48-48;
-      tpDrawLogo(ctx,tx,44,64,false);
-      ctx.fillStyle='#101828';ctx.font='800 26px Inter, "Segoe UI", Arial, sans-serif';ctx.fillText(TPCARD_BIZ.name,tx+80,76);
-      ctx.fillStyle='#535862';ctx.font='650 16px Inter, "Segoe UI", Arial, sans-serif';ctx.fillText('Pide en línea · Entrega fácil',tx+80,100);
+      ctx.fillStyle='#101828';ctx.font='800 28px Inter, "Segoe UI", Arial, sans-serif';ctx.fillText(TPCARD_BIZ.name,tx,68);
+      ctx.fillStyle='#535862';ctx.font='650 17px Inter, "Segoe UI", Arial, sans-serif';ctx.fillText('Pide en línea · Entrega fácil',tx,94);
       ctx.fillStyle='#101828';ctx.font='800 42px Inter, "Segoe UI", Arial, sans-serif';var lines=tpWrap(ctx,name,tx,192,tw,48,2);
       var descY=192+(lines-1)*48+38;
       if(desc){ctx.fillStyle='#535862';ctx.font='500 22px Inter, "Segoe UI", Arial, sans-serif';tpWrap(ctx,desc,tx,descY,tw,30,2);}

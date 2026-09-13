@@ -1678,6 +1678,30 @@ function getStats(businessId) {
   };
 }
 
+// Manifest PWA de la landing (para instalar el sitio de Nessik, no una tienda en particular)
+app.get('/manifest.webmanifest', (req, res) => {
+  res.set('Content-Type', 'application/manifest+json');
+  res.set('Cache-Control', 'no-store');
+  res.json({
+    name: 'Nessik · Tu tienda en línea con WhatsApp',
+    short_name: 'Nessik',
+    description: 'Crea y administra tu catálogo en línea con pedidos por WhatsApp',
+    id: '/',
+    start_url: '/',
+    scope: '/',
+    display: 'standalone',
+    orientation: 'portrait',
+    background_color: '#f7f6f2',
+    theme_color: '#11100e',
+    lang: 'es',
+    icons: [
+      { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+      { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+      { src: '/icons/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }
+    ]
+  });
+});
+
 // ================= LANDING =================
 app.get('/', (req, res) => {
   const stores = db.prepare('SELECT * FROM businesses WHERE active = 1 ORDER BY created_at DESC LIMIT 12').all();
