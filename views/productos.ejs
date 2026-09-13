@@ -2115,45 +2115,81 @@
     #tp-modal { display:none; }
     #tp-modal.open { display:flex; }
     #tp-preview canvas { width:100%; height:auto; display:block; }
-    #tp-preview { cursor: pointer; }
+    #tp-preview { cursor: pointer; transition: background-color .18s ease; }
+    #tp-preview[data-format="story"] { padding-inline: clamp(3rem, 16vw, 6.5rem); }
+    #tp-preview[data-format="landscape"] { padding-block: clamp(1.5rem, 10vw, 3rem); }
+    .tp-format-btn { min-height:52px; border-radius:10px; color:#64748b; font-size:11px; font-weight:750; line-height:1.3; padding:6px 4px; transition:background-color .18s ease,color .18s ease,box-shadow .18s ease; }
+    .tp-format-btn small { display:block; font-size:9px; font-weight:650; opacity:.7; margin-top:1px; }
+    .tp-format-btn.is-active { background:#fff; color:#0f172a; box-shadow:0 2px 8px rgba(15,23,42,.09); }
+    @media (max-width:640px) {
+      #tp-modal { align-items:flex-end; padding:0; }
+      #tp-modal > .tp-sheet { max-width:none; max-height:94dvh; border-radius:20px 20px 0 0; }
+    }
   </style>
   <div id="tp-modal" class="fixed inset-0 z-[200] items-center justify-center p-4">
-    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="cerrarTarjetaProducto()"></div>
-    <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm max-h-[92vh] overflow-y-auto">
-      <div class="flex items-center justify-between px-4 py-3 border-b border-slate-100 sticky top-0 bg-white">
-        <p class="font-extrabold text-sm text-slate-800">🛍️ Tarjeta para redes</p>
-        <button type="button" onclick="cerrarTarjetaProducto()" class="w-8 h-8 rounded-full hover:bg-slate-100 text-slate-500 font-bold">✕</button>
+    <div class="absolute inset-0 bg-slate-950/65" onclick="cerrarTarjetaProducto()"></div>
+    <div class="tp-sheet relative bg-white rounded-2xl shadow-2xl w-full max-w-[430px] max-h-[92vh] overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="tp-title">
+      <div class="flex items-center justify-between px-4 py-3 border-b border-slate-200 sticky top-0 z-10 bg-white">
+        <div>
+          <p id="tp-title" class="font-extrabold text-sm text-slate-900">Contenido para redes</p>
+          <p class="text-[11px] text-slate-500 mt-0.5">Listo para publicar y vender</p>
+        </div>
+        <button type="button" onclick="cerrarTarjetaProducto()" aria-label="Cerrar" class="w-9 h-9 grid place-items-center rounded-xl hover:bg-slate-100 text-slate-600">
+          <svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+        </button>
       </div>
-      <div class="p-4 space-y-3">
-        <div id="tp-preview" class="rounded-xl overflow-hidden border border-slate-100 bg-slate-50 flex items-center justify-center min-h-[240px]">
+      <div class="p-4 space-y-4">
+        <div class="grid grid-cols-2 gap-1 p-1 rounded-xl bg-slate-100" role="group" aria-label="Formato de publicación">
+          <button id="tp-format-square" type="button" class="tp-format-btn is-active" onclick="seleccionarFormatoTarjeta('square')">Cuadrada 1:1<small>Feed universal</small></button>
+          <button id="tp-format-feed" type="button" class="tp-format-btn" onclick="seleccionarFormatoTarjeta('feed')">Publicación 4:5<small>Máximo alcance</small></button>
+          <button id="tp-format-story" type="button" class="tp-format-btn" onclick="seleccionarFormatoTarjeta('story')">Historia 9:16<small>Stories / Estados</small></button>
+          <button id="tp-format-landscape" type="button" class="tp-format-btn" onclick="seleccionarFormatoTarjeta('landscape')">Horizontal 1.91:1<small>Anuncio de enlace</small></button>
+        </div>
+        <div id="tp-preview" data-format="feed" class="rounded-xl overflow-hidden bg-slate-100 flex items-center justify-center min-h-[260px]" title="Abrir página del producto">
           <span class="w-8 h-8 border-[3px] border-[var(--md-primary,#2563eb)] border-t-transparent rounded-full animate-spin"></span>
         </div>
 
-        <div class="rounded-xl border border-slate-200 bg-slate-50/70 p-3">
-          <p class="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">Paso 1 · Publica tu tarjeta</p>
-          <p class="text-xs text-slate-500 mt-0.5 mb-2">Descarga la imagen y súbela a tu estado o red favorita.</p>
-          <button type="button" onclick="descargarTarjetaProducto()" class="m-btn m-btn-filled w-full !text-xs">⬇️ Descargar imagen</button>
-          <button type="button" onclick="descargarHistoriaProducto()" class="m-btn m-btn-outlined w-full mt-2 !text-xs">📱 Descargar historia (1080×1920)</button>
+        <div>
+          <button id="tp-download" type="button" onclick="descargarFormatoTarjeta()" class="m-btn m-btn-filled w-full !text-xs !h-11">
+            <svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 19h14"/></svg>
+            Descargar publicación
+          </button>
+          <button type="button" onclick="compartirTarjetaProducto()" class="m-btn m-btn-outlined w-full mt-2 !text-xs !h-11">
+            <svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 10.7 6.8-4.4m-6.8 7 6.8 4.4"/></svg>
+            Compartir tarjeta
+          </button>
         </div>
 
-        <div class="rounded-xl border border-slate-200 bg-slate-50/70 p-3">
-          <p class="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">Paso 2 · Comparte el enlace</p>
-          <p class="text-xs text-slate-500 mt-0.5 mb-2">Cópialo y pégalo en tu estado, chats o bio para que vayan directo al producto.</p>
+        <div class="pt-3 border-t border-slate-200">
+          <p class="text-xs font-bold text-slate-800 mb-2">Enlace directo al producto</p>
           <div class="flex gap-2">
-            <input id="tp-link" readonly onclick="this.select()" class="flex-1 min-w-0 text-xs text-slate-600 bg-white border border-slate-200 rounded-lg px-3 py-2 outline-none" value="">
-            <button type="button" onclick="copiarEnlaceProducto()" class="m-btn m-btn-filled !text-xs !px-3">📋</button>
+            <input id="tp-link" aria-label="Enlace del producto" readonly onclick="this.select()" class="flex-1 min-w-0 text-xs text-slate-700 bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 outline-none focus:ring-2 focus:ring-[var(--md-primary,#2563eb)]/20" value="">
+            <button type="button" onclick="copiarEnlaceProducto()" aria-label="Copiar enlace" class="m-btn m-btn-outlined !px-3">
+              <svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            </button>
           </div>
         </div>
 
-        <p class="text-[11px] text-slate-400 text-center">Imagen 1080×1350 para redes · Toca la tarjeta para abrir la página de compra</p>
+        <p id="tp-size-note" class="text-[11px] text-slate-500 text-center">1080 × 1350 px · Optimizada para publicaciones</p>
       </div>
     </div>
   </div>
 
   <script>
     // ===== Tarjeta de producto para redes (canvas → PNG) =====
-    var TPCARD_BIZ = <%- safeJson({ name: biz.name, slug: biz.slug, cur: biz.currency || 'MXN', accent: biz.color_hex || '#2563eb', accent2: biz.color_hex2 || biz.color_hex || '#4f46e5', logo: biz.logo || '' }) %>;
-    var TPCARD = { row: null, url: '', photo: '', photoImg: null, canvas: null, logoImg: null };
+    var TPCARD_BIZ = <%- safeJson({ name: biz.name, slug: biz.slug, cur: biz.currency || 'MXN', accent: biz.color_hex || '#17324a', accent2: biz.color_hex2 || biz.color_hex || '#2c2c2e', logo: biz.logo || '' }) %>;
+    // Cuatro formatos con las proporciones que de verdad se usan en pauta y
+    // redes (nada de improvisar tamaños): cuadrado 1:1 es el más compatible
+    // entre plataformas, 4:5 es el que más alto ocupa en el feed (más
+    // impacto), 9:16 es historias/estados, y 1.91:1 es el estándar de
+    // anuncios de enlace (Facebook Ads, vista previa de link en WhatsApp).
+    var TP_FORMATS = {
+      square:    { label: 'Cuadrada 1:1',      note: '1080 × 1080 px · Feed universal (Instagram/Facebook)', w: 1080, h: 1080 },
+      feed:      { label: 'Publicación 4:5',   note: '1080 × 1350 px · La que más alto ocupa en el feed',     w: 1080, h: 1350 },
+      story:     { label: 'Historia 9:16',     note: '1080 × 1920 px · Historias y estados de WhatsApp',      w: 1080, h: 1920 },
+      landscape: { label: 'Horizontal 1.91:1', note: '1200 × 628 px · Anuncios de enlace y banners',          w: 1200, h: 628 }
+    };
+    var TPCARD = { row: null, url: '', photo: '', photoImg: null, canvases: {}, format: 'square', logoImg: null, opener: null };
 
     function tpSym(n) {
       var SYM = { MXN:'$', USD:'$', EUR:'€', COP:'$', ARS:'$', CLP:'$', PEN:'S/', GBP:'£', BRL:'R$' };
@@ -2199,15 +2235,10 @@
       var a = tpHex(hex), b = tpHex(hex2);
       return 'rgb(' + Math.round(a.r+(b.r-a.r)*t) + ',' + Math.round(a.g+(b.g-a.g)*t) + ',' + Math.round(a.b+(b.b-a.b)*t) + ')';
     }
-    function tpInitials(name) {
-      var p = String(name || '').trim().split(/\s+/);
-      var s = (p[0] ? p[0][0] : '') + (p[1] ? p[1][0] : '');
-      return (s || 'T').toUpperCase();
-    }
-
     function abrirTarjetaProducto(row) {
       if (!row) return;
-      TPCARD.row = row; TPCARD.url = ''; TPCARD.photo = ''; TPCARD.photoImg = null; TPCARD.canvas = null;
+      TPCARD.row = row; TPCARD.url = ''; TPCARD.photo = ''; TPCARD.photoImg = null; TPCARD.canvases = {}; TPCARD.opener = document.activeElement;
+      seleccionarFormatoTarjeta('square');
       if (TPCARD_BIZ.logo && !TPCARD.logoImg) {
         var lg = new Image();
         lg.onload = function () { TPCARD.logoImg = lg; tpPintar(); };
@@ -2225,7 +2256,10 @@
         })
         .catch(function () { mostrarToast('No se pudo preparar la tarjeta', 'error'); cerrarTarjetaProducto(); });
     }
-    function cerrarTarjetaProducto() { document.getElementById('tp-modal').classList.remove('open'); }
+    function cerrarTarjetaProducto() {
+      document.getElementById('tp-modal').classList.remove('open');
+      if (TPCARD.opener && TPCARD.opener.focus) TPCARD.opener.focus();
+    }
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape') cerrarTarjetaProducto(); });
     // Tocar la tarjeta abre la página de compra del producto
     document.getElementById('tp-preview').addEventListener('click', function () {
@@ -2270,212 +2304,207 @@
       im.src = proxy;
     }
 
-    function tpDibujar(photo) {
-      var W = 1080, H = 1350, row = TPCARD.row;
-      if (!row) return;
-      var c = document.createElement('canvas'); c.width = W; c.height = H;
-      var ctx = c.getContext('2d');
-      var name = row.getAttribute('data-edit-name') || '';
+    // Sin logo propio: en vez de iniciales (poco profesional, "PT" no dice
+    // nada de la tienda) se dibuja un ícono genérico de tienda/local, igual
+    // al que ya usa el resto del sistema para representar un negocio.
+    function tpDrawStoreGlyph(ctx, x, y, size, fg, bg) {
+      ctx.save();
+      ctx.fillStyle = fg;
+      ctx.beginPath();
+      ctx.moveTo(x + size*0.16, y + size*0.52);
+      ctx.lineTo(x + size*0.5, y + size*0.15);
+      ctx.lineTo(x + size*0.84, y + size*0.52);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillRect(x + size*0.24, y + size*0.5, size*0.52, size*0.32);
+      ctx.fillStyle = bg;
+      ctx.fillRect(x + size*0.42, y + size*0.62, size*0.16, size*0.2);
+      ctx.restore();
+    }
+    function tpDrawLogo(ctx, x, y, size, inverse) {
+      ctx.save();
+      tpRR(ctx, x, y, size, size, Math.round(size * .24)); ctx.clip();
+      if (TPCARD.logoImg) tpCover(ctx, TPCARD.logoImg, x, y, size, size);
+      else {
+        var bg = inverse ? 'rgba(255,255,255,.16)' : TPCARD_BIZ.accent;
+        var fg = inverse ? '#FFFFFF' : tpText(TPCARD_BIZ.accent);
+        ctx.fillStyle = bg;
+        ctx.fillRect(x, y, size, size);
+        tpDrawStoreGlyph(ctx, x, y, size, fg, bg);
+      }
+      ctx.restore(); ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    }
+    function tpDrawPlaceholder(ctx, x, y, w, h) {
+      ctx.fillStyle = '#E7E5E0'; ctx.fillRect(x, y, w, h);
+      ctx.strokeStyle = '#C9C6BE'; ctx.lineWidth = 5;
+      ctx.beginPath(); ctx.rect(x + w*.39, y + h*.36, w*.22, h*.22); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x+w*.39, y+h*.58); ctx.lineTo(x+w*.48, y+h*.47); ctx.lineTo(x+w*.54, y+h*.53); ctx.lineTo(x+w*.61, y+h*.43); ctx.stroke();
+      ctx.fillStyle = '#6B6860'; ctx.font = '700 25px Inter, "Segoe UI", Arial, sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText('Agrega una foto para destacar tu producto', x + w/2, y + h*.69); ctx.textAlign = 'left';
+    }
+    function tpDrawPrice(ctx, row, x, y, size) {
       var price = parseFloat(row.getAttribute('data-edit-price')) || 0;
       var old = parseFloat(row.getAttribute('data-edit-old')) || 0;
-      var desc = row.getAttribute('data-edit-desc') || '';
-
-      // Fondo claro con tinte del acento + blobs suaves
-      ctx.fillStyle = tpMix(TPCARD_BIZ.accent, '#FFFFFF', 0.93);
-      ctx.fillRect(0, 0, W, H);
-      ctx.fillStyle = tpRgba(TPCARD_BIZ.accent, 0.08);
-      ctx.beginPath(); ctx.arc(W*0.88, H*0.06, 260, 0, Math.PI*2); ctx.fill();
-      ctx.fillStyle = tpRgba(TPCARD_BIZ.accent2, 0.07);
-      ctx.beginPath(); ctx.arc(W*0.06, H*0.97, 220, 0, Math.PI*2); ctx.fill();
-
-      // Tarjeta blanca con sombra suave
-      ctx.save();
-      ctx.shadowColor = 'rgba(15,23,42,0.16)'; ctx.shadowBlur = 44; ctx.shadowOffsetY = 16;
-      ctx.fillStyle = '#FFFFFF';
-      tpRR(ctx, 44, 44, W-88, H-88, 44); ctx.fill();
-      ctx.restore();
-      ctx.strokeStyle = 'rgba(15,23,42,0.07)'; ctx.lineWidth = 2;
-      tpRR(ctx, 44, 44, W-88, H-88, 44); ctx.stroke();
-
-      // Encabezado: logo o iniciales + nombre de la tienda
-      var hx = 92, hy = 96, hr = 40;
-      ctx.save();
-      ctx.beginPath(); ctx.arc(hx+hr, hy+hr, hr, 0, Math.PI*2); ctx.clip();
-      if (TPCARD.logoImg) { tpCover(ctx, TPCARD.logoImg, hx, hy, hr*2, hr*2); }
-      else { ctx.fillStyle = TPCARD_BIZ.accent; ctx.fillRect(hx, hy, hr*2, hr*2); }
-      ctx.restore();
-      if (!TPCARD.logoImg) {
-        ctx.fillStyle = tpText(TPCARD_BIZ.accent); ctx.font = '800 34px "Segoe UI", Arial, sans-serif';
-        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.fillText(tpInitials(TPCARD_BIZ.name), hx+hr, hy+hr+2);
-        ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
-      }
-      ctx.strokeStyle = tpRgba(TPCARD_BIZ.accent, 0.25); ctx.lineWidth = 3;
-      ctx.beginPath(); ctx.arc(hx+hr, hy+hr, hr+2, 0, Math.PI*2); ctx.stroke();
-      ctx.fillStyle = '#0F172A'; ctx.font = '800 32px "Segoe UI", Arial, sans-serif';
-      var t = TPCARD_BIZ.name;
-      while (ctx.measureText(t).width > W-92-248 && t.length > 4) t = t.slice(0, -2);
-      if (t !== TPCARD_BIZ.name) t += '…';
-      ctx.fillText(t, 92 + hr*2 + 20, 122);
-      ctx.fillStyle = 'rgba(15,23,42,0.45)'; ctx.font = '700 17px "Segoe UI", Arial, sans-serif';
-      ctx.fillText('C A T Á L O G O   E N   L Í N E A', 92 + hr*2 + 20, 152);
-
-      // Foto del producto con marco y sombra
-      var px = 92, py = 204, pw = W-184, ph = 580;
-      ctx.save();
-      ctx.shadowColor = 'rgba(15,23,42,0.12)'; ctx.shadowBlur = 26; ctx.shadowOffsetY = 10;
-      ctx.fillStyle = '#FFFFFF'; tpRR(ctx, px, py, pw, ph, 30); ctx.fill();
-      ctx.restore();
-      ctx.save();
-      tpRR(ctx, px, py, pw, ph, 30); ctx.clip();
-      if (photo) { tpCover(ctx, photo, px, py, pw, ph); }
-      else {
-        ctx.fillStyle = '#EEF2F7'; ctx.fillRect(px, py, pw, ph);
-        ctx.fillStyle = 'rgba(15,23,42,0.30)'; ctx.font = '150px serif';
-        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.fillText('🛒', px + pw/2, py + ph/2 - 20);
-        ctx.font = '600 26px "Segoe UI", Arial, sans-serif';
-        ctx.fillStyle = 'rgba(15,23,42,0.35)';
-        ctx.fillText('Foto del producto', px + pw/2, py + ph/2 + 90);
-        ctx.textBaseline = 'alphabetic';
-      }
+      ctx.fillStyle = '#101828'; ctx.font = '900 ' + size + 'px Inter, "Segoe UI", Arial, sans-serif';
+      var ptxt = tpSym(price); ctx.fillText(ptxt, x, y);
       if (old > price && old > 0) {
-        var pct = Math.round((1 - price/old) * 100);
-        ctx.fillStyle = '#E11D48';
-        tpRR(ctx, px+24, py+24, 210, 60, 30); ctx.fill();
-        ctx.fillStyle = '#FFFFFF'; ctx.font = '800 32px "Segoe UI", Arial, sans-serif';
-        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.fillText('🔥 -' + pct + '%', px+24+105, py+24+30);
-        ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+        var pw = ctx.measureText(ptxt).width;
+        ctx.fillStyle = '#777A82'; ctx.font = '600 ' + Math.round(size*.43) + 'px Inter, "Segoe UI", Arial, sans-serif';
+        var otxt = tpSym(old), ox = x + pw + 26; ctx.fillText(otxt, ox, y - 4);
+        ctx.strokeStyle = '#777A82'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(ox-3, y-size*.2); ctx.lineTo(ox+ctx.measureText(otxt).width+3, y-size*.2); ctx.stroke();
       }
-      ctx.restore();
-
-      // Nombre (máx 2 líneas) y descripción (máx 2 líneas)
-      ctx.fillStyle = '#0F172A';
-      ctx.font = '800 52px "Segoe UI", Arial, sans-serif';
-      var nLines = tpWrap(ctx, name, 92, 882, pw, 62, 2);
-      var y = 882 + (nLines - 1) * 62;
-      if (desc) {
-        ctx.fillStyle = '#64748B'; ctx.font = '500 31px "Segoe UI", Arial, sans-serif';
-        y = y + 56 + tpWrap(ctx, desc, 92, y + 56, pw, 40, 2) * 40;
-      }
-
-      // Precio grande + precio anterior tachado
-      ctx.fillStyle = TPCARD_BIZ.accent; ctx.font = '900 82px "Segoe UI", Arial, sans-serif';
-      var ptxt = tpSym(price);
-      ctx.fillText(ptxt, 92, 1120);
-      var pwid = ctx.measureText(ptxt).width;
-      if (old > price && old > 0) {
-        ctx.fillStyle = '#94A3B8'; ctx.font = '600 38px "Segoe UI", Arial, sans-serif';
-        var otxt = tpSym(old);
-        ctx.fillText(otxt, 92 + pwid + 24, 1120);
-        var ow = ctx.measureText(otxt).width;
-        ctx.strokeStyle = '#94A3B8'; ctx.lineWidth = 3;
-        ctx.beginPath(); ctx.moveTo(92 + pwid + 20, 1107); ctx.lineTo(92 + pwid + 28 + ow, 1107); ctx.stroke();
-      }
-
-      // Píldora de abonos: a cuánto sale cada pago
-      if (row.getAttribute('data-edit-installments') === '1') {
-        var freq = row.getAttribute('data-edit-inst-freq') || 'semanal';
-        var cnt = row.getAttribute('data-edit-inst-count') || 6;
-        var per = tpSym(Math.ceil(price / cnt));
-        var atxt = '💳 A solo ' + cnt + ' pagos ' + freq + 'es de ' + per;
-        ctx.font = '700 28px "Segoe UI", Arial, sans-serif';
-        var aw = Math.min(ctx.measureText(atxt).width + 48, pw);
-        ctx.fillStyle = 'rgba(16,185,129,0.12)';
-        tpRR(ctx, 92, 1156, aw, 50, 25); ctx.fill();
-        ctx.fillStyle = '#059669';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(atxt, 92 + 24, 1156 + 25);
-        ctx.textBaseline = 'alphabetic';
-      }
-
-      TPCARD.canvas = c;
-      var prev = document.getElementById('tp-preview');
-      prev.innerHTML = '';
-      prev.appendChild(c);
+    }
+    function tpDrawOffer(ctx, row, x, y) {
+      var price = parseFloat(row.getAttribute('data-edit-price')) || 0;
+      var old = parseFloat(row.getAttribute('data-edit-old')) || 0;
+      if (!(old > price && old > 0)) return;
+      var label = 'AHORRA ' + Math.round((1-price/old)*100) + '%';
+      ctx.font = '800 27px Inter, "Segoe UI", Arial, sans-serif';
+      var w = ctx.measureText(label).width + 42;
+      ctx.fillStyle = '#D92D20'; tpRR(ctx, x, y, w, 54, 12); ctx.fill();
+      ctx.fillStyle = '#FFFFFF'; ctx.textBaseline = 'middle'; ctx.fillText(label, x+21, y+28); ctx.textBaseline = 'alphabetic';
+    }
+    function tpBuildFeed(photo) {
+      var W=1080,H=1350,row=TPCARD.row,c=document.createElement('canvas'); c.width=W;c.height=H;
+      var ctx=c.getContext('2d'), name=row.getAttribute('data-edit-name')||'', desc=row.getAttribute('data-edit-desc')||'';
+      ctx.fillStyle='#F4F2EC';ctx.fillRect(0,0,W,H);
+      ctx.fillStyle=TPCARD_BIZ.accent;ctx.fillRect(0,0,W,218);
+      tpDrawLogo(ctx,64,54,92,true);
+      ctx.fillStyle=tpText(TPCARD_BIZ.accent);ctx.font='800 36px Inter, "Segoe UI", Arial, sans-serif';ctx.fillText(TPCARD_BIZ.name,180,102);
+      ctx.font='650 21px Inter, "Segoe UI", Arial, sans-serif';ctx.globalAlpha=.78;ctx.fillText('Pide en línea · Entrega fácil',180,140);ctx.globalAlpha=1;
+      var px=56,py=178,pw=968,ph=640;ctx.save();tpRR(ctx,px,py,pw,ph,26);ctx.clip(); if(photo)tpCover(ctx,photo,px,py,pw,ph);else tpDrawPlaceholder(ctx,px,py,pw,ph);ctx.restore();
+      tpDrawOffer(ctx,row,82,206);
+      ctx.fillStyle='#101828';ctx.font='850 56px Inter, "Segoe UI", Arial, sans-serif';var lines=tpWrap(ctx,name,64,904,952,66,2);
+      var descY=904+(lines-1)*66+55;
+      if(desc){ctx.fillStyle='#535862';ctx.font='500 29px Inter, "Segoe UI", Arial, sans-serif';tpWrap(ctx,desc,64,descY,720,40,2);}
+      tpDrawPrice(ctx,row,64,1145,78);
+      ctx.fillStyle=TPCARD_BIZ.accent;tpRR(ctx,56,1207,968,103,20);ctx.fill();
+      ctx.fillStyle=tpText(TPCARD_BIZ.accent);ctx.textAlign='center';
+      ctx.font='800 33px Inter, "Segoe UI", Arial, sans-serif';ctx.fillText('PIDE AHORA',540,1249);
+      ctx.font='600 21px Inter, "Segoe UI", Arial, sans-serif';ctx.globalAlpha=.85;ctx.fillText('Enlace directo en la descripción',540,1281);ctx.globalAlpha=1;
+      ctx.textAlign='left';
+      return c;
+    }
+    function tpBuildStory(photo) {
+      var W=1080,H=1920,row=TPCARD.row,c=document.createElement('canvas'); c.width=W;c.height=H;
+      var ctx=c.getContext('2d'),name=row.getAttribute('data-edit-name')||'',desc=row.getAttribute('data-edit-desc')||'';
+      ctx.fillStyle=TPCARD_BIZ.accent;ctx.fillRect(0,0,W,H);
+      tpDrawLogo(ctx,64,70,94,true);
+      ctx.fillStyle=tpText(TPCARD_BIZ.accent);ctx.font='800 38px Inter, "Segoe UI", Arial, sans-serif';ctx.fillText(TPCARD_BIZ.name,184,120);
+      ctx.font='650 22px Inter, "Segoe UI", Arial, sans-serif';ctx.globalAlpha=.78;ctx.fillText('Disponible para pedir en línea',184,155);ctx.globalAlpha=1;
+      var px=48,py=232,pw=984,ph=930;ctx.save();tpRR(ctx,px,py,pw,ph,30);ctx.clip();if(photo)tpCover(ctx,photo,px,py,pw,ph);else tpDrawPlaceholder(ctx,px,py,pw,ph);ctx.restore();
+      tpDrawOffer(ctx,row,78,264);
+      ctx.fillStyle='#F4F2EC';ctx.fillRect(0,1128,W,792);
+      ctx.fillStyle='#101828';ctx.font='850 64px Inter, "Segoe UI", Arial, sans-serif';var lines=tpWrap(ctx,name,64,1252,952,76,3);
+      var descY=1252+(lines-1)*76+58;
+      if(desc){ctx.fillStyle='#535862';ctx.font='500 31px Inter, "Segoe UI", Arial, sans-serif';tpWrap(ctx,desc,64,descY,880,43,2);}
+      tpDrawPrice(ctx,row,64,1585,82);
+      ctx.fillStyle=TPCARD_BIZ.accent;tpRR(ctx,56,1652,968,204,24);ctx.fill();
+      ctx.fillStyle=tpText(TPCARD_BIZ.accent);ctx.textAlign='center';
+      ctx.font='850 42px Inter, "Segoe UI", Arial, sans-serif';ctx.fillText('PÍDELO HOY',540,1742);
+      ctx.font='550 25px Inter, "Segoe UI", Arial, sans-serif';ctx.globalAlpha=.85;ctx.fillText('Abre el enlace directo para pedir',540,1790);ctx.globalAlpha=1;
+      ctx.textAlign='left';
+      return c;
+    }
+    // Cuadrada 1:1 — misma composición que la publicación 4:5 pero recortada
+    // a un lienzo cuadrado, que es el formato más compatible entre Instagram,
+    // Facebook y WhatsApp cuando no se sabe dónde terminará publicándose.
+    function tpBuildSquare(photo) {
+      var W=1080,H=1080,row=TPCARD.row,c=document.createElement('canvas'); c.width=W;c.height=H;
+      var ctx=c.getContext('2d'), name=row.getAttribute('data-edit-name')||'', desc=row.getAttribute('data-edit-desc')||'';
+      ctx.fillStyle='#F4F2EC';ctx.fillRect(0,0,W,H);
+      ctx.fillStyle=TPCARD_BIZ.accent;ctx.fillRect(0,0,W,178);
+      tpDrawLogo(ctx,54,42,80,true);
+      ctx.fillStyle=tpText(TPCARD_BIZ.accent);ctx.font='800 32px Inter, "Segoe UI", Arial, sans-serif';ctx.fillText(TPCARD_BIZ.name,158,84);
+      ctx.font='650 19px Inter, "Segoe UI", Arial, sans-serif';ctx.globalAlpha=.78;ctx.fillText('Pide en línea · Entrega fácil',158,116);ctx.globalAlpha=1;
+      var px=48,py=146,pw=984,ph=468;ctx.save();tpRR(ctx,px,py,pw,ph,24);ctx.clip(); if(photo)tpCover(ctx,photo,px,py,pw,ph);else tpDrawPlaceholder(ctx,px,py,pw,ph);ctx.restore();
+      tpDrawOffer(ctx,row,74,172);
+      ctx.fillStyle='#101828';ctx.font='800 44px Inter, "Segoe UI", Arial, sans-serif';var lines=tpWrap(ctx,name,54,684,972,52,2);
+      var descY=684+(lines-1)*52+42;
+      if(desc){ctx.fillStyle='#535862';ctx.font='500 25px Inter, "Segoe UI", Arial, sans-serif';tpWrap(ctx,desc,54,descY,700,34,1);}
+      tpDrawPrice(ctx,row,54,868,62);
+      ctx.fillStyle=TPCARD_BIZ.accent;tpRR(ctx,48,918,984,86,18);ctx.fill();
+      ctx.fillStyle=tpText(TPCARD_BIZ.accent);ctx.textAlign='center';
+      ctx.font='800 27px Inter, "Segoe UI", Arial, sans-serif';ctx.fillText('PIDE AHORA',540,955);
+      ctx.font='600 18px Inter, "Segoe UI", Arial, sans-serif';ctx.globalAlpha=.85;ctx.fillText('Enlace directo en la descripción',540,982);ctx.globalAlpha=1;
+      ctx.textAlign='left';
+      return c;
+    }
+    // Horizontal 1.91:1 — composición partida (foto a un lado, texto al otro)
+    // porque a este ancho tan bajo apilar todo verticalmente como en los demás
+    // formatos deja el texto ilegible; es el estándar de anuncios de enlace
+    // (Facebook Ads, vista previa de link) donde el layout SÍ cambia de forma.
+    function tpBuildLandscape(photo) {
+      var W=1200,H=628,row=TPCARD.row,c=document.createElement('canvas'); c.width=W;c.height=H;
+      var ctx=c.getContext('2d'), name=row.getAttribute('data-edit-name')||'', desc=row.getAttribute('data-edit-desc')||'';
+      ctx.fillStyle='#F4F2EC';ctx.fillRect(0,0,W,H);
+      var pw=560;
+      ctx.save();ctx.beginPath();ctx.rect(0,0,pw,H);ctx.clip(); if(photo)tpCover(ctx,photo,0,0,pw,H);else tpDrawPlaceholder(ctx,0,0,pw,H);ctx.restore();
+      tpDrawOffer(ctx,row,26,26);
+      var tx=pw+48,tw=W-pw-48-48;
+      tpDrawLogo(ctx,tx,44,64,false);
+      ctx.fillStyle='#101828';ctx.font='800 26px Inter, "Segoe UI", Arial, sans-serif';ctx.fillText(TPCARD_BIZ.name,tx+80,76);
+      ctx.fillStyle='#535862';ctx.font='650 16px Inter, "Segoe UI", Arial, sans-serif';ctx.fillText('Pide en línea · Entrega fácil',tx+80,100);
+      ctx.fillStyle='#101828';ctx.font='800 42px Inter, "Segoe UI", Arial, sans-serif';var lines=tpWrap(ctx,name,tx,192,tw,48,2);
+      var descY=192+(lines-1)*48+38;
+      if(desc){ctx.fillStyle='#535862';ctx.font='500 22px Inter, "Segoe UI", Arial, sans-serif';tpWrap(ctx,desc,tx,descY,tw,30,2);}
+      tpDrawPrice(ctx,row,tx,432,54);
+      ctx.fillStyle=TPCARD_BIZ.accent;tpRR(ctx,tx,478,tw,70,16);ctx.fill();
+      ctx.fillStyle=tpText(TPCARD_BIZ.accent);ctx.font='800 21px Inter, "Segoe UI", Arial, sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('PIDE AHORA · ENLACE DIRECTO',tx+tw/2,478+35);ctx.textAlign='left';ctx.textBaseline='alphabetic';
+      return c;
     }
 
-    // Descarga la tarjeta en tamaño historia (1080×1920): dibuja la tarjeta
-    // actual y le agrega franjas arriba/abajo con el nombre de la tienda y el
-    // precio, para estados de WhatsApp e historias de Instagram.
-    function descargarHistoriaProducto() {
-      if (!TPCARD.canvas || !TPCARD.row) { mostrarToast('Aún se está generando la tarjeta', 'error'); return; }
-      var W = 1080, H = 1920;
-      var base = TPCARD.canvas;
-      var c = document.createElement('canvas'); c.width = W; c.height = H;
-      var ctx = c.getContext('2d');
-      // Fondo con tinte del acento (igual que la tarjeta)
-      ctx.fillStyle = tpMix(TPCARD_BIZ.accent, '#FFFFFF', 0.93);
-      ctx.fillRect(0, 0, W, H);
-      ctx.fillStyle = tpRgba(TPCARD_BIZ.accent, 0.08);
-      ctx.beginPath(); ctx.arc(W*0.88, H*0.05, 260, 0, Math.PI*2); ctx.fill();
-      ctx.fillStyle = tpRgba(TPCARD_BIZ.accent2, 0.07);
-      ctx.beginPath(); ctx.arc(W*0.06, H*0.96, 220, 0, Math.PI*2); ctx.fill();
-      // Franja superior: logo/iniciales + nombre de la tienda
-      var hr = 46, hx = 92, hy = 110;
-      ctx.save();
-      ctx.beginPath(); ctx.arc(hx+hr, hy+hr, hr, 0, Math.PI*2); ctx.clip();
-      if (TPCARD.logoImg) { tpCover(ctx, TPCARD.logoImg, hx, hy, hr*2, hr*2); }
-      else { ctx.fillStyle = TPCARD_BIZ.accent; ctx.fillRect(hx, hy, hr*2, hr*2); }
-      ctx.restore();
-      if (!TPCARD.logoImg) {
-        ctx.fillStyle = tpText(TPCARD_BIZ.accent); ctx.font = '800 38px "Segoe UI", Arial, sans-serif';
-        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.fillText(tpInitials(TPCARD_BIZ.name), hx+hr, hy+hr+2);
-        ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
-      }
-      ctx.strokeStyle = tpRgba(TPCARD_BIZ.accent, 0.25); ctx.lineWidth = 3;
-      ctx.beginPath(); ctx.arc(hx+hr, hy+hr, hr+2, 0, Math.PI*2); ctx.stroke();
-      ctx.fillStyle = '#0F172A'; ctx.font = '800 40px "Segoe UI", Arial, sans-serif';
-      var t = TPCARD_BIZ.name;
-      while (ctx.measureText(t).width > W-92-(hr*2+40) && t.length > 4) t = t.slice(0, -2);
-      if (t !== TPCARD_BIZ.name) t += '…';
-      ctx.fillText(t, hx + hr*2 + 24, hy + hr - 6);
-      ctx.fillStyle = 'rgba(15,23,42,0.45)'; ctx.font = '700 22px "Segoe UI", Arial, sans-serif';
-      ctx.fillText('C A T Á L O G O   E N   L Í N E A', hx + hr*2 + 24, hy + hr + 34);
-      // Tarjeta base centrada (deja ~120px arriba y ~150px abajo)
-      var drawH = H - 120 - 150;
-      var drawW = drawH * (base.width / base.height);
-      var dx = (W - drawW) / 2;
-      ctx.save();
-      ctx.shadowColor = 'rgba(15,23,42,0.14)'; ctx.shadowBlur = 40; ctx.shadowOffsetY = 14;
-      ctx.drawImage(base, dx, 120, drawW, drawH);
-      ctx.restore();
-      // Franja inferior: precio + "Desliza para pedir"
-      var price = parseFloat(TPCARD.row.getAttribute('data-edit-price')) || 0;
-      ctx.fillStyle = TPCARD_BIZ.accent; ctx.font = '900 76px "Segoe UI", Arial, sans-serif';
-      ctx.fillText(tpSym(price), 92, H - 84);
-      ctx.fillStyle = 'rgba(15,23,42,0.5)'; ctx.font = '600 30px "Segoe UI", Arial, sans-serif';
-      ctx.textAlign = 'right';
-      ctx.fillText('👆 Desliza hacia arriba para pedir', W - 92, H - 74);
-      ctx.textAlign = 'left';
-      c.toBlob(function (blob) {
-        if (!blob) { mostrarToast('No se pudo exportar la historia', 'error'); return; }
-        var a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = 'historia-' + (TPCARD.row ? TPCARD.row.getAttribute('data-edit-id') : '') + '.png';
-        document.body.appendChild(a); a.click(); a.remove();
-        setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
-        mostrarToast('Historia descargada ✓', 'ok');
-      }, 'image/png');
+    var TP_BUILDERS = { square: tpBuildSquare, feed: tpBuildFeed, story: tpBuildStory, landscape: tpBuildLandscape };
+
+    function tpDibujar(photo) {
+      if (!TPCARD.row) return;
+      TPCARD.canvases = {};
+      Object.keys(TP_BUILDERS).forEach(function (key) { TPCARD.canvases[key] = TP_BUILDERS[key](photo); });
+      tpRenderPreview();
+    }
+    function tpRenderPreview() {
+      var prev=document.getElementById('tp-preview'); if(!prev)return;
+      var canvas=TPCARD.canvases[TPCARD.format];
+      if(!canvas)return; prev.innerHTML='';prev.appendChild(canvas);prev.setAttribute('data-format',TPCARD.format);
+    }
+    function seleccionarFormatoTarjeta(format) {
+      TPCARD.format = TP_FORMATS[format] ? format : 'square';
+      Object.keys(TP_FORMATS).forEach(function (key) {
+        var b = document.getElementById('tp-format-' + key);
+        if (b) b.classList.toggle('is-active', TPCARD.format === key);
+      });
+      var info = TP_FORMATS[TPCARD.format];
+      var btn=document.getElementById('tp-download'),note=document.getElementById('tp-size-note');
+      if(btn)btn.lastChild.textContent=' Descargar ' + info.label.toLowerCase();
+      if(note)note.textContent=info.note;
+      tpRenderPreview();
     }
 
-    function descargarTarjetaProducto() {
-      if (!TPCARD.canvas) { mostrarToast('Aún se está generando la tarjeta', 'error'); return; }
-      try {
-        TPCARD.canvas.toBlob(function (blob) {
-          if (!blob) { mostrarToast('No se pudo exportar la imagen', 'error'); return; }
-          var a = document.createElement('a');
-          a.href = URL.createObjectURL(blob);
-          a.download = 'producto-' + (TPCARD.row ? TPCARD.row.getAttribute('data-edit-id') : '') + '.png';
-          document.body.appendChild(a); a.click(); a.remove();
-          setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
-          mostrarToast('Tarjeta descargada ✓', 'ok');
-        }, 'image/png');
-      } catch (e) {
-        mostrarToast('La imagen no se pudo exportar', 'error');
-      }
+    function tpDescargarCanvas(canvas, prefix, success) {
+      if (!canvas) { mostrarToast('Aún se está generando la tarjeta', 'error'); return; }
+      canvas.toBlob(function (blob) {
+        if (!blob) { mostrarToast('No se pudo exportar la imagen', 'error'); return; }
+        var href=URL.createObjectURL(blob),a=document.createElement('a');a.href=href;
+        a.download=prefix+'-'+(TPCARD.row?TPCARD.row.getAttribute('data-edit-id'):'')+'.png';
+        document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(href);},2000);
+        mostrarToast(success, 'ok');
+      },'image/png');
+    }
+    function descargarFormatoTarjeta() {
+      tpDescargarCanvas(TPCARD.canvases[TPCARD.format], TPCARD.format, TP_FORMATS[TPCARD.format].label + ' descargada ✓');
+    }
+    function compartirTarjetaProducto() {
+      var canvas=TPCARD.canvases[TPCARD.format];
+      if(!canvas){mostrarToast('Aún se está generando la tarjeta','error');return;}
+      canvas.toBlob(function(blob){
+        if(!blob){mostrarToast('No se pudo preparar la imagen','error');return;}
+        var file=new File([blob],TPCARD.format+'-'+(TPCARD.row?TPCARD.row.getAttribute('data-edit-id'):'')+'.png',{type:'image/png'});
+        if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
+          navigator.share({files:[file],title:TPCARD.row.getAttribute('data-edit-name')||'Producto',text:'Mira este producto en '+TPCARD_BIZ.name,url:TPCARD.url}).catch(function(e){if(e&&e.name!=='AbortError')mostrarToast('No se pudo compartir','error');});
+        }else{
+          tpDescargarCanvas(canvas,TPCARD.format,'Imagen descargada para compartir');
+        }
+      },'image/png');
     }
     function copiarEnlaceProducto() {
       if (!TPCARD.url) return;

@@ -2028,7 +2028,7 @@ app.get('/:slug/p/:id', (req, res, next) => {
 app.get('/:slug/manifest.webmanifest', (req, res) => {
   const biz = getBusiness(req.params.slug);
   if (!biz || !biz.active) return res.status(404).end();
-  const pal = getPalette(biz, getEffectiveEstilo(biz));
+  const designTokens = catDesignOf(biz).tokens;
   const name = biz.name || 'Catálogo';
   res.set('Content-Type', 'application/manifest+json');
   res.set('Cache-Control', 'no-store');
@@ -2041,8 +2041,8 @@ app.get('/:slug/manifest.webmanifest', (req, res) => {
     scope: '/' + biz.slug,
     display: 'standalone',
     orientation: 'portrait',
-    background_color: '#ffffff',
-    theme_color: pal.accent || '#2563eb',
+    background_color: designTokens.bg || '#ffffff',
+    theme_color: designTokens.accent || '#17232d',
     lang: 'es',
     icons: [
       { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },

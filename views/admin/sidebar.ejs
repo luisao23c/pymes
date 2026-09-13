@@ -65,8 +65,14 @@ SIDEBAR NUEVO (diseño totalmente distinto)
     <% }) %>
   </nav>
 
-  <!-- Pie: opciones secundarias (modo oscuro, salir) -->
+  <!-- Pie: opciones secundarias (instalar app, modo oscuro, salir) -->
   <div class="px-3 pb-5 space-y-1 pt-3" style="border-top:1px solid var(--ap-border)">
+    <button type="button" id="pwa-install-btn" onclick="window.installPWA && window.installPWA()"
+       class="m-ripple w-full items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors" style="display:none;color:var(--ap-accent-text)">
+      <svg class="w-[17px] h-[17px] shrink-0" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 3v13m0 0l-4.5-4.5M12 16l4.5-4.5M4 20h16"/></svg>
+      Instalar app
+    </button>
+
     <div class="flex items-center justify-between px-3 py-2">
       <span class="flex items-center gap-2.5 text-[13px] font-medium" style="color:var(--ap-text-sec)">
         <svg class="w-[17px] h-[17px]" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M21 12.8A9 9 0 1111.2 3 7 7 0 0021 12.8z"/></svg>
@@ -101,6 +107,21 @@ SCRIPT: Toggle modo oscuro
     if (dark) document.body.classList.add('dark');
     var t = document.getElementById('dark-toggle');
     if (t) t.checked = dark;
+  })();
+
+  // Botón "Instalar app": lo muestra pwa.js en cuanto sabe que se puede
+  // instalar (o, en iOS, que hay que hacerlo a mano desde Compartir).
+  // Se consulta el DOM en cada llamada (no una sola vez al cargar) porque
+  // el botón del menú móvil "Más" aparece más abajo en el documento, después
+  // de que este script ya corrió durante el parseo.
+  (function () {
+    function apply(can) {
+      document.querySelectorAll('#pwa-install-btn, .pwa-install-btn').forEach(function (b) {
+        b.style.display = can ? 'flex' : 'none';
+      });
+    }
+    document.addEventListener('pwa-installable-change', function (e) { apply(e.detail.installable); });
+    if (document.documentElement.classList.contains('pwa-installable')) apply(true);
   })();
 </script>
 
@@ -265,6 +286,11 @@ BOTTOM NAV MÓVIL (máx 4 opciones + "Más")
         </a>
       <% }) %>
     </div>
+    <button type="button" id="pwa-install-btn-mobile" onclick="window.installPWA && window.installPWA()"
+       class="pwa-install-btn w-full items-center justify-center gap-2 mt-2 py-3 rounded-lg text-[13px] font-semibold" style="display:none;background:var(--ap-bg);color:var(--ap-accent-text)">
+      <svg class="w-[18px] h-[18px] shrink-0" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 3v13m0 0l-4.5-4.5M12 16l4.5-4.5M4 20h16"/></svg>
+      Instalar app en este teléfono
+    </button>
   </div>
 </div>
 <script>
