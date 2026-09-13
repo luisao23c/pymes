@@ -384,6 +384,11 @@ addColumnIfMissing('businesses', 'redes', "TEXT DEFAULT '{}'");
 // 'catalogo' = patrón base de venta por catálogo; 'joyeria' = patrón elegante tipo boutique.
 addColumnIfMissing('businesses', 'catalog_design', "TEXT DEFAULT 'catalogo'");
 
+// Si aparece o no en el directorio público de nessik.net (landing → "Tiendas").
+// Por defecto sí: solo se desmarca a mano para tiendas de prueba/demo internas
+// que no deben verse como parte del catálogo de negocios reales.
+addColumnIfMissing('businesses', 'listed', 'INTEGER DEFAULT 1');
+
 // ============ Plantillas personalizadas del equipo ============
 db.exec(`
 CREATE TABLE IF NOT EXISTS custom_templates (

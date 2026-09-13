@@ -28,17 +28,22 @@
           <p class="mt-3 text-[15px] max-w-md mx-auto" style="color:var(--ap-text-sec)">Cuéntanos a qué te dedicas y preparamos tu catálogo a tu medida — diseño, categorías y todo listo para que solo agregues tus productos.</p>
         </div>
 
+        <div class="relative max-w-sm mx-auto mb-5">
+          <input type="text" id="wz-giro-search" placeholder="Busca tu giro (ej: panadería, ropa, taller...)" class="w-full text-sm rounded-full px-4 py-2.5 outline-none" style="border:1px solid var(--ap-border);background:var(--ap-card);color:var(--ap-text)">
+        </div>
+
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-3" id="wz-giro-grid">
           <% GIRO_PRESETS.forEach(p => { %>
-            <button type="button" class="wz-card" data-giro="<%= p.id %>">
+            <button type="button" class="wz-card" data-giro="<%= p.id %>" data-search="<%= (p.nombre + ' ' + p.descripcion).toLowerCase() %>">
               <span class="text-2xl"><%= p.emoji %></span>
               <span class="wz-card-title"><%= p.nombre %></span>
               <span class="wz-card-desc"><%= p.descripcion %></span>
             </button>
           <% }) %>
+          <p class="text-sm text-center col-span-2 sm:col-span-3 hidden" id="wz-giro-empty" style="color:var(--ap-text-sec)">Ningún giro coincide — elige "Otro negocio" o prueba con otra palabra.</p>
         </div>
 
-        <div class="text-center mt-8">
+        <div class="text-center mt-8 wz-cta-bar">
           <button type="button" class="m-btn m-btn-filled px-8" id="wz-next-1" disabled>Siguiente →</button>
           <p class="mt-4">
             <button type="submit" name="skip" value="1" class="text-[13px] font-medium" style="color:var(--ap-text-sec);background:none;border:none;cursor:pointer;text-decoration:underline">Prefiero configurarlo yo mismo</button>
@@ -127,6 +132,15 @@
       color: var(--ap-accent-text); background: rgba(44,44,46,.08); border-radius: 999px; padding: 2px 8px; margin-top: 2px;
     }
     .wz-swatch { width: 28px; height: 28px; border-radius: 8px; display: inline-block; flex: none; }
+    #wz-giro-search:focus { border-color: var(--ap-accent); }
+    /* El paso 1 muestra 100 giros — sin esto, el botón "Siguiente" solo se
+       ve hasta scrollear toda la cuadrícula. Al quedar sticky, siempre está
+       a un tap de distancia sin importar cuántos giros haya arriba. */
+    .wz-cta-bar {
+      position: sticky; bottom: 0; z-index: 10;
+      background: var(--ap-bg); padding-top: 14px; padding-bottom: 14px;
+      margin-left: -16px; margin-right: -16px; padding-left: 16px; padding-right: 16px;
+    }
   </style>
 
   <script>
@@ -160,6 +174,28 @@
       setDot(step);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
+
+    // Buscador del paso 1: filtra los 100 giros por nombre/descripción para
+    // no obligar a scrollear toda la cuadrícula buscando el propio.
+    (function () {
+      var search = document.getElementById('wz-giro-search');
+      var empty = document.getElementById('wz-giro-empty');
+      if (!search) return;
+      search.addEventListener('input', function () {
+        var q = search.value.trim().toLowerCase();
+        var cards = document.querySelectorAll('#wz-giro-grid .wz-card');
+        var visible = 0;
+        cards.forEach(function (card) {
+          var match = !q || (card.getAttribute('data-search') || '').indexOf(q) !== -1;
+          // Ojo: .wz-card ya define display:flex en su propia regla, así que
+          // la clase utilitaria "hidden" de Tailwind pierde el empate de
+          // especificidad y no ocultaba nada — por eso se fuerza inline.
+          card.style.display = match ? '' : 'none';
+          if (match) visible++;
+        });
+        if (empty) empty.classList.toggle('hidden', visible !== 0);
+      });
+    })();
 
     // Paso 1: elegir giro
     document.querySelectorAll('#wz-giro-grid .wz-card').forEach(function (card) {

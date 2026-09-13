@@ -479,7 +479,15 @@
       fetch('/api/pedir', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ items: g.items.map(it => ({ store: it.store.slug, id: it.id, qty: it.qty, variant: it.variant })), nombre: nombre, telefono: telefono }) }).catch(() => {});
     } catch (e) {}
     window.open(url, '_blank');
+    // El pedido ya se registró arriba (fetch a /api/pedir): una vez que se
+    // abrió WhatsApp con el mensaje listo, ya no tiene caso dejar esos
+    // productos en el carrito — si se quedaban, el cliente terminaba
+    // "pidiendo" el mismo carrito otra vez sin darse cuenta.
+    g.items.forEach(it => { delete cart[it.key]; });
+    saveCart();
+    renderCart();
     if (!horarioAbierto()) toast(closedMsg(), true);
+    else toast('Pedido enviado ✓', true);
     if (window.haptic) window.haptic(30);
   }
   function toggleChat(show) {

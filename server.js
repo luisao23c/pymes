@@ -1717,7 +1717,7 @@ app.get('/manifest.webmanifest', (req, res) => {
 
 // ================= LANDING =================
 app.get('/', (req, res) => {
-  const stores = db.prepare('SELECT * FROM businesses WHERE active = 1 ORDER BY created_at DESC LIMIT 12').all();
+  const stores = db.prepare('SELECT * FROM businesses WHERE active = 1 AND listed = 1 ORDER BY created_at DESC LIMIT 12').all();
   res.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
   res.render('landing', { stores, TEMPLATES, COLORS });
 });
