@@ -1180,19 +1180,30 @@
   <script>
     (function () {
       var fab = document.querySelector('.filter-fab');
-      // Sentinel al final de la cuadrícula: mientras siga a la vista, seguimos
-      // "dentro" de la sección de productos; en cuanto se pierde de vista hacia
-      // arriba, ya se bajó a otra sección y el botón no pinta nada ahí.
+      // Sentinel al final de la cuadrícula: el botón solo debe flotar mientras
+      // todavía haya productos a la altura donde él vive en pantalla (fijo,
+      // pegado abajo). En cuanto ese punto de fin de cuadrícula sube por
+      // encima de la propia zona del botón, ya no hay productos ahí — solo
+      // el espacio en blanco o la siguiente sección — así que se oculta,
+      // en vez de quedarse flotando sobre contenido ajeno.
       var sentinel = document.getElementById('prodGridEnd');
       if (!fab || !sentinel) return;
       function isMobile() { return window.matchMedia('(max-width:900px)').matches; }
-      var obs = new IntersectionObserver(function (entries) {
-        entries.forEach(function (e) {
-          fab.style.display = (isMobile() && e.boundingClientRect.top > 0) ? 'flex' : 'none';
-        });
-      }, { threshold: [0, 1] });
-      obs.observe(sentinel);
-      window.addEventListener('resize', function () { if (!isMobile()) fab.style.display = 'none'; });
+      function update() {
+        if (!isMobile()) { fab.style.display = 'none'; return; }
+        var fabZoneTop = window.innerHeight - 140;
+        var top = sentinel.getBoundingClientRect().top;
+        fab.style.display = (top > fabZoneTop) ? 'flex' : 'none';
+      }
+      var ticking = false;
+      function onScroll() {
+        if (ticking) return;
+        ticking = true;
+        requestAnimationFrame(function () { update(); ticking = false; });
+      }
+      window.addEventListener('scroll', onScroll, { passive: true });
+      window.addEventListener('resize', onScroll);
+      update();
     })();
   </script>
 
